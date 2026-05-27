@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2025/5/11 19:40
 
+from pathlib import Path
 from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
 import os
@@ -31,6 +32,8 @@ class Settings(BaseSettings):
     # 文件上传配置
     UPLOAD_DIR: str = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
     MAX_FILE_SIZE: int = 100 * 1024 * 1024  # 100MB
+
+    BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
 
 
 settings = Settings()
