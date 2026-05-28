@@ -33,7 +33,7 @@ def login(login_data: UserLogin):
     # 2.校验密码
     if not pwd_context.verify(login_data.password, user["password"]):
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="密码错误"
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="密码错误"
         )
 
     # 3.生成JWT令牌

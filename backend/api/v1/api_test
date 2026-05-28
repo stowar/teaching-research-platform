@@ -1,3 +1,0 @@
-curl -X PUT http://localhost:8000/api/users/password -H "Content-Type: application/json" -H "Authorization: Bearer 你的完整Token" -d "{\"old_password\":\"12345678\",\"new_password\":\"123456\"}"
-
-curl -X PUT http://localhost:8000/api/users/me -H "accept: application/json" -H "Content-Type: application/json" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwiZXhwIjoxNzc5MjA5NjE4fQ.VUCLPooyITz8TT1E_vNHHC0TXmefUfSmIl11Xwlqayg" -d "{\"name\":\"张三\",\"school\":\"北京大学\",\"title\":\"学生\"}"
