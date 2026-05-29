@@ -6,8 +6,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from passlib.context import CryptContext
 
+from backend.core.engine import engine
 from backend.core.deps import get_current_user
-from backend.db.user_db import (update_user_info,update_user_password)
 from backend.model.user import UserResponse,UserUpdate,UserUpdatePassword
 
 
@@ -32,7 +32,7 @@ def update_current_user_info(
 ):
     """更新当前登录用户的个人信息"""
     # 更新数据库
-    updated_user = update_user_info(current_user["id"], update_data)
+    updated_user = engine.update_user_info(current_user["id"], update_data)
     if not update_data:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="没有需要更新的字段")
     return {
@@ -51,12 +51,11 @@ def change_password(password_data: UserUpdatePassword,current_user = Depends(get
 
     # 加密新密码并更新
     new_hashed_password = pwd_context.hash(password_data.new_password)
-    update_user_password(current_user["id"], new_hashed_password)
+    engine.update_user_password(current_user["id"], new_hashed_password)
     return {
         "code": 200,
         "msg": "修改成功"
     }
-
 
 
 if __name__ == '__main__':
