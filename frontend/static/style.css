@@ -1,0 +1,61 @@
+/* 全局字体 */
+* {
+    font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+}
+
+/* 普通按钮基础+hover */
+.stButton > button {
+    border-radius: 0.6rem !important;
+    transition: all 0.2s ease;
+}
+.stButton > button:hover {
+    background-color: #f0f8ff !important;
+    color: #048A81 !important;
+    border-color: #048A81 !important;
+    transform: translateY(-1px);
+}
+
+/* ===== 表单提交按钮（st.form_submit_button）hover ===== */
+.stFormSubmitButton > button {
+    border-radius: 0.6rem !important;
+    background-color: #048A81 !important;
+    color: #fff !important;
+    transition: all 0.2s ease !important;
+}
+.stFormSubmitButton > button:hover {
+    background-color: #036b66 !important; /* 主色加深 */
+    color: #fff !important;
+    border-color: #036b66 !important;
+    transform: translateY(-1px) scale(1.01);
+    box-shadow: 0 2px 8px rgba(4,138,129,0.2);
+}
+
+/* 只针对 key="logout" 的按钮！ */
+.st-key-logout button:hover {
+    background-color: #dc3545 !important;
+    color: white !important;
+    border-color: #b02a37 !important;
+}
+
+/* 自定义info卡片 */
+.custom-card {
+    background: #e6f7ff;
+    padding: 1.2rem;
+    border-radius: 0.6rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.custom-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(4,138,129,0.15);
+}
+
+/* 页脚 */
+.footer {
+    text-align: center;
+    color: #999;
+    font-size: 0.9rem;
+    margin-top: 3rem;
+}
+

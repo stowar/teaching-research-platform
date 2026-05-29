@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2026/5/11 20:49
 import requests
-from backend.core.config import settings
 import streamlit as st
+from urllib.parse import urljoin
 
-BASE_URL = "http://localhost:8000" + settings.API_V1_STR
+BASE_URL = "http://localhost:8000"
+API_PREFIX = "/api/v1"
+BACKEND_URL = urljoin(BASE_URL, API_PREFIX.lstrip('/'))
 
 def health_check():
     """测试后端连接"""
@@ -23,7 +25,7 @@ def api_request(method, endpoint, data=None, params=None):
     if st.session_state.token:
         headers["Authorization"] = f"Bearer {st.session_state.token}"
 
-    url = f"{BASE_URL}{endpoint}"
+    url = f"{BACKEND_URL}{endpoint}"
 
     try:
         if method == "GET":

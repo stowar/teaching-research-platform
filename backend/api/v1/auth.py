@@ -48,7 +48,7 @@ def login(login_data: UserLogin):
     }
 
 
-@router.post("/register", summary="用户注册", response_model=BaseResponse)
+@router.post("/register", summary="用户注册")
 def register(register_data: UserCreate):
     """用户注册接口"""
     if get_user_by_phone(register_data.phone):
@@ -57,7 +57,8 @@ def register(register_data: UserCreate):
     new_user = create_user(register_data)
     return {
         "code": 200,
-        "msg": "注册成功"
+        "msg": "注册成功",
+        "data": new_user
     }
 
 
