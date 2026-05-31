@@ -1,5 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from passlib.context import CryptContext
+from fastapi import APIRouter, Depends, HTTPException
 
 from backend.core.deps import require_admin
 from backend.core.exceptions import BusinessException
@@ -10,9 +9,6 @@ from backend.model.user import UserUpdate
 
 # 初始化路由
 router_admin = APIRouter(prefix="/admin", tags=["管理员"])
-
-# 密码加密上下文
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 @router_admin.get("/", summary="管理员-获取所有用户信息")

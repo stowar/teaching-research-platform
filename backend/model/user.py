@@ -62,5 +62,5 @@ class UserResponse(UserBase):
 class LoginResponse(BaseResponse):
     """登录响应（Token + 用户信息）"""
     access_token: str
-    token_type: str = "Bearer <token>"
+    token_type: str = "bearer"
     user: UserResponse

@@ -3,10 +3,28 @@ import os
 import streamlit as st
 import json
 import time
-from utils.api_client import api_request
+from datetime import datetime, date
+
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CSS_PATH = os.path.join(BASE_DIR, "static", "style.css")
+
+
+class _DateTimeEncoder(json.JSONEncoder):
+    """处理 datetime/date 对象的 JSON 序列化器"""
+    def default(self, obj):
+        if isinstance(obj, (datetime, date)):
+            return obj.isoformat()
+        return super().default(obj)
+
+
+def _safe_json_dumps(data):
+    """安全地将数据序列化为 JSON 字符串，兼容 datetime 类型"""
+    try:
+        return json.dumps(data, ensure_ascii=False, cls=_DateTimeEncoder)
+    except (TypeError, ValueError):
+        # 兜底：将所有值转为字符串后再序列化
+        return json.dumps({k: str(v) for k, v in data.items()}, ensure_ascii=False)
 
 def init_global_app():
     """
@@ -24,6 +42,7 @@ def init_global_app():
     st.session_state.token = st.session_state.get("token", None)
     st.session_state.current_user = st.session_state.get("current_user", None)
     st.session_state.page = st.session_state.get("page", "home")
+    st.session_state.prompt = st.session_state.get("prompt", "")
 
     # 3. 从URL自动恢复登录状态（刷新/切换页面都不丢失）
     params = st.query_params
@@ -38,8 +57,12 @@ def init_global_app():
     # 如果session中有登录状态但URL没有参数，自动补全
     if st.session_state.token is not None and "token" not in params:
         st.query_params["token"] = st.session_state.token
-        st.query_params["current_user"] = json.dumps(st.session_state.current_user, ensure_ascii=False)
+        try:
+            st.query_params["current_user"] = _safe_json_dumps(st.session_state.current_user)
+        except Exception:
+            pass
 
+    # markdown注入
     try:
         with open(CSS_PATH, "r", encoding="utf-8") as f:
             css_content = f.read()
@@ -61,13 +84,16 @@ def save_login_state(token, user):
     st.session_state.token = token
     st.session_state.current_user = user
     st.query_params["token"] = token
-    st.query_params["current_user"] = json.dumps(user, ensure_ascii=False)
+    try:
+        st.query_params["current_user"] = _safe_json_dumps(user)
+    except Exception:
+        pass
 
 def global_back_home_button():
     """全局统一返回首页，用于退出登录、切换用户等操作"""
     col = st.columns([1, 2, 1])
     with col[1]:
-        if st.button("返回首页",use_container_width=True):
+        if st.button("返回首页",use_container_width=True,type="primary"):
             st.switch_page("app.py")
 
 def global_button():

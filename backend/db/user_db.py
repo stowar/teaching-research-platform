@@ -1,11 +1,7 @@
 from backend.db.connection import execute_query, execute_one, execute_update
-from backend.model.user import UserCreate,UserUpdatePassword,UserUpdate
-# passlib:密码加密库
-from passlib.context import CryptContext
+from backend.model.user import UserCreate, UserUpdate
+from backend.core.security import get_password_hash
 from datetime import datetime
-
-# 配置加密上下文
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def get_user_by_id(user_id : int):
     """根据id获取用户"""
@@ -21,7 +17,7 @@ def get_user_by_phone(phone: str):
 def create_user(user: UserCreate):
     """创建新用户"""
     # 密码加密
-    hashed_password = pwd_context.hash(user.password)
+    hashed_password = get_password_hash(user.password)
     # 获取时间
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     # 默认角色和状态

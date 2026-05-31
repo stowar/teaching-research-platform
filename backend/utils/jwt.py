@@ -4,7 +4,7 @@
 实现生成令牌、验证令牌、解析用户 ID
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 # 用来安全的安全地生成、解析、验证 JWT 令牌
 from jose import JWTError,jwt
 
@@ -20,7 +20,7 @@ def create_access_token(user_id: int) -> str:
     # datetime.utcnow(): 获取UTC时间
     # timedelta(days=settings.ACCESS_TOKEN_EXPIRE_DAYS)：创建一个时间间隔对象
     # expire：令牌过期时间
-    expire = datetime.utcnow() + timedelta(days=settings.ACCESS_TOKEN_EXPIRE_DAYS)
+    expire = datetime.now(timezone.utc) + timedelta(days=settings.ACCESS_TOKEN_EXPIRE_DAYS)
     to_encode ={"sub": str(user_id),"exp": expire}
 
     # 2.用密钥和加密算法生成令牌

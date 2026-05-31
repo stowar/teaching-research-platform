@@ -3,9 +3,7 @@ init_global_app()
 
 import streamlit as st
 
-# 这里写你的教研资料业务逻辑（上传、搜索、下载等）
-st.info("📚 教研社区模块正在全力开发中，未来将支持教案分享")
-# 再和底部按钮加个间距
+st.info("这里是消息区域,未来教师之间可以相互沟通交流")
 st.markdown("<br><br>", unsafe_allow_html=True)
 global_back_home_button()
 global_button()

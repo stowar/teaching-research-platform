@@ -14,7 +14,7 @@ def get_db_connection():
         user=settings.DB_USER,
         password=str(settings.DB_PASSWORD).encode('utf-8').decode('latin-1'),
         db=settings.DB_NAME,
-        charset='utf8',
+        charset='utf8mb4',
         cursorclass=DictCursor
     )
 

@@ -3,59 +3,55 @@
     font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
 }
 
-/* 普通按钮基础+hover */
-.stButton > button {
-    border-radius: 0.6rem !important;
-    transition: all 0.2s ease;
+[data-testid="block-container"] {
+    padding: 2rem 3rem;
+    max-width: 1200px;
+    margin: 0 auto;
 }
-.stButton > button:hover {
-    background-color: #f0f8ff !important;
-    color: #048A81 !important;
-    border-color: #048A81 !important;
-    transform: translateY(-1px);
-}
-
-/* ===== 表单提交按钮（st.form_submit_button）hover ===== */
-.stFormSubmitButton > button {
-    border-radius: 0.6rem !important;
-    background-color: #048A81 !important;
-    color: #fff !important;
-    transition: all 0.2s ease !important;
-}
-.stFormSubmitButton > button:hover {
-    background-color: #036b66 !important; /* 主色加深 */
-    color: #fff !important;
-    border-color: #036b66 !important;
-    transform: translateY(-1px) scale(1.01);
-    box-shadow: 0 2px 8px rgba(4,138,129,0.2);
-}
-
-/* 只针对 key="logout" 的按钮！ */
-.st-key-logout button:hover {
-    background-color: #dc3545 !important;
-    color: white !important;
-    border-color: #b02a37 !important;
-}
-
-/* 自定义info卡片 */
-.custom-card {
-    background: #e6f7ff;
+/* 卡片：自适应高度，不再强制100%，解决包不住 */
+.box-card {
+    background: #fff;
+    border-radius: 12px;
     padding: 1.2rem;
-    border-radius: 0.6rem;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07);
 }
-.custom-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(4,138,129,0.15);
+div.stButton > button {
+    border-radius: 8px;
+    height: px;
+    margin: 4px 0;
 }
-
-/* 页脚 */
-.footer {
-    text-align: center;
-    color: #999;
-    font-size: 0.9rem;
-    margin-top: 3rem;
+[data-testid="stToolbar"], [data-testid="stDecoration"] {
+    display: none;
 }
 
+div.stButton > button:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* 主按钮样式 */
+.primary-btn button {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+}
+
+/* 次要按钮样式 */
+.secondary-btn button {
+    background: #f1f5f9 !important;
+    color: #1e40af !important;
+}
+
+/* 危险按钮样式（注销） */
+.danger-btn button {
+    background: #ef4444 !important;
+    color: white !important;
+}
+
+.danger-btn button:hover {
+    background: #dc2626 !important;
+}
+
+
+ /*隐藏默认元素 */
+[data-testid="stToolbar"], [data-testid="stDecoration"] {
+    display: none !important;
+}
