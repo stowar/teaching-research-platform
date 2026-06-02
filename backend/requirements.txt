@@ -12,3 +12,7 @@ python-docx==1.1.0
 PyPDF2==3.0.1
 pandas==2.2.1
 numpy==1.26.4
+jieba==0.42.1
+
+# 情感分析模型依赖（PyTorch 请根据环境选择 CPU/GPU 版本安装,单独安装）
+# pip install torch==2.10.0 torchvision==0.25.0 torchaudio==2.10.0 -i https://pypi.tuna.tsinghua.edu.cn/simple --extra-index-url https://download.pytorch.org/whl/cu128
