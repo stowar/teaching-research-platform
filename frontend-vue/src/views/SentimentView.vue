@@ -14,10 +14,10 @@ const error = ref('')
 const result = ref(null)
 
 const examples = [
-  '老师讲课特别生动，课堂气氛很活跃，学到了很多实用的英语表达技巧。',
-  '这节课内容有点难，语速太快了，很多知识点没跟上，希望老师能放慢节奏。',
-  '非常喜欢这种互动式教学，小组讨论让我们有更多开口说英语的机会。',
-  '课件制作精美，但课堂练习时间太少，感觉听懂了但一做题就不会。'
+  '张老师上课很有激情，讲解深入浅出，课堂气氛很活跃，收获很大。',
+  '全程照着PPT念，内容东拉西扯没有重点，纯属浪费时间。',
+  '小组讨论环节设计得很好，案例很贴近实际，学到了很多实用的技巧。',
+  '老师语速太快了，很多知识点没跟上，听了半节课就不想听了。'
 ]
 
 async function analyze() {
@@ -47,15 +47,20 @@ function clear() {
   error.value = ''
 }
 
-// 根据权重计算背景色强度
-function heatColor(weight) {
-  // 使用品牌色 indigo，透明度随权重变化
-  const alpha = 0.15 + weight * 0.55
+// 根据权重计算背景色强度（基于原始 softmax 值，不做归一化）
+function heatColor(weight, maxWeight) {
+  const ratio = maxWeight > 0 ? weight / maxWeight : 0
+  const alpha = 0.15 + ratio * 0.55
   return `rgba(99, 102, 241, ${alpha})`
 }
 
-function heatTextColor(weight) {
-  return weight > 0.5 ? '#fff' : 'var(--text-primary)'
+function heatTextColor(weight, maxWeight) {
+  const ratio = maxWeight > 0 ? weight / maxWeight : 0
+  return ratio > 0.7 ? '#fff' : 'var(--text-primary)'
+}
+
+function maxAttention(weights) {
+  return weights.length ? Math.max(...weights) : 0
 }
 </script>
 
@@ -67,6 +72,7 @@ function heatTextColor(weight) {
       <div class="header-text">
         <h1>教学评价情感分析</h1>
         <p>基于自研 Attention-GRU 模型，洞察学生反馈中的情感倾向与关注重点</p>
+        <p class="header-note">当前模型训练数据量有限（600 条），分析结果仅供参考</p>
       </div>
     </div>
 
@@ -164,10 +170,10 @@ function heatTextColor(weight) {
                 :key="i"
                 class="heat-word"
                 :style="{
-                  backgroundColor: heatColor(result.attn_weights[i]),
-                  color: heatTextColor(result.attn_weights[i])
+                  backgroundColor: heatColor(result.attn_weights[i], maxAttention(result.attn_weights)),
+                  color: heatTextColor(result.attn_weights[i], maxAttention(result.attn_weights))
                 }"
-                :title="`权重: ${(result.attn_weights[i] * 100).toFixed(1)}%`"
+                :title="`权重: ${(result.attn_weights[i] * 100).toFixed(2)}%`"
               >
                 {{ word }}
               </span>
@@ -209,6 +215,12 @@ function heatTextColor(weight) {
   font-size: var(--text-sm);
   color: var(--text-secondary);
   margin: 0;
+}
+
+.header-note {
+  font-size: var(--text-xs) !important;
+  color: var(--text-tertiary) !important;
+  margin-top: var(--space-1) !important;
 }
 
 /* 内容网格 */

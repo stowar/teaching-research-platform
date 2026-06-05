@@ -73,7 +73,7 @@ def get_comments(post_id: int, page: int = Query(1, ge=1), page_size: int = Quer
 @router.post("/posts/{post_id}/comments", summary="发表评论")
 def create_comment(post_id: int, data: CommentCreate, current_user = Depends(get_current_user)):
     try:
-        return community_service.create_comment_service(post_id, data.content, data.parent_id, current_user)
+        return community_service.create_comment_service(post_id, data.content, data.parent_id, data.is_anonymous, current_user)
     except BusinessException as e:
         raise HTTPException(status_code=e.code, detail=e.message)
 

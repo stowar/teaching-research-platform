@@ -100,9 +100,9 @@ def get_comments_service(post_id, page=1, page_size=20):
     return {"code": 200, "msg": "查询成功", "data": comments}
 
 
-def create_comment_service(post_id, content, parent_id, user: dict):
+def create_comment_service(post_id, content, parent_id, is_anonymous, user: dict):
     """发表评论"""
-    community_db.create_comment(post_id, user["id"], content, parent_id)
+    community_db.create_comment(post_id, user["id"], content, parent_id, is_anonymous)
     community_db.update_post_like_count(post_id, delta_comments=1)
     return {"code": 200, "msg": "评论成功"}
 

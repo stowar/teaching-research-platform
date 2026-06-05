@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/api/client.js'
 import { Send, BookOpen, ArrowLeft } from 'lucide-vue-next'
@@ -9,14 +9,24 @@ const router = useRouter()
 const title = ref('')
 const content = ref('')
 const categoryId = ref(1)
+const isAnonymous = ref(false)
+const defaultCategories = [
+  { id: 1, name: '教案分享' }, { id: 2, name: '课堂管理' },
+  { id: 3, name: '考试命题' }, { id: 4, name: '教学反思' },
+  { id: 5, name: '职业英语' }, { id: 6, name: 'AI工具' },
+]
 const categories = ref([])
+const categoryOptions = computed(() => categories.value.length ? categories.value : defaultCategories)
 const loading = ref(false)
 const error = ref('')
 
 async function fetchCategories() {
   try {
     const res = await api.get('/community/categories')
-    categories.value = res.data || []
+    // 按 id 去重，防止种子数据重复插入导致下拉框选项重复
+    const seen = new Map()
+    for (const c of (res.data || [])) seen.set(c.id, c)
+    categories.value = [...seen.values()]
   } catch { /* ignore */ }
 }
 
@@ -28,7 +38,8 @@ async function submit() {
     await api.post('/community/posts', {
       title: title.value.trim(),
       content: content.value.trim(),
-      category_id: categoryId.value
+      category_id: categoryId.value,
+      is_anonymous: isAnonymous.value ? 1 : 0
     })
     router.push('/community')
   } catch (e) {
@@ -69,15 +80,9 @@ onMounted(() => {
       <div class="form-group">
         <label>分类</label>
         <select v-model="categoryId" class="form-input">
-          <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+          <option v-for="cat in categoryOptions" :key="cat.id" :value="cat.id">
             {{ cat.name }}
           </option>
-          <option value="1">教案分享</option>
-          <option value="2">课堂管理</option>
-          <option value="3">考试命题</option>
-          <option value="4">教学反思</option>
-          <option value="5">职业英语</option>
-          <option value="6">AI工具</option>
         </select>
       </div>
 
@@ -87,11 +92,18 @@ onMounted(() => {
           v-model="content"
           rows="10"
           maxlength="5000"
-          placeholder="写下你的教学心得、问题或经验..."
+          placeholder="写下你的教学心得、问题或经验...&#10;&#10;支持 Markdown：**加粗** | # 标题 | - 列表 | `代码`"
           class="form-input"
           required
         />
         <span class="char-hint">{{ content.length }}/5000</span>
+      </div>
+
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input type="checkbox" v-model="isAnonymous" />
+          <span>匿名发布（不会显示您的姓名）</span>
+        </label>
       </div>
 
       <div v-if="error" class="alert alert-error">{{ error }}</div>
@@ -194,6 +206,21 @@ textarea.form-input { resize: vertical; }
   font-size: var(--text-xs);
   color: var(--text-tertiary);
   margin-top: var(--space-1);
+}
+
+.checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.checkbox-label input[type=\"checkbox\"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-brand-600);
+  cursor: pointer;
 }
 
 .alert-error {

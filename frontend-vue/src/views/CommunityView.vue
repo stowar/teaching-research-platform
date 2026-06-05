@@ -30,7 +30,9 @@ const totalPages = ref(1)
 async function fetchCategories() {
   try {
     const res = await api.get('/community/categories')
-    categories.value = res.data || []
+    const seen = new Map()
+    for (const c of (res.data || [])) seen.set(c.id, c)
+    categories.value = [...seen.values()]
   } catch { /* 分类接口暂不可用，用默认值 */ }
 }
 
@@ -99,6 +101,11 @@ function formatTime(ts) {
   if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`
   if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`
   return d.toLocaleDateString('zh-CN')
+}
+
+function stripMarkdown(text) {
+  if (!text) return ''
+  return text.replace(/[#*`>\-\[\]\(\)!|~]/g, '').replace(/\s+/g, ' ').trim()
 }
 
 onMounted(() => {
@@ -221,9 +228,9 @@ onMounted(() => {
           <span v-if="post.is_pinned" class="badge badge-pinned">置顶</span>
           <span v-if="post.is_essence" class="badge badge-essence">精华</span>
         </div>
-        <p class="post-excerpt">{{ post.content || '暂无内容' }}</p>
+        <p class="post-excerpt">{{ stripMarkdown(post.content) || '暂无内容' }}</p>
         <div class="post-meta">
-          <span class="meta-author">{{ post.author_name || '匿名' }}</span>
+          <span class="meta-author">{{ post.is_anonymous ? '匿名用户' : (post.author_name || '匿名') }}</span>
           <span class="meta-divider">·</span>
           <span class="meta-time">{{ formatTime(post.create_time) }}</span>
           <span class="meta-divider">·</span>

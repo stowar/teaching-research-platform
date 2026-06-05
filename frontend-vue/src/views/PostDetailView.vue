@@ -7,10 +7,13 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.js'
 import api from '@/api/client.js'
+import MarkdownIt from 'markdown-it'
 import {
   Eye, Heart, MessageCircle, Send, ArrowLeft,
   Clock, User, Trash2, Award, Pin
 } from 'lucide-vue-next'
+
+const md = new MarkdownIt({ breaks: true, linkify: true })
 
 const route = useRoute()
 const router = useRouter()
@@ -24,6 +27,7 @@ const loading = ref(true)
 const error = ref('')
 
 const commentContent = ref('')
+const commentAnonymous = ref(false)
 const liked = ref(false)
 const submitting = ref(false)
 const commentLoading = ref(false)
@@ -83,9 +87,11 @@ async function submitComment() {
   try {
     await api.post(`/community/posts/${postId.value}/comments`, {
       content: commentContent.value.trim(),
-      parent_id: null
+      parent_id: null,
+      is_anonymous: commentAnonymous.value ? 1 : 0
     })
     commentContent.value = ''
+    commentAnonymous.value = false
     if (post.value) {
       post.value.comment_count = (post.value.comment_count || 0) + 1
     }
@@ -151,7 +157,7 @@ onMounted(() => {
           </div>
           <h1 class="post-title">{{ post.title }}</h1>
           <div class="post-meta">
-            <span class="meta-author"><User :size="14" /> {{ post.author_name || '匿名' }}</span>
+            <span class="meta-author"><User :size="14" /> {{ post.is_anonymous ? '匿名用户' : (post.author_name || '匿名') }}</span>
             <span class="meta-divider">·</span>
             <span class="meta-time"><Clock :size="14" /> {{ formatTime(post.create_time) }}</span>
             <span class="meta-divider">·</span>
@@ -160,7 +166,7 @@ onMounted(() => {
         </div>
 
         <div class="post-content">
-          <pre class="content-text">{{ post.content }}</pre>
+          <div class="content-text" v-html="md.render(post.content)" />
         </div>
 
         <div class="post-stats">
@@ -205,10 +211,10 @@ onMounted(() => {
         <div v-else class="comments-list">
           <div v-for="comment in comments" :key="comment.id" class="comment-card">
             <div class="comment-header">
-              <span class="comment-author">{{ comment.author_name || '匿名' }}</span>
+              <span class="comment-author">{{ comment.is_anonymous ? '匿名用户' : (comment.author_name || '匿名') }}</span>
               <span class="comment-time">{{ formatTime(comment.create_time) }}</span>
             </div>
-            <p class="comment-content">{{ comment.content }}</p>
+            <div class="comment-content" v-html="md.render(comment.content)" />
           </div>
         </div>
 
@@ -221,6 +227,10 @@ onMounted(() => {
             placeholder="写下你的评论..."
             maxlength="500"
           />
+          <label class="checkbox-label">
+            <input type="checkbox" v-model="commentAnonymous" />
+            <span>匿名评论</span>
+          </label>
           <div class="comment-form-actions">
             <span class="char-count">{{ commentContent.length }}/500</span>
             <button
@@ -332,13 +342,72 @@ onMounted(() => {
 }
 
 .content-text {
-  font-family: inherit;
   font-size: var(--text-base);
   color: var(--text-primary);
   line-height: 1.8;
-  white-space: pre-wrap;
   word-break: break-word;
-  margin: 0;
+}
+.content-text :deep(h1),
+.content-text :deep(h2),
+.content-text :deep(h3) {
+  margin: var(--space-4) 0 var(--space-2);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+}
+.content-text :deep(h1) { font-size: var(--text-2xl); }
+.content-text :deep(h2) { font-size: var(--text-xl); }
+.content-text :deep(h3) { font-size: var(--text-lg); }
+.content-text :deep(p) { margin: 0 0 var(--space-2); }
+.content-text :deep(ul), .content-text :deep(ol) { padding-left: var(--space-5); margin: var(--space-2) 0; }
+.content-text :deep(li) { margin-bottom: var(--space-1); }
+.content-text :deep(code) {
+  background: var(--bg-hover);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 0.9em;
+  font-family: var(--font-mono);
+}
+.content-text :deep(pre) {
+  background: var(--color-gray-100);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  overflow-x: auto;
+  font-size: var(--text-sm);
+  margin: var(--space-3) 0;
+  white-space: pre-wrap;
+}
+.content-text :deep(pre code) {
+  background: none;
+  padding: 0;
+}
+.content-text :deep(blockquote) {
+  border-left: 3px solid var(--color-brand-400);
+  padding-left: var(--space-3);
+  color: var(--text-secondary);
+  margin: var(--space-3) 0;
+}
+.content-text :deep(a) {
+  color: var(--text-link);
+}
+.content-text :deep(strong) {
+  font-weight: var(--font-bold);
+}
+
+.comment-content {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.comment-content :deep(p) { margin: 0; }
+.comment-content :deep(code) {
+  background: var(--bg-hover);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 0.9em;
+}
+.comment-content :deep(a) {
+  color: var(--text-link);
 }
 
 .post-stats {
@@ -451,6 +520,21 @@ onMounted(() => {
 
 .comment-input:focus { outline: none; border-color: var(--color-brand-400); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12); }
 
+.checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  cursor: pointer;
+  margin-top: var(--space-2);
+}
+.checkbox-label input[type="checkbox"] {
+  width: 14px; height: 14px;
+  accent-color: var(--color-brand-600);
+  cursor: pointer;
+}
+
 .comment-form-actions {
   display: flex;
   align-items: center;
@@ -504,4 +588,6 @@ onMounted(() => {
 }
 
 [data-theme="dark"] .skeleton-line { background: var(--color-gray-700); }
+[data-theme="dark"] .content-text :deep(pre) { background: rgba(0,0,0,0.3); border-color: var(--border-light); }
+[data-theme="dark"] .content-text :deep(code) { background: rgba(255,255,255,0.08); }
 </style>

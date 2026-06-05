@@ -30,14 +30,19 @@ VALUES (
     NOW()
 );
 
+DROP TABLE IF EXISTS categories;
+
 CREATE TABLE categories (
     id INT(11) NOT NULL AUTO_INCREMENT COMMENT '分类ID',
     name VARCHAR(50) NOT NULL COMMENT '分类名称',
     description VARCHAR(200) DEFAULT NULL COMMENT '分类描述',
     sort_order INT(11) DEFAULT 0 COMMENT '排序权重',
     create_time DATETIME NOT NULL COMMENT '创建时间',
-    PRIMARY KEY (id)
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_category_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='帖子分类表';
+
+DROP TABLE IF EXISTS posts;
 
 CREATE TABLE posts (
     id INT(11) NOT NULL AUTO_INCREMENT COMMENT '帖子ID',
@@ -56,6 +61,8 @@ CREATE TABLE posts (
     PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='帖子表';
 
+DROP TABLE IF EXISTS comments;
+
 CREATE TABLE comments (
     id INT(11) NOT NULL AUTO_INCREMENT COMMENT '评论ID',
     post_id INT(11) NOT NULL COMMENT '所属帖子ID',
@@ -67,6 +74,8 @@ CREATE TABLE comments (
     PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='评论表';
 
+DROP TABLE IF EXISTS likes;
+
 CREATE TABLE likes (
     id INT(11) NOT NULL AUTO_INCREMENT COMMENT '点赞ID',
     post_id INT(11) NOT NULL COMMENT '帖子ID',
@@ -75,6 +84,8 @@ CREATE TABLE likes (
     UNIQUE KEY uk_post_user (post_id, user_id),
     PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='点赞记录表';
+
+DROP TABLE IF EXISTS notifications;
 
 CREATE TABLE notifications (
     id INT(11) NOT NULL AUTO_INCREMENT COMMENT '通知ID',
@@ -89,7 +100,7 @@ CREATE TABLE notifications (
     PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='通知表';
 
-INSERT INTO categories (name, description, sort_order, create_time) VALUES
+INSERT IGNORE INTO categories (name, description, sort_order, create_time) VALUES
 ('教案分享', '分享优秀教案与教学设计', 1, NOW()),
 ('课堂管理', '课堂纪律、学生互动技巧', 2, NOW()),
 ('考试命题', '试题设计、试卷分析', 3, NOW()),

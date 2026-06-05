@@ -49,16 +49,22 @@ def get_post_list(category_id=None, sort='new', keyword=None, page=1, page_size=
 
 
 def get_post_by_id(post_id):
-    """根据id获取帖子"""
-    sql = "SELECT * FROM posts WHERE id = %s AND status = 1"
+    """根据id获取帖子（含作者名）"""
+    sql = """
+        SELECT p.*, u.name AS author_name
+        FROM posts p
+        JOIN users u ON p.user_id = u.id
+        WHERE p.id = %s AND p.status = 1
+    """
     return execute_one(sql, (post_id,))
 
 
 def create_post(post_data, user_id):
     """创建新帖子"""
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    sql = "INSERT INTO posts (title, content, user_id, category_id, create_time) VALUES (%s, %s, %s, %s, %s)"
-    return execute_update(sql, (post_data.title, post_data.content, user_id, post_data.category_id, now))
+    is_anonymous = getattr(post_data, 'is_anonymous', 0)
+    sql = "INSERT INTO posts (title, content, user_id, category_id, is_anonymous, create_time) VALUES (%s, %s, %s, %s, %s, %s)"
+    return execute_update(sql, (post_data.title, post_data.content, user_id, post_data.category_id, is_anonymous, now))
 
 
 def update_post(post_id, update_data):
@@ -140,11 +146,11 @@ def get_comments_by_post(post_id, page=1, page_size=20):
     return execute_query(sql, (post_id, page_size, offset))
 
 
-def create_comment(post_id, user_id, content, parent_id=None):
+def create_comment(post_id, user_id, content, parent_id=None, is_anonymous=0):
     """创建评论"""
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    sql = "INSERT INTO comments (post_id, user_id, parent_id, content, create_time) VALUES (%s, %s, %s, %s, %s)"
-    return execute_update(sql, (post_id, user_id, parent_id, content, now))
+    sql = "INSERT INTO comments (post_id, user_id, parent_id, content, is_anonymous, create_time) VALUES (%s, %s, %s, %s, %s, %s)"
+    return execute_update(sql, (post_id, user_id, parent_id, content, is_anonymous, now))
 
 
 def delete_comment(comment_id):
