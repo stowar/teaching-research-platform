@@ -194,7 +194,7 @@ function heatTextColor(weight) {
 }
 
 .page-icon {
-  color: var(--color-brand-600);
+  color: #7c3aed;
   flex-shrink: 0;
 }
 
@@ -346,7 +346,7 @@ function heatTextColor(weight) {
 
 .example-chip:hover {
   border-color: var(--color-brand-400);
-  color: var(--color-brand-600);
+  color: #7c3aed;
   background: var(--color-brand-50);
 }
 

@@ -9,7 +9,7 @@ import { GraduationCap, LogIn, UserPlus, Star, MessageSquare, BookOpen, Bot } fr
 const router = useRouter()
 
 const highlights = [
-  { icon: MessageSquare, title: '教研交流', desc: '跨校协作、在线研讨、经验分享', color: '#4f46e5' },
+  { icon: MessageSquare, title: '教研交流', desc: '跨校协作、在线研讨、经验分享', color: 'var(--color-brand-600)' },
   { icon: BookOpen, title: '资源共享', desc: '教案课件、真题题库一键获取', color: '#7c3aed' },
   { icon: Bot, title: 'AI赋能', desc: '智能助手、RAG检索、教研提效', color: '#06b6d4' },
 ]
@@ -66,7 +66,7 @@ const highlights = [
 
 .landing-hero {
   position: relative;
-  background: linear-gradient(135deg, var(--color-gray-900) 0%, var(--color-brand-900) 40%, var(--color-brand-600) 100%);
+  background: linear-gradient(135deg, var(--color-gray-900) 0%, #312e81 40%, #7c3aed 100%);
   border-radius: var(--radius-xl);
   padding: var(--space-16) var(--space-8);
   text-align: center;

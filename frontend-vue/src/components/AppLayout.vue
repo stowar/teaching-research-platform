@@ -135,7 +135,7 @@ function logout() {
 .nav-brand-icon {
   width: 1.6rem;
   height: 1.6rem;
-  color: var(--color-brand-600);
+  color: #7c3aed;
 }
 
 .nav-links {
@@ -159,7 +159,7 @@ function logout() {
 
 /* 当前页面高亮 + 底部小横条指示器 */
 .nav-link.active {
-  color: var(--color-brand-600);
+  color: #7c3aed;
   background: var(--color-brand-50);
 }
 

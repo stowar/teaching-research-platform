@@ -118,7 +118,7 @@ async function onSubmit() {
 
 .login-hero {
   flex: 0 0 45%;
-  background: linear-gradient(135deg, var(--color-gray-900) 0%, var(--color-brand-900) 40%, var(--color-brand-600) 100%);
+  background: linear-gradient(135deg, var(--color-gray-900) 0%, #312e81 40%, #7c3aed 100%);
   display: flex;
   align-items: center;
   justify-content: center;

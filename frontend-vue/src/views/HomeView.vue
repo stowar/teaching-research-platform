@@ -54,7 +54,7 @@ function clearDone() {
 }
 
 const features = [
-  { icon: MessageSquare, title: '教研社区', desc: '发帖讨论、互助答疑、分享教学经验', color: '#4f46e5', route: 'community' },
+  { icon: MessageSquare, title: '教研社区', desc: '发帖讨论、互助答疑、分享教学经验', color: 'var(--color-brand-600)', route: 'community' },
   { icon: BookOpen, title: '教研资料部', desc: '教案课件、真题题库一键下载', color: '#7c3aed', route: 'resources' },
   { icon: Bot, title: 'AI聊天室', desc: '智能教研助手，RAG深度检索', color: '#06b6d4', route: 'ai-chat' },
   { icon: Users, title: '集体备课', desc: '课程共建、协同开发、资源共享', color: '#10b981', route: 'community' },
@@ -157,7 +157,7 @@ const allFeatures = computed(() => {
 /* 欢迎横幅 */
 .hero-banner {
   position: relative;
-  background: linear-gradient(135deg, var(--color-brand-900) 0%, var(--color-brand-700) 40%, #7c3aed 100%);
+  background: linear-gradient(135deg, #312e81 0%, var(--color-brand-700) 40%, #7c3aed 100%);
   border-radius: var(--radius-xl);
   padding: var(--space-10) var(--space-8);
   color: #ffffff;

@@ -5,6 +5,7 @@
 """
 
 from datetime import datetime, timedelta, timezone
+from typing import Optional
 # 用来安全的安全地生成、解析、验证 JWT 令牌
 from jose import JWTError,jwt
 
@@ -41,7 +42,7 @@ def verify_token(token: str) -> bool:
         return False
 
 
-def get_user_id_from_token(token: str) -> int | None:
+def get_user_id_from_token(token: str) -> Optional[int]:
     """
     从令牌中解析出用户ID
     :param token:前端传过来的JWT令牌

@@ -342,7 +342,7 @@ function formatTime(ts) {
 
 .btn-new:hover {
   background: var(--color-brand-50);
-  color: var(--color-brand-600);
+  color: #7c3aed;
   border-color: var(--color-brand-300);
 }
 
@@ -456,11 +456,11 @@ function formatTime(ts) {
   justify-content: center;
   flex-shrink: 0;
   background: var(--color-brand-100);
-  color: var(--color-brand-600);
+  color: #7c3aed;
 }
 
 .message-row.user .message-avatar {
-  background: var(--color-brand-600);
+  background: #7c3aed;
   color: #fff;
 }
 
@@ -498,7 +498,7 @@ function formatTime(ts) {
 }
 
 .message-row.user .message-bubble {
-  background: linear-gradient(135deg, var(--color-brand-600), var(--color-brand-500));
+  background: linear-gradient(135deg, #7c3aed, var(--color-brand-600));
   color: #fff;
   border: none;
 }
@@ -520,7 +520,7 @@ function formatTime(ts) {
   display: inline-block;
   width: 2px;
   height: 1em;
-  background: var(--color-brand-500);
+  background: var(--color-brand-600);
   margin-left: 2px;
   animation: blink 1s step-end infinite;
   vertical-align: text-bottom;
@@ -596,7 +596,7 @@ function formatTime(ts) {
 
 .prompt-chip:hover {
   border-color: var(--color-brand-400);
-  color: var(--color-brand-600);
+  color: #7c3aed;
   background: var(--color-brand-50);
   transform: translateY(-1px);
 }
@@ -673,7 +673,7 @@ function formatTime(ts) {
   height: 32px;
   border-radius: var(--radius-lg);
   border: none;
-  background: linear-gradient(135deg, var(--color-brand-600), var(--color-brand-500));
+  background: linear-gradient(135deg, #7c3aed, var(--color-brand-600));
   color: #fff;
   cursor: pointer;
   display: inline-flex;
@@ -834,7 +834,7 @@ function formatTime(ts) {
 
 .theme-toggle:hover {
   border-color: var(--color-brand-400);
-  color: var(--color-brand-600);
+  color: #7c3aed;
   background: var(--color-brand-50);
 }
 

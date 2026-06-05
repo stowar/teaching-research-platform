@@ -24,9 +24,6 @@ class UserCreate(UserBase):
     password: str = Field(..., min_length=6, max_length=20, description="密码")
 
 
-
-
-
 class UserUpdate(BaseModel):
     """修改个人信息（无需手机号，仅可修改姓名/学校/职称）"""
     name: Optional[str] = Field(None, max_length=20, description="用户名")
@@ -48,6 +45,7 @@ class BaseResponse(BaseModel):
     code: int = 200
     msg: Optional[str] = Field(None, description="提示信息")
 
+
 class UserResponse(UserBase):
     """用户完整响应模型（不含密码）"""
     id: int
@@ -58,6 +56,7 @@ class UserResponse(UserBase):
 
     class Config:
         from_attributes = True  # 兼容数据库 ORM 对象
+
 
 class LoginResponse(BaseResponse):
     """登录响应（Token + 用户信息）"""

@@ -5,7 +5,7 @@
  */
 
 :root {
-  /* ========== 品牌色阶 ========== */
+  /* ========== 品牌色阶（Indigo） ========== */
   --color-brand-50: #eef2ff;
   --color-brand-100: #e0e7ff;
   --color-brand-200: #c7d2fe;
@@ -17,65 +17,71 @@
   --color-brand-800: #3730a3;
   --color-brand-900: #312e81;
 
-  /* ========== 中性色阶 ========== */
+  /* ========== 中性色阶（整体加深以提高可读性） ========== */
   --color-gray-0: #ffffff;
-  --color-gray-50: #f8fafc;
-  --color-gray-100: #f1f5f9;
-  --color-gray-200: #e2e8f0;
-  --color-gray-300: #cbd5e1;
-  --color-gray-400: #94a3b8;
-  --color-gray-500: #64748b;
-  --color-gray-600: #475569;
-  --color-gray-700: #334155;
-  --color-gray-800: #1e293b;
-  --color-gray-900: #0f172a;
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
 
-  /* ========== 语义色 ========== */
+  /* ========== 语义色（提高饱和度，标注/徽章更显眼） ========== */
   --color-success-50: #f0fdf4;
   --color-success-100: #dcfce7;
+  --color-success-200: #bbf7d0;
+  --color-success-400: #4ade80;
   --color-success-500: #22c55e;
   --color-success-600: #16a34a;
   --color-success-700: #15803d;
 
   --color-warning-50: #fffbeb;
   --color-warning-100: #fef3c7;
+  --color-warning-200: #fde68a;
   --color-warning-500: #f59e0b;
   --color-warning-600: #d97706;
   --color-warning-700: #b45309;
 
   --color-danger-50: #fef2f2;
   --color-danger-100: #fee2e2;
+  --color-danger-200: #fecaca;
+  --color-danger-300: #fca5a5;
   --color-danger-500: #ef4444;
   --color-danger-600: #dc2626;
   --color-danger-700: #b91c1c;
 
   --color-info-50: #eff6ff;
   --color-info-100: #dbeafe;
+  --color-info-200: #bfdbfe;
   --color-info-500: #3b82f6;
   --color-info-600: #2563eb;
   --color-info-700: #1d4ed8;
 
-  /* ========== 文字色 ========== */
-  --text-primary: var(--color-gray-900);
-  --text-secondary: var(--color-gray-500);
-  --text-tertiary: var(--color-gray-400);
-  --text-disabled: var(--color-gray-300);
+  /* ========== 文字色（整体加深，提升可读性） ========== */
+  --text-primary: var(--color-gray-900);   /* #111827 — 近黑 */
+  --text-secondary: var(--color-gray-600); /* #4b5563 — 从 500 降到 600 */
+  --text-tertiary: var(--color-gray-500);  /* #6b7280 — 从 400 提到 500 */
+  --text-disabled: var(--color-gray-400);
   --text-inverse: var(--color-gray-0);
   --text-link: var(--color-brand-600);
   --text-link-hover: var(--color-brand-700);
 
   /* ========== 背景色 ========== */
-  --bg-page: var(--color-gray-50);
-  --bg-card: var(--color-gray-0);
+  --bg-page: var(--color-gray-100);      /* #f3f4f6 — 更深，卡片更突出 */
+  --bg-card: var(--color-gray-0);        /* #ffffff */
   --bg-elevated: var(--color-gray-0);
   --bg-hover: var(--color-gray-100);
   --bg-active: var(--color-brand-50);
-  --bg-overlay: rgba(15, 23, 42, 0.4);
+  --bg-overlay: rgba(17, 24, 39, 0.5);  /* 加深叠加层 */
 
-  /* ========== 边框色 ========== */
-  --border-light: var(--color-gray-200);
-  --border-medium: var(--color-gray-300);
-  --border-focus: var(--color-brand-500);
+  /* ========== 边框色（更明确的分隔） ========== */
+  --border-light: var(--color-gray-300);  /* #d1d5db — 从 200 深到 300 */
+  --border-medium: var(--color-gray-400); /* #9ca3af */
+  --border-focus: var(--color-brand-600);
 
   /* ========== 字体系统 ========== */
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans SC', sans-serif;
@@ -116,13 +122,14 @@
   --space-16: 4rem;     /* 64px */
   --space-20: 5rem;     /* 80px */
 
-  /* ========== 阴影系统（层级感） ========== */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-  --shadow-brand: 0 4px 14px 0 rgba(79, 70, 229, 0.25);
-  --shadow-brand-lg: 0 10px 40px rgba(79, 70, 229, 0.2);
+  /* ========== 阴影系统（加深，增加层级感） ========== */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.12), 0 2px 4px -2px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.12), 0 4px 6px -4px rgba(0, 0, 0, 0.12);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.15);
+  --shadow-brand: 0 4px 16px 0 rgba(99, 102, 241, 0.3);
+  --shadow-brand-lg: 0 12px 48px rgba(99, 102, 241, 0.25);
 
   /* ========== 圆角系统 ========== */
   --radius-sm: 6px;
@@ -171,7 +178,7 @@
   --bg-card: #1e293b;
   --bg-elevated: #334155;
   --bg-hover: #334155;
-  --bg-active: rgba(79, 70, 229, 0.15);
+  --bg-active: rgba(99, 102, 241, 0.15);
   --bg-overlay: rgba(0, 0, 0, 0.6);
 
   /* 边框色 */
@@ -205,6 +212,6 @@
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.5);
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.6);
-  --shadow-brand: 0 4px 14px 0 rgba(79, 70, 229, 0.4);
-  --shadow-brand-lg: 0 10px 40px rgba(79, 70, 229, 0.3);
+  --shadow-brand: 0 4px 14px 0 rgba(99, 102, 241, 0.4);
+  --shadow-brand-lg: 0 10px 40px rgba(99, 102, 241, 0.3);
 }

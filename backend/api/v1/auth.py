@@ -13,6 +13,7 @@ from backend.core.exceptions import BusinessException
 # 创建路由的作用是创建接口
 router = APIRouter(prefix="/auth", tags=["认证授权"])
 
+
 @router.post("/login", response_model=LoginResponse,summary="用户登录")
 def login(login_data: UserLogin):
     """用户登录接口"""

@@ -41,6 +41,17 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/community/create',
+      name: 'community-create',
+      component: () => import('@/views/PostCreateView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/community/:postId',
+      name: 'community-post',
+      component: () => import('@/views/PostDetailView.vue'),
+    },
+    {
       path: '/resources',
       name: 'resources',
       component: () => import('@/views/ResourcesView.vue'),

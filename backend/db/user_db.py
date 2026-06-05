@@ -3,16 +3,19 @@ from backend.model.user import UserCreate, UserUpdate
 from backend.core.security import get_password_hash
 from datetime import datetime
 
+
 def get_user_by_id(user_id : int):
     """根据id获取用户"""
     sql = "SELECT * FROM users WHERE id = %s"
     result = execute_one(sql, (user_id,))
     return result
 
+
 def get_user_by_phone(phone: str):
     """根据手机号获取用户"""
     sql = "SELECT * FROM users WHERE phone = %s AND status = 1"
     return execute_one(sql, (phone,))
+
 
 def create_user(user: UserCreate):
     """创建新用户"""
@@ -25,6 +28,7 @@ def create_user(user: UserCreate):
     status = 1
     sql = "INSERT INTO users (phone, password, name, school, title, role, status, create_time) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
     return execute_update(sql, (user.phone, hashed_password, user.name, user.school,user.title, role, status,now))
+
 
 def update_user_info(user_id: int,user_update: UserUpdate):
     """更新用户信息"""
@@ -47,15 +51,18 @@ def update_user_info(user_id: int,user_update: UserUpdate):
     sql = f"UPDATE users SET {','.join(update_fields)} WHERE id = %s"
     return execute_update(sql, params)
 
+
 def update_user_password(user_id: int, new_password: str):
     """更新用户密码"""
     sql = "UPDATE users SET password = %s WHERE id = %s"
     return execute_update(sql, (new_password, user_id))
 
+
 def update_user_status(user_id: int, status: int):
     """更新用户状态"""
     sql = "UPDATE users SET status = %s WHERE id = %s"
     return execute_update(sql, (status, user_id))
+
 
 def get_all_users():
     """获取所有用户"""

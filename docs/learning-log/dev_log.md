@@ -1,4 +1,5 @@
 # Dev Log 2026-05-11
+
 ## 今日开发进度
 1. **项目立项**
    完成教研管理系统项目正式立项，确定前后端分离技术栈（FastAPI + 前端），规划整体项目架构与开发规范。
@@ -250,7 +251,7 @@
 - 学会Streamlit纯前端页面布局规范，提升用户体验与视觉质感
 - 彻底解决前端交互、样式、状态同步的常见坑点，完成稳定可用的前端页面
 
- ---
+---
 # Dev Log | 2026-05-30
 项目：职业院校英语虚拟教研社区系统
 今日核心：批量优化项目预留空壳模块、整改页面布局标准
@@ -353,3 +354,122 @@
 - 建立先前端成型、后接口对接的科学开发思路，适配单人独立开发模式，大幅提升开发效率
 - 掌握比赛作品优化技巧，区分核心功能与预留拓展功能，通过文案包装、页面规整规避半成品扣分问题
 - 完成项目核心业务页面落地，AI英语教研聊天功能主线完全跑通，项目完整度、美观度、实用性均达到参赛评优标准
+
+---
+
+# Dev Log | 2026-06-01 ~ 2026-06-06
+**项目**：职业院校英语虚拟教研社区系统  
+**今日核心**：Streamlit → Vue 3 全站重构、暗黑模式、lucide 图标替换、AI 聊天室重写、情感分析模型接入、教研社区模块从零开发
+
+---
+
+## ✅ 完成内容
+
+### 1. Streamlit → Vue 3 全站重构
+- 完成 Streamlit 前端向 Vue 3 (Composition API + Pinia + Vue Router) 的完整迁移
+- 搭建 Design Token 体系（CSS 自定义属性）：品牌色阶、中性色阶、语义色、字体、间距、阴影、圆角、动画
+- 实现全局动画库：`slide-up-enter`、`bounce-in`、`shimmer`、`spinner`、`press-feedback`、`hover-lift`
+- 封装 `useTheme()` 组合式函数：`localStorage` 持久化、系统偏好检测、运行时切换、防闪烁
+- 完成 AppLayout 全局布局组件：玻璃拟态导航栏 + 主题切换 + 响应式适配
+
+### 2. 暗黑模式全站适配
+- `[data-theme="dark"]` 覆盖 ~40 个 CSS 变量：文字色、背景色、边框色、语义色、阴影
+- 导航栏暗黑玻璃拟态效果：半透明深色背景 + 柔和底部边框
+- 表单、骨架屏、滚动条全部适配暗黑模式
+- 主题切换按钮同步 Sun/Moon 图标
+
+### 3. 全站 Emoji → lucide-vue-next 矢量图标替换
+- 12 个 Vue 文件全部替换为专业 SVG 图标
+- 图标支持暗黑模式自动变色，无可见性、锯齿或错位问题
+- 首页、落地页、功能卡片、占位页面图标体系统一
+
+### 4. AI 聊天室三栏固定布局（参考 Streamlit 旧版）
+- 左侧会话栏：新建会话 + session 列表 + 返回首页
+- 中间聊天区：消息气泡 + 打字机效果 + 快捷提问 + 输入发送
+- 右侧说明栏：功能介绍 + 提问技巧 + 注意事项 + 主题切换
+- 模拟智能回复（教研领域预设）+ 关键词匹配 + 打字机逐字输出
+
+### 5. 情感分析模型完整接入
+- 从 `Hotel_Emotion_Predict` 项目迁移自研 PyTorch 模型（Embedding + BiGRU + Self-Attention）
+- 创建 `backend/ml/sentiment/` 模块：`model.py`、`data_process.py`、`predictor.py`
+- 懒加载模型 + 词典（线程安全、CPU/GPU 自适应）
+- FastAPI 路由：`POST /predict`（单条预测 + 注意力权重）+ `GET /status`（模型状态）
+- Vue 前端页面 `SentimentView.vue`：双栏布局 + 情感标签 + 概率条 + 注意力热力图
+
+### 6. 教研社区模块从零完整开发（教学实战）
+- **阶段 0**：理解数据模型 — 5 张表（categories、posts、comments、likes、notifications）、反规范化、parent_id 设计
+- **阶段 1**：写建表 SQL — 全部 5 张表 + 6 条分类种子数据 + `init_db.py` 验证通过
+- **阶段 2**：DB 层 `backend/db/community_db.py` — 15 个函数（帖子 7、评论 5、点赞 3、分类 1）
+- **阶段 3**：Model 层 `backend/model/community.py` — PostCreate、PostUpdate、CommentCreate、PostResponse
+- **阶段 4**：Service 层 `backend/services/community.py` — 11 个 Service（权限校验、计数同步、业务组装）
+- **阶段 5**：API 层 `backend/api/v1/community.py` — 12 个 RESTful 端点（帖子 5、评论 3、点赞 2、分类 1）
+- **阶段 6**：注册路由 + TestClient 端到端测试（6 项全部通过）
+- **阶段 7**：前端社区首页 + 帖子详情 + 发帖页面（3 个 Vue 页面全部完成）
+
+### 7. Design Token 对比度提升
+- `text-secondary`：`#64748b` → `#4b5563`（辅助文字加深）
+- `text-tertiary`：`#94a3b8` → `#6b7280`（三级文字不再淡得看不清）
+- `bg-page`：`#f8fafc` → `#f3f4f6`（页面底色加深，白色卡片更突出）
+- `border-light`：`#e2e8f0` → `#d1d5db`（卡片分隔线清晰可见）
+- 阴影透明度全面上调，层级感增强
+- 语义色补齐 200/300/400 级别，徽章/标签颜色更鲜明
+
+### 8. 性能优化
+- 连接池 `PooledDB` 替换每次新建连接（`connection.py`），单次查询从 20-30ms 降到 1-2ms
+- posts 表添加 4 个索引（status、category_id、user_id、create_time）
+- `jwt.py` Python 3.7 兼容性修复：`int | None` → `Optional[int]`
+
+---
+
+## 🐛 踩坑记录
+
+1. **问题**：暗黑模式导航栏颜色太接近页面背景，导航栏边界模糊
+   - 原因：`rgba(15, 23, 42, 0.85)` 与暗色背景几乎融为一体
+   - 解决方案：改为 `rgba(30, 41, 59, 0.55)` + 微亮底部边框 `rgba(255,255,255,0.06)`
+
+2. **问题**：暗黑模式导航栏 Logo 看不清
+   - 原因：GraduationCap SVG 图标在深色背景下不可见
+   - 解决方案：添加 `filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.35))`，保证图标清晰可见
+
+3. **问题**：情感分析模型加载时 vocab_size 不匹配（12409 vs 12368）
+   - 原因：`normalize_string` 添加了额外的停用词过滤，与训练时不一致
+   - 解决方案：移除停用词过滤，与原始训练代码保持完全一致
+
+4. **问题**：Service 层 `post_data.user_id = user["id"]` 报错
+   - 原因：`PostCreate` Pydantic 模型没有 `user_id` 字段
+   - 解决方案：Service 层直接传 `user["id"]` 给 DB 层参数，不挂到 Pydantic 模型上
+
+5. **问题**：`get_post_list` 关键词搜索 SQL 有两个 `%s` 但 params 只有一个值
+   - 原因：`AND (title LIKE %s OR content LIKE %s)` 需要两个参数
+   - 解决方案：`params.extend([keyword, keyword])`
+
+6. **问题**：`update_post` 函数 category_id 判断块内多余 `return 0`
+   - 原因：复制粘贴残留，导致后续逻辑全部跳过
+   - 解决方案：删除该行
+
+7. **问题**：sed 批量替换设计令牌时产生自引用 `--color-brand-600: var(--color-brand-600)`
+   - 原因：替换命令未排除定义文件自身
+   - 解决方案：手动修复回 `#7c3aed`，并补全所有回退操作
+
+8. **问题**：Python 3.7 不支持 `int | None` 联合类型语法
+   - 原因：Python 3.10+ 才支持 `|` 运算符用于类型注解
+   - 解决方案：改为 `Optional[int]`，导入 `from typing import Optional`
+
+---
+
+## 📝 核心收获
+
+- 掌握 Vue 3 Composition API + Pinia + Vue Router 全栈前端开发
+- 深入理解 Design Token 体系：统一 CSS 变量管理全站视觉语言
+- 精通暗黑模式实现原理：`data-theme` 属性 + CSS 变量覆盖 + `matchMedia` 系统检测
+- 理解三层架构的真谛：DB 层只跑 SQL、Service 层做校验和组装、API 层只做请求路由
+- 掌握裸 SQL + pymysql 的完整开发流程：连接池、软删除、反规范化、索引优化
+- 透彻理解 N+1 问题：列表页用 SQL JOIN 一次性查，避免循环查询
+- 学会 Pydantic 模型的职责分离：请求模型（前端→后端）+ 响应模型（后端→前端）
+- 掌握 JWT 认证全链路：`Depends(get_current_user)` 注入 → Service 层无感知拿到 user
+- 体验从零到一的教学实战：先理解为什么，再写代码，最后 Review 改进
+- 完成竞赛级项目闭环：设计系统 + 暗黑模式 + 自研 AI 模型 + 完整后端 + 前端落地
+
+---
+
+*本日志由 Claude Code 在教学过程中根据实际开发进度自动追加。*
