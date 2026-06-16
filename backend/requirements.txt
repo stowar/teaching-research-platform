@@ -4,7 +4,7 @@ uvicorn==0.27.1
 
 # ========== 数据库 ==========
 pymysql==1.1.0
-dbutils==3.1.3
+dbutils>=3.0.0
 
 # ========== 认证 ==========
 python-jose[cryptography]==3.3.0
