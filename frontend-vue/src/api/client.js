@@ -4,12 +4,10 @@
  */
 import axios from 'axios'
 
-// 后端服务的基础地址，开发环境使用 localhost:8000
-const BASE_URL = 'http://localhost:8000'
-// API 接口前缀，后端所有接口都在 /api/v1 下
+// 后端服务地址：开发用 localhost，生产用相对路径（通过 Nginx 代理）
+const BASE_URL = import.meta.env.DEV ? 'http://localhost:8000' : ''
 const API_PREFIX = '/api/v1'
 
-// 创建 axios 实例，配置基础 URL 和请求头
 const api = axios.create({
   baseURL: `${BASE_URL}${API_PREFIX}`,
   headers: {
