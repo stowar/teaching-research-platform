@@ -2,44 +2,50 @@ from backend.db.connection import execute_query, execute_one, execute_update
 from datetime import datetime
 
 
-def get_post_list(category_id=None, sort='new', keyword=None, page=1, page_size=10):
+def get_post_list(category_id=None, sort='new', keyword=None, user_id=None, page=1, page_size=10):
     """
     查询帖子列表篇
     :param category_id: 种类id
     :param sort: 排序方式
     :param keyword: 关键词搜索
+    :param user_id: 用户ID（查自己的帖子）
     :param page: 页数
     :param page_size: 一页容纳的尺寸
     :return:
     """
     # 1. 拼 SQL：SELECT posts JOIN users 拿到作者名
     sql = """
-        SELECT p.*, u.name AS author_name
+        SELECT p.*, u.name AS author_name, c.name AS category_name
         FROM posts p
         JOIN users u ON p.user_id = u.id
+        LEFT JOIN categories c ON p.category_id = c.id
         WHERE p.status = 1
     """
 
     params = []
 
-    # 2. 分类筛选：如果有 category_id，追加 AND p.category_id = %s
-    # 你的代码
+    # 2. 分类筛选
     if category_id:
         sql += " AND p.category_id = %s"
         params.append(category_id)
 
-    # 3. 关键词搜索：如果有 keyword，追加 AND (p.title LIKE %s OR p.content LIKE %s)
+    # 3. 用户筛选
+    if user_id:
+        sql += " AND p.user_id = %s"
+        params.append(user_id)
+
+    # 4. 关键词搜索
     if keyword:
         sql += " AND (p.title LIKE %s OR p.content LIKE %s)"
         params.extend([f"%{keyword}%", f"%{keyword}%"])
 
-    # 4. 排序：sort='new' 按 create_time DESC，sort='hot' 按 (comment_count*3 + like_count*2 + view_count*0.5) DESC
+    # 5. 排序
     if sort == 'new':
         sql += " ORDER BY p.create_time DESC"
     elif sort == 'hot':
         sql += " ORDER BY (p.comment_count*3 + p.like_count*2 + p.view_count*0.5) DESC"
 
-    # 5. 分页：LIMIT %s OFFSET %s
+    # 6. 分页
     offset = (page - 1) * page_size
     sql += " LIMIT %s OFFSET %s"
     params.append(page_size)
@@ -51,9 +57,10 @@ def get_post_list(category_id=None, sort='new', keyword=None, page=1, page_size=
 def get_post_by_id(post_id):
     """根据id获取帖子（含作者名）"""
     sql = """
-        SELECT p.*, u.name AS author_name
+        SELECT p.*, u.name AS author_name, c.name AS category_name
         FROM posts p
         JOIN users u ON p.user_id = u.id
+        LEFT JOIN categories c ON p.category_id = c.id
         WHERE p.id = %s AND p.status = 1
     """
     return execute_one(sql, (post_id,))
@@ -163,6 +170,54 @@ def get_comment_by_id(comment_id):
     """根据ID获取单条评论"""
     sql = "SELECT * FROM comments WHERE id = %s AND status = 1"
     return execute_one(sql, (comment_id,))
+
+
+# ===================== 通知 =====================
+
+def create_notification(user_id, sender_id, notif_type, post_id, comment_id=None, content=''):
+    """创建通知"""
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    sql = "INSERT INTO notifications (user_id, sender_id, type, post_id, comment_id, content, create_time) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+    return execute_update(sql, (user_id, sender_id, notif_type, post_id, comment_id, content, now))
+
+
+def get_notifications(user_id, page=1, page_size=20):
+    """获取用户通知列表（含触发者名称）"""
+    offset = (page - 1) * page_size
+    sql = """
+        SELECT n.*, u.name AS sender_name
+        FROM notifications n
+        JOIN users u ON n.sender_id = u.id
+        WHERE n.user_id = %s
+        ORDER BY n.create_time DESC
+        LIMIT %s OFFSET %s
+    """
+    return execute_query(sql, (user_id, page_size, offset))
+
+
+def get_unread_count(user_id):
+    """获取未读通知数"""
+    sql = "SELECT COUNT(*) AS cnt FROM notifications WHERE user_id = %s AND is_read = 0"
+    result = execute_one(sql, (user_id,))
+    return result['cnt'] if result else 0
+
+
+def mark_notification_read(notif_id, user_id):
+    """标记单条通知已读"""
+    sql = "UPDATE notifications SET is_read = 1 WHERE id = %s AND user_id = %s"
+    return execute_update(sql, (notif_id, user_id))
+
+
+def mark_all_read(user_id):
+    """标记所有通知已读"""
+    sql = "UPDATE notifications SET is_read = 1 WHERE user_id = %s"
+    return execute_update(sql, (user_id,))
+
+
+def delete_notification(notif_id, user_id):
+    """删除通知（只能删自己的）"""
+    sql = "DELETE FROM notifications WHERE id = %s AND user_id = %s"
+    return execute_update(sql, (notif_id, user_id))
 
 
 # ===================== 点赞 =====================

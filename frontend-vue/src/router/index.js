@@ -47,6 +47,12 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/community/:postId/edit',
+      name: 'community-edit',
+      component: () => import('@/views/PostCreateView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/community/:postId',
       name: 'community-post',
       component: () => import('@/views/PostDetailView.vue'),
@@ -70,9 +76,9 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
-      path: '/messages',
-      name: 'messages',
-      component: () => import('@/views/MessagesView.vue'),
+      path: '/account',
+      name: 'account',
+      component: () => import('@/views/AccountView.vue'),
       meta: { requiresAuth: true }
     },
     {

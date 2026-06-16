@@ -4,14 +4,17 @@
  * 帖子列表 + 分类筛选 + 排序 + 搜索 + 分页
  */
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth.js'
 import api from '@/api/client.js'
 import {
   MessageSquare, Eye, Heart, MessageCircle,
-  Search, Plus, Filter, Clock, Flame
+  Search, Plus, Filter, Clock, Flame, User
 } from 'lucide-vue-next'
 
 const router = useRouter()
+const route = useRoute()
+const auth = useAuthStore()
 
 const posts = ref([])
 const categories = ref([])
@@ -19,6 +22,7 @@ const loading = ref(true)
 const error = ref('')
 
 const activeCategory = ref(null)
+const onlyMine = ref(false)
 const sort = ref('new')
 const keyword = ref('')
 const page = ref(1)
@@ -43,6 +47,7 @@ async function fetchPosts() {
     const params = { page: page.value, page_size: pageSize.value, sort: sort.value }
     if (activeCategory.value) params.category_id = activeCategory.value
     if (keyword.value) params.keyword = keyword.value
+    if (onlyMine.value && auth.user) params.user_id = auth.user.id
     const res = await api.get('/community/posts', { params })
     posts.value = res.data || []
     total.value = res.total || posts.value.length
@@ -67,6 +72,13 @@ function onCategoryChange(catId) {
 
 function onSortChange(s) {
   sort.value = s
+  page.value = 1
+  fetchPosts()
+}
+
+function toggleMine() {
+  onlyMine.value = !onlyMine.value
+  activeCategory.value = null
   page.value = 1
   fetchPosts()
 }
@@ -109,6 +121,7 @@ function stripMarkdown(text) {
 }
 
 onMounted(() => {
+  if (route.query.mine !== undefined) onlyMine.value = true
   fetchCategories()
   fetchPosts()
 })
@@ -170,22 +183,26 @@ onMounted(() => {
       </template>
     </div>
 
-    <!-- 排序切换 -->
-    <div class="sort-bar">
-      <span class="sort-label">排序：</span>
+    <div class="toolbar-row">
+      <!-- 排序切换 -->
+      <div class="sort-bar">
+        <span class="sort-label">排序：</span>
+        <button :class="['sort-btn', { active: sort === 'new' }]" @click="onSortChange('new')">
+          <Clock :size="14" /> 最新
+        </button>
+        <button :class="['sort-btn', { active: sort === 'hot' }]" @click="onSortChange('hot')">
+          <Flame :size="14" /> 最热
+        </button>
+      </div>
+
+      <!-- 我的帖子 -->
       <button
-        :class="['sort-btn', { active: sort === 'new' }]"
-        @click="onSortChange('new')"
+        v-if="auth.isLoggedIn"
+        :class="['sort-btn', { active: onlyMine }]"
+        @click="toggleMine"
       >
-        <Clock :size="14" />
-        最新
-      </button>
-      <button
-        :class="['sort-btn', { active: sort === 'hot' }]"
-        @click="onSortChange('hot')"
-      >
-        <Flame :size="14" />
-        最热
+        <User :size="14" />
+        {{ onlyMine ? '全部帖子' : '我的帖子' }}
       </button>
     </div>
 
@@ -271,7 +288,7 @@ onMounted(() => {
 }
 
 .page-icon {
-  color: #7c3aed;
+  color: var(--color-brand-600);
 }
 
 .header-left h1 {
@@ -301,7 +318,7 @@ onMounted(() => {
 }
 
 .btn-primary {
-  background: #7c3aed;
+  background: var(--color-brand-600);
   color: #fff;
 }
 
@@ -355,7 +372,7 @@ onMounted(() => {
 .search-input:focus {
   outline: none;
   border-color: var(--color-brand-400);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
 }
 
 .search-input::placeholder {
@@ -383,13 +400,21 @@ onMounted(() => {
 
 .tab:hover {
   border-color: var(--color-brand-400);
-  color: #7c3aed;
+  color: var(--color-brand-600);
 }
 
 .tab.active {
-  background: #7c3aed;
-  border-color: #7c3aed;
+  background: var(--color-brand-600);
+  border-color: var(--color-brand-600);
   color: #fff;
+}
+
+.toolbar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
 }
 
 /* 排序 */
@@ -397,7 +422,6 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  margin-bottom: var(--space-5);
 }
 
 .sort-label {
@@ -425,7 +449,7 @@ onMounted(() => {
 
 .sort-btn.active {
   background: var(--color-brand-50);
-  color: #7c3aed;
+  color: var(--color-brand-600);
   font-weight: var(--font-semibold);
 }
 
@@ -609,11 +633,11 @@ onMounted(() => {
 }
 
 [data-theme="dark"] .sort-btn.active {
-  background: rgba(99, 102, 241, 0.15);
+  background: rgba(79, 70, 229, 0.15);
   color: var(--color-brand-300);
 }
 
 [data-theme="dark"] .search-input:focus {
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
 }
 </style>

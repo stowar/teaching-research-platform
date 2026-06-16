@@ -51,7 +51,7 @@ function clear() {
 function heatColor(weight, maxWeight) {
   const ratio = maxWeight > 0 ? weight / maxWeight : 0
   const alpha = 0.15 + ratio * 0.55
-  return `rgba(99, 102, 241, ${alpha})`
+  return `rgba(79, 70, 229, ${alpha})`
 }
 
 function heatTextColor(weight, maxWeight) {
@@ -200,7 +200,7 @@ function maxAttention(weights) {
 }
 
 .page-icon {
-  color: #7c3aed;
+  color: var(--color-brand-600);
   flex-shrink: 0;
 }
 
@@ -289,7 +289,7 @@ function maxAttention(weights) {
 .text-input:focus {
   outline: none;
   border-color: var(--color-brand-400);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
 }
 
 .text-input::placeholder {
@@ -358,7 +358,7 @@ function maxAttention(weights) {
 
 .example-chip:hover {
   border-color: var(--color-brand-400);
-  color: #7c3aed;
+  color: var(--color-brand-600);
   background: var(--color-brand-50);
 }
 
@@ -548,6 +548,6 @@ function maxAttention(weights) {
 }
 
 [data-theme="dark"] .example-chip:hover {
-  background: rgba(99, 102, 241, 0.1);
+  background: rgba(79, 70, 229, 0.1);
 }
 </style>

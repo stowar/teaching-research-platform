@@ -8,8 +8,8 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.js'
 import {
   Hand, LayoutDashboard, Megaphone, ClipboardList, Sparkles,
-  MessageSquare, BookOpen, Bot, Users, Mail, Info, ShieldCheck,
-  Plus, Trash2, Calendar, User as UserIcon
+  MessageSquare, BookOpen, Bot, Info, ShieldCheck,
+  Plus, Trash2, Calendar, User as UserIcon, Brain, UserCircle
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -55,10 +55,10 @@ function clearDone() {
 
 const features = [
   { icon: MessageSquare, title: '教研社区', desc: '发帖讨论、互助答疑、分享教学经验', color: 'var(--color-brand-600)', route: 'community' },
-  { icon: BookOpen, title: '教研资料部', desc: '教案课件、真题题库一键下载', color: '#7c3aed', route: 'resources' },
-  { icon: Bot, title: 'AI聊天室', desc: '智能教研助手，RAG深度检索', color: '#06b6d4', route: 'ai-chat' },
-  { icon: Users, title: '集体备课', desc: '课程共建、协同开发、资源共享', color: '#10b981', route: 'community' },
-  { icon: Mail, title: '消息中心', desc: '教师互动交流、通知推送', color: '#f59e0b', route: 'messages' },
+  { icon: Brain, title: '情感分析', desc: '自研 Attention-GRU 模型，教学评价智能分析', color: '#8b5cf6', route: 'sentiment' },
+  { icon: Bot, title: 'AI聊天室', desc: '智能教研助手，教学问题即时解答', color: '#06b6d4', route: 'ai-chat' },
+  { icon: BookOpen, title: '教研资料部', desc: '教案课件、真题题库一键下载', color: 'var(--color-brand-600)', route: 'resources' },
+  { icon: UserCircle, title: '个人中心', desc: '我的帖子、消息通知、资料编辑', color: '#f59e0b', route: 'account' },
   { icon: Info, title: '关于项目', desc: '平台介绍、使用说明、更新记录', color: '#64748b', route: 'about' },
 ]
 
@@ -82,6 +82,8 @@ const allFeatures = computed(() => {
         <UserIcon v-else class="icon" :size="14" />
         {{ roleLabel }}
       </div>
+      <div class="hero-dots" aria-hidden="true"></div>
+      <div class="hero-gradient" aria-hidden="true"></div>
       <div class="hero-glow" aria-hidden="true"></div>
     </div>
 
@@ -157,7 +159,7 @@ const allFeatures = computed(() => {
 /* 欢迎横幅 */
 .hero-banner {
   position: relative;
-  background: linear-gradient(135deg, #312e81 0%, var(--color-brand-700) 40%, #7c3aed 100%);
+  background: linear-gradient(135deg, var(--color-brand-900) 0%, var(--color-brand-700) 40%, var(--color-brand-600) 100%);
   border-radius: var(--radius-xl);
   padding: var(--space-10) var(--space-8);
   color: #ffffff;
@@ -171,7 +173,13 @@ const allFeatures = computed(() => {
 .hero-icon {
   margin-bottom: var(--space-3);
   display: inline-block;
-  animation: bounce-in 0.6s var(--ease-spring) 0.2s both;
+  color: var(--color-brand-300);
+  animation: bounce-in 0.6s var(--ease-spring) 0.2s both, hero-float 3s ease-in-out 1s infinite;
+}
+
+@keyframes hero-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
 }
 
 .hero-banner h1 {
@@ -198,6 +206,25 @@ const allFeatures = computed(() => {
   font-size: var(--text-sm);
   margin-top: var(--space-4);
   border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.hero-gradient {
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, var(--color-brand-500) 0%, var(--color-brand-400) 30%, var(--color-brand-300) 50%, var(--color-brand-400) 70%, var(--color-brand-500) 100%);
+  background-size: 400% 400%;
+  animation: gradient-flow 8s ease infinite;
+  opacity: 0.35;
+}
+@keyframes gradient-flow {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.hero-dots {
+  position: absolute; inset: 0; z-index: 0;
+  opacity: 0.08;
+  background-image: radial-gradient(circle, rgba(255,255,255,1) 1px, transparent 1px);
+  background-size: 24px 24px;
 }
 
 .hero-glow {

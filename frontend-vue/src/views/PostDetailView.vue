@@ -10,7 +10,7 @@ import api from '@/api/client.js'
 import MarkdownIt from 'markdown-it'
 import {
   Eye, Heart, MessageCircle, Send, ArrowLeft,
-  Clock, User, Trash2, Award, Pin
+  Clock, User, Trash2, Award, Pin, Pencil
 } from 'lucide-vue-next'
 
 const md = new MarkdownIt({ breaks: true, linkify: true })
@@ -31,6 +31,17 @@ const commentAnonymous = ref(false)
 const liked = ref(false)
 const submitting = ref(false)
 const commentLoading = ref(false)
+const replyTo = ref({ id: null, name: '' })
+
+const nestedComments = computed(() => {
+  const map = {}, roots = []
+  for (const c of comments.value) { map[c.id] = { ...c, children: [] } }
+  for (const c of Object.values(map)) {
+    if (c.parent_id && map[c.parent_id]) map[c.parent_id].children.push(c)
+    else roots.push(c)
+  }
+  return roots
+})
 
 async function fetchPost() {
   loading.value = true
@@ -161,7 +172,7 @@ onMounted(() => {
             <span class="meta-divider">·</span>
             <span class="meta-time"><Clock :size="14" /> {{ formatTime(post.create_time) }}</span>
             <span class="meta-divider">·</span>
-            <span class="meta-category">{{ post.category_id || '未分类' }}</span>
+            <span class="meta-category">{{ post.category_name || '未分类' }}</span>
           </div>
         </div>
 
@@ -174,9 +185,18 @@ onMounted(() => {
           <span><Heart :size="14" /> {{ post.like_count || 0 }}</span>
           <span><MessageCircle :size="14" /> {{ post.comment_count || 0 }}</span>
           <button
+            v-if="auth.isLoggedIn && auth.user?.id === post.user_id"
+            class="btn-ghost-icon"
+            @click="router.push(`/community/${postId}/edit`)"
+            title="编辑帖子"
+          >
+            <Pencil :size="14" />
+          </button>
+          <button
             v-if="auth.isLoggedIn && (auth.user?.id === post.user_id || auth.isAdmin)"
             class="btn-ghost-icon btn-danger"
             @click="deletePost"
+            title="删除帖子"
           >
             <Trash2 :size="14" />
           </button>
@@ -209,13 +229,30 @@ onMounted(() => {
         </div>
 
         <div v-else class="comments-list">
-          <div v-for="comment in comments" :key="comment.id" class="comment-card">
-            <div class="comment-header">
-              <span class="comment-author">{{ comment.is_anonymous ? '匿名用户' : (comment.author_name || '匿名') }}</span>
-              <span class="comment-time">{{ formatTime(comment.create_time) }}</span>
+          <template v-for="comment in nestedComments" :key="comment.id">
+            <div :class="['comment-card', { 'is-reply': comment.parent_id }]">
+              <div class="comment-header">
+                <span class="comment-author">
+                  {{ comment.is_anonymous ? '匿名用户' : (comment.author_name || '匿名') }}
+                  <span v-if="comment.parent_id" class="reply-hint"> 回复了上一条</span>
+                </span>
+                <span class="comment-time">{{ formatTime(comment.create_time) }}</span>
+              </div>
+              <div class="comment-content" v-html="md.render(comment.content)" />
+              <button class="btn-reply" @click="commentContent='@'+comment.author_name+' '; replyTo={id:comment.id,name:comment.author_name}">
+                回复
+              </button>
+              <div v-if="comment.children?.length" class="reply-list">
+                <div v-for="child in comment.children" :key="child.id" class="comment-card is-reply">
+                  <div class="comment-header">
+                    <span class="comment-author">{{ child.is_anonymous ? '匿名用户' : (child.author_name || '匿名') }}</span>
+                    <span class="comment-time">{{ formatTime(child.create_time) }}</span>
+                  </div>
+                  <div class="comment-content" v-html="md.render(child.content)" />
+                </div>
+              </div>
             </div>
-            <div class="comment-content" v-html="md.render(comment.content)" />
-          </div>
+          </template>
         </div>
 
         <!-- 发表评论 -->
@@ -482,6 +519,16 @@ onMounted(() => {
   border: 1px solid var(--border-light);
 }
 
+.comment-card.is-reply {
+  margin-left: var(--space-6);
+  border-left: 2px solid var(--color-brand-200);
+  padding-left: var(--space-3);
+}
+.reply-list { margin-top: var(--space-3); display: flex; flex-direction: column; gap: var(--space-3); }
+.reply-hint { font-size: var(--text-xs); color: var(--text-tertiary); font-weight: var(--font-normal); }
+.btn-reply { background: none; border: none; color: var(--text-tertiary); font-size: var(--text-xs); cursor: pointer; padding: 0; margin-top: var(--space-1); }
+.btn-reply:hover { color: var(--text-link); }
+
 .comment-header {
   display: flex;
   align-items: center;
@@ -518,7 +565,7 @@ onMounted(() => {
   line-height: 1.6;
 }
 
-.comment-input:focus { outline: none; border-color: var(--color-brand-400); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12); }
+.comment-input:focus { outline: none; border-color: var(--color-brand-400); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12); }
 
 .checkbox-label {
   display: inline-flex;
@@ -558,7 +605,7 @@ onMounted(() => {
 .link:hover { text-decoration: underline; }
 
 .btn { display: inline-flex; align-items: center; gap: var(--space-1); padding: var(--space-2) var(--space-4); border-radius: var(--radius-md); font-size: var(--text-sm); font-weight: var(--font-semibold); border: none; cursor: pointer; }
-.btn-primary { background: #7c3aed; color: #fff; }
+.btn-primary { background: var(--color-brand-600); color: #fff; }
 .btn-primary:hover { background: var(--color-brand-700); }
 .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-ghost { background: transparent; border: 1px solid var(--border-light); color: var(--text-secondary); }

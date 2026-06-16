@@ -8,7 +8,7 @@ import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.js'
 import { useTheme } from '@/composables/useTheme.js'
-import { GraduationCap, Sun, Moon, Home, MessageSquare, BookOpen, Bot, Mail, ShieldCheck, Brain } from 'lucide-vue-next'
+import { GraduationCap, Sun, Moon, Home, MessageSquare, BookOpen, Bot, UserCircle, ShieldCheck, Brain } from 'lucide-vue-next'
 
 const router = useRouter()
 const route = useRoute()
@@ -27,7 +27,7 @@ const navItems = computed(() => {
     { name: 'resources', label: '教研资料部', path: '/resources', icon: BookOpen },
     { name: 'ai-chat', label: 'AI聊天室', path: '/ai-chat', icon: Bot },
     { name: 'sentiment', label: '情感分析', path: '/sentiment', icon: Brain },
-    { name: 'messages', label: '消息中心', path: '/messages', icon: Mail },
+    { name: 'account', label: '个人中心', path: '/account', icon: UserCircle },
   ]
   if (isAdmin.value) {
     items.push({ name: 'admin-users', label: '用户管理', path: '/admin/users', icon: ShieldCheck })
@@ -135,7 +135,7 @@ function logout() {
 .nav-brand-icon {
   width: 1.6rem;
   height: 1.6rem;
-  color: #7c3aed;
+  color: var(--color-brand-600);
 }
 
 .nav-links {
@@ -159,7 +159,7 @@ function logout() {
 
 /* 当前页面高亮 + 底部小横条指示器 */
 .nav-link.active {
-  color: #7c3aed;
+  color: var(--color-brand-600);
   background: var(--color-brand-50);
 }
 
@@ -220,8 +220,13 @@ function logout() {
 
 /* 暗色模式下当前页面高亮：更柔和的发光感 */
 :global(html[data-theme="dark"]) .nav-link.active {
-  background: rgba(99, 102, 241, 0.15);
+  background: rgba(79, 70, 229, 0.15);
   color: var(--color-brand-200);
+}
+
+/* 暗色模式 Logo 用亮色，白天保持原 Indigo */
+:global(html[data-theme="dark"]) .nav-brand-icon {
+  color: var(--color-brand-400);
 }
 
 /* 暗色模式主题按钮微调 */

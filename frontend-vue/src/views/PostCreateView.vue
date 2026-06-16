@@ -1,10 +1,16 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import api from '@/api/client.js'
 import { Send, BookOpen, ArrowLeft } from 'lucide-vue-next'
 
 const router = useRouter()
+const route = useRoute()
+
+const editPostId = computed(() => route.params.postId ? Number(route.params.postId) : null)
+const isEdit = computed(() => !!editPostId.value)
+const draftSaved = ref(false)
+const DRAFT_KEY = 'post-draft'
 
 const title = ref('')
 const content = ref('')
@@ -30,27 +36,79 @@ async function fetchCategories() {
   } catch { /* ignore */ }
 }
 
+async function fetchPost() {
+  if (!isEdit.value) return
+  loading.value = true
+  try {
+    const res = await api.get(`/community/posts/${editPostId.value}`)
+    const p = res.data
+    title.value = p.title
+    content.value = p.content
+    categoryId.value = p.category_id
+    isAnonymous.value = !!p.is_anonymous
+  } catch { /* edit mode fetch fail, fallback to create */ }
+  finally { loading.value = false }
+}
+
 async function submit() {
   if (!title.value.trim() || !content.value.trim() || loading.value) return
   loading.value = true
   error.value = ''
+  const body = {
+    title: title.value.trim(),
+    content: content.value.trim(),
+    category_id: categoryId.value,
+    is_anonymous: isAnonymous.value ? 1 : 0
+  }
   try {
-    await api.post('/community/posts', {
-      title: title.value.trim(),
-      content: content.value.trim(),
-      category_id: categoryId.value,
-      is_anonymous: isAnonymous.value ? 1 : 0
-    })
+    if (isEdit.value) {
+      await api.put(`/community/posts/${editPostId.value}`, body)
+    } else {
+      await api.post('/community/posts', body)
+    }
+    clearDraft()
     router.push('/community')
   } catch (e) {
-    error.value = e.message || '发布失败'
+    error.value = e.message || (isEdit.value ? '编辑失败' : '发布失败')
   } finally {
     loading.value = false
   }
 }
 
+// 草稿：自动保存
+watch([title, content], () => {
+  if (!isEdit.value && (title.value || content.value)) {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ title: title.value, content: content.value }))
+    draftSaved.value = true
+    setTimeout(() => draftSaved.value = false, 2000)
+  }
+}, { deep: true })
+
+function loadDraft() {
+  if (isEdit.value) return
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY)
+    if (raw) {
+      const d = JSON.parse(raw)
+      if (d.title) title.value = d.title
+      if (d.content) content.value = d.content
+      return true
+    }
+  } catch { return false }
+  return false
+}
+
+function clearDraft() {
+  localStorage.removeItem(DRAFT_KEY)
+}
+
 onMounted(() => {
   fetchCategories()
+  if (isEdit.value) {
+    fetchPost()
+  } else {
+    loadDraft()
+  }
 })
 </script>
 
@@ -60,7 +118,7 @@ onMounted(() => {
       <button class="btn-ghost-icon" @click="router.push('/community')">
         <ArrowLeft :size="18" />
       </button>
-      <h1>发布新帖</h1>
+      <h1>{{ isEdit ? '编辑帖子' : '发布新帖' }}</h1>
     </div>
 
     <form class="create-form" @submit.prevent="submit">
@@ -109,6 +167,7 @@ onMounted(() => {
       <div v-if="error" class="alert alert-error">{{ error }}</div>
 
       <div class="form-actions">
+        <span v-if="draftSaved" class="draft-hint">草稿已保存</span>
         <button type="button" class="btn btn-ghost" @click="router.push('/community')">取消</button>
         <button
           type="submit"
@@ -116,7 +175,7 @@ onMounted(() => {
           :disabled="!title.trim() || !content.trim() || loading"
         >
           <Send :size="14" />
-          <span>{{ loading ? '发布中...' : '发布帖子' }}</span>
+          <span>{{ loading ? (isEdit ? '保存中...' : '发布中...') : (isEdit ? '保存修改' : '发布帖子') }}</span>
         </button>
       </div>
     </form>
@@ -195,7 +254,7 @@ select.form-input { cursor: pointer; }
 .form-input:focus {
   outline: none;
   border-color: var(--color-brand-400);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
 }
 
 textarea.form-input { resize: vertical; }
@@ -235,10 +294,18 @@ textarea.form-input { resize: vertical; }
 .form-actions {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   gap: var(--space-3);
   padding-top: var(--space-3);
   border-top: 1px solid var(--border-light);
 }
+.draft-hint {
+  font-size: var(--text-xs);
+  color: var(--color-success-600);
+  margin-right: auto;
+  animation: fade-in 0.3s var(--ease-out);
+}
+@keyframes fade-in { from { opacity: 0 } to { opacity: 1 } }
 
 .btn {
   display: inline-flex;
@@ -253,7 +320,7 @@ textarea.form-input { resize: vertical; }
   transition: all var(--duration-fast) var(--ease-out);
 }
 
-.btn-primary { background: #7c3aed; color: #fff; }
+.btn-primary { background: var(--color-brand-600); color: #fff; }
 .btn-primary:hover { background: var(--color-brand-700); }
 .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-ghost { background: transparent; border: 1px solid var(--border-light); color: var(--text-secondary); }

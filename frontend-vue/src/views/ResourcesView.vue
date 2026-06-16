@@ -37,7 +37,7 @@ import { BookOpen, Construction } from 'lucide-vue-next'
   left: 0;
   right: 0;
   height: 280px;
-  background: linear-gradient(135deg, #312e81 0%, var(--color-brand-700) 40%, #7c3aed 100%);
+  background: linear-gradient(135deg, var(--color-brand-900) 0%, var(--color-brand-700) 40%, var(--color-brand-600) 100%);
   border-radius: 0 0 var(--radius-xl) var(--radius-xl);
   overflow: hidden;
 }

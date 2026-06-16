@@ -22,7 +22,7 @@ import { GraduationCap, Target, Rocket, Wrench, Mail } from 'lucide-vue-next'
     <!-- 内容卡片区域 -->
     <div class="about-grid">
       <div class="about-card card" style="animation-delay: 0.1s">
-        <div class="card-icon" aria-hidden="true" style="background: var(--color-brand-100); color: #7c3aed"><Target :size="24" /></div>
+        <div class="card-icon" aria-hidden="true" style="background: var(--color-brand-100); color: var(--color-brand-600)"><Target :size="24" /></div>
         <h2>平台介绍</h2>
         <p>聚师成林，研无止境。本平台旨在为英语教师提供教研交流、资源共享、AI赋能的一站式协作环境。</p>
       </div>
@@ -71,7 +71,7 @@ import { GraduationCap, Target, Rocket, Wrench, Mail } from 'lucide-vue-next'
 
 .about-hero {
   position: relative;
-  background: linear-gradient(135deg, #312e81 0%, var(--color-brand-700) 40%, #7c3aed 100%);
+  background: linear-gradient(135deg, var(--color-brand-900) 0%, var(--color-brand-700) 40%, var(--color-brand-600) 100%);
   border-radius: var(--radius-xl);
   padding: var(--space-12) var(--space-8);
   text-align: center;

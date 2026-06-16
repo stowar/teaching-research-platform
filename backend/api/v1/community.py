@@ -13,11 +13,12 @@ def get_post_list(
     category_id: int = Query(None),
     sort: str = Query('new'),
     keyword: str = Query(None),
+    user_id: int = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(10, ge=1, le=50)
 ):
     """分页查询帖子列表"""
-    return community_service.get_post_list_service(category_id, sort, keyword, page, page_size)
+    return community_service.get_post_list_service(category_id, sort, keyword, user_id, page, page_size)
 
 
 # 2. 帖子详情
@@ -99,3 +100,25 @@ def toggle_like(post_id: int, current_user = Depends(get_current_user)):
 @router.get("/posts/{post_id}/like", summary="查询点赞状态")
 def has_liked(post_id: int, current_user = Depends(get_current_user)):
     return community_service.has_liked_service(post_id, current_user)
+
+
+# ===================== 通知 =====================
+
+@router.get("/notifications", summary="通知列表")
+def get_notifications(page: int = Query(1, ge=1), current_user = Depends(get_current_user)):
+    return community_service.get_notifications_service(current_user, page)
+
+
+@router.put("/notifications/{notif_id}/read", summary="标记已读")
+def mark_read(notif_id: int, current_user = Depends(get_current_user)):
+    return community_service.mark_read_service(notif_id, current_user)
+
+
+@router.put("/notifications/read-all", summary="全部已读")
+def mark_all_read(current_user = Depends(get_current_user)):
+    return community_service.mark_all_read_service(current_user)
+
+
+@router.delete("/notifications/{notif_id}", summary="删除通知")
+def delete_notification(notif_id: int, current_user = Depends(get_current_user)):
+    return community_service.delete_notification_service(notif_id, current_user)

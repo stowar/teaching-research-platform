@@ -17,13 +17,13 @@ def create_post_service(post_data, user: dict):
         "msg": "发布成功"
     }
 
-def get_post_list_service(category_id=None, sort='new', keyword=None, page=1, page_size=10):
+def get_post_list_service(category_id=None, sort='new', keyword=None, user_id=None, page=1, page_size=10):
     """
     获取帖子列表
     :return: dict {code, msg, data: [posts], total}
     """
     # 1. 调 DB 层拿列表数据
-    posts = community_db.get_post_list(category_id, sort, keyword, page, page_size)
+    posts = community_db.get_post_list(category_id, sort, keyword, user_id, page, page_size)
 
     # 2. 裁切 content 为摘要（前 100 字）
     for post in posts:
@@ -104,6 +104,10 @@ def create_comment_service(post_id, content, parent_id, is_anonymous, user: dict
     """发表评论"""
     community_db.create_comment(post_id, user["id"], content, parent_id, is_anonymous)
     community_db.update_post_like_count(post_id, delta_comments=1)
+    # 通知帖子作者
+    post = community_db.get_post_by_id(post_id)
+    if post and post["user_id"] != user["id"]:
+        community_db.create_notification(post["user_id"], user["id"], 'comment', post_id, content=f'{user.get("name","有人")} 评论了你的帖子《{post["title"]}》')
     return {"code": 200, "msg": "评论成功"}
 
 
@@ -125,9 +129,41 @@ def toggle_like_service(post_id, user: dict):
     liked = community_db.toggle_like(post_id, user["id"])
     delta = 1 if liked else -1
     community_db.update_post_like_count(post_id, delta_likes=delta)
+    # 点赞通知（取消点赞不通知）
+    if liked:
+        post = community_db.get_post_by_id(post_id)
+        if post and post["user_id"] != user["id"]:
+            community_db.create_notification(post["user_id"], user["id"], 'like', post_id, content=f'{user.get("name","有人")} 赞了你的帖子《{post["title"]}》')
     return {"code": 200, "msg": "点赞成功" if liked else "已取消点赞", "liked": liked}
 
 
 def has_liked_service(post_id, user: dict):
     """检查当前用户是否已点赞"""
     return {"code": 200, "data": {"liked": community_db.has_liked(post_id, user["id"])}}
+
+
+# ===================== 通知 =====================
+
+def get_notifications_service(user: dict, page=1, page_size=20):
+    """获取通知列表 + 未读数"""
+    notifs = community_db.get_notifications(user["id"], page, page_size)
+    unread = community_db.get_unread_count(user["id"])
+    return {"code": 200, "data": notifs, "unread": unread}
+
+
+def mark_read_service(notif_id, user: dict):
+    """标记单条已读"""
+    community_db.mark_notification_read(notif_id, user["id"])
+    return {"code": 200, "msg": "已标记已读"}
+
+
+def mark_all_read_service(user: dict):
+    """标记全部已读"""
+    community_db.mark_all_read(user["id"])
+    return {"code": 200, "msg": "全部已读"}
+
+
+def delete_notification_service(notif_id, user: dict):
+    """删除通知（只能删自己的）"""
+    community_db.delete_notification(notif_id, user["id"])
+    return {"code": 200, "msg": "已删除"}

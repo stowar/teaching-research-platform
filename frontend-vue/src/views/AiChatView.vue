@@ -342,7 +342,7 @@ function formatTime(ts) {
 
 .btn-new:hover {
   background: var(--color-brand-50);
-  color: #7c3aed;
+  color: var(--color-brand-600);
   border-color: var(--color-brand-300);
 }
 
@@ -456,11 +456,11 @@ function formatTime(ts) {
   justify-content: center;
   flex-shrink: 0;
   background: var(--color-brand-100);
-  color: #7c3aed;
+  color: var(--color-brand-600);
 }
 
 .message-row.user .message-avatar {
-  background: #7c3aed;
+  background: var(--color-brand-600);
   color: #fff;
 }
 
@@ -498,7 +498,7 @@ function formatTime(ts) {
 }
 
 .message-row.user .message-bubble {
-  background: linear-gradient(135deg, #7c3aed, var(--color-brand-600));
+  background: linear-gradient(135deg, var(--color-brand-500), var(--color-brand-600));
   color: #fff;
   border: none;
 }
@@ -596,7 +596,7 @@ function formatTime(ts) {
 
 .prompt-chip:hover {
   border-color: var(--color-brand-400);
-  color: #7c3aed;
+  color: var(--color-brand-600);
   background: var(--color-brand-50);
   transform: translateY(-1px);
 }
@@ -650,7 +650,7 @@ function formatTime(ts) {
 
 .input-wrapper:focus-within {
   border-color: var(--color-brand-400);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
 }
 
 .chat-input {
@@ -673,7 +673,7 @@ function formatTime(ts) {
   height: 32px;
   border-radius: var(--radius-lg);
   border: none;
-  background: linear-gradient(135deg, #7c3aed, var(--color-brand-600));
+  background: linear-gradient(135deg, var(--color-brand-500), var(--color-brand-600));
   color: #fff;
   cursor: pointer;
   display: inline-flex;
@@ -834,30 +834,30 @@ function formatTime(ts) {
 
 .theme-toggle:hover {
   border-color: var(--color-brand-400);
-  color: #7c3aed;
+  color: var(--color-brand-600);
   background: var(--color-brand-50);
 }
 
 /* 暗黑模式 */
 [data-theme="dark"] .btn-new:hover {
-  background: rgba(99, 102, 241, 0.12);
+  background: rgba(79, 70, 229, 0.12);
 }
 
 [data-theme="dark"] .session-item.active {
-  background: rgba(99, 102, 241, 0.15);
+  background: rgba(79, 70, 229, 0.15);
   color: var(--color-brand-300);
 }
 
 [data-theme="dark"] .prompt-chip:hover {
-  background: rgba(99, 102, 241, 0.1);
+  background: rgba(79, 70, 229, 0.1);
 }
 
 [data-theme="dark"] .input-wrapper:focus-within {
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
 }
 
 [data-theme="dark"] .info-tag {
-  background: rgba(99, 102, 241, 0.15);
+  background: rgba(79, 70, 229, 0.15);
   color: var(--color-brand-300);
 }
 </style>

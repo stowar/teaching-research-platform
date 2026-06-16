@@ -10,7 +10,7 @@ const router = useRouter()
 
 const highlights = [
   { icon: MessageSquare, title: '教研交流', desc: '跨校协作、在线研讨、经验分享', color: 'var(--color-brand-600)' },
-  { icon: BookOpen, title: '资源共享', desc: '教案课件、真题题库一键获取', color: '#7c3aed' },
+  { icon: BookOpen, title: '资源共享', desc: '教案课件、真题题库一键获取', color: 'var(--color-brand-600)' },
   { icon: Bot, title: 'AI赋能', desc: '智能助手、RAG检索、教研提效', color: '#06b6d4' },
 ]
 </script>
@@ -24,6 +24,8 @@ const highlights = [
         <p class="hero-subtitle">聚师成林，研无止境</p>
         <div class="hero-slogan">专为职业院校英语教师打造的教研协作平台</div>
       </div>
+      <div class="hero-dots" aria-hidden="true"></div>
+      <div class="hero-gradient" aria-hidden="true"></div>
       <div class="hero-decoration" aria-hidden="true"></div>
       <div class="hero-decoration-2" aria-hidden="true"></div>
     </div>
@@ -66,7 +68,7 @@ const highlights = [
 
 .landing-hero {
   position: relative;
-  background: linear-gradient(135deg, var(--color-gray-900) 0%, #312e81 40%, #7c3aed 100%);
+  background: linear-gradient(135deg, var(--color-brand-900) 0%, var(--color-brand-700) 40%, var(--color-brand-600) 100%);
   border-radius: var(--radius-xl);
   padding: var(--space-16) var(--space-8);
   text-align: center;
@@ -84,7 +86,8 @@ const highlights = [
 .hero-icon {
   margin-bottom: var(--space-4);
   display: inline-block;
-  animation: bounce-in 0.6s var(--ease-spring) 0.3s both;
+  color: var(--color-brand-300);
+  animation: bounce-in 0.6s var(--ease-spring) 0.3s both, hero-float 3s ease-in-out 1s infinite;
 }
 
 .hero-content h1 {
@@ -94,20 +97,50 @@ const highlights = [
   margin-bottom: var(--space-4);
 }
 
+.hero-gradient {
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, var(--color-brand-500) 0%, var(--color-brand-400) 30%, var(--color-brand-300) 50%, var(--color-brand-400) 70%, var(--color-brand-500) 100%);
+  background-size: 400% 400%;
+  animation: gradient-flow 8s ease infinite;
+  opacity: 0.35;
+}
+@keyframes gradient-flow {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.hero-dots {
+  position: absolute; inset: 0; z-index: 0;
+  opacity: 0.08;
+  background-image: radial-gradient(circle, rgba(255,255,255,1) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.hero-content h1 { animation: fade-up 0.8s var(--ease-out) both; }
+.hero-subtitle { animation: fade-up 0.8s var(--ease-out) 0.15s both; }
+.hero-slogan { animation: fade-up 0.8s var(--ease-out) 0.3s both; }
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .hero-subtitle {
-  font-size: var(--text-xl);
-  opacity: 0.85;
-  margin-bottom: var(--space-6);
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0 0 var(--space-4);
+  letter-spacing: 0.05em;
 }
 
 .hero-slogan {
   display: inline-block;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(10px);
   padding: var(--space-2) var(--space-6);
   border-radius: var(--radius-full);
   font-size: var(--text-sm);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .hero-decoration {
@@ -211,6 +244,11 @@ const highlights = [
 @keyframes slide-up-enter {
   from { opacity: 0; transform: translateY(24px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes hero-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
 }
 
 @keyframes bounce-in {
