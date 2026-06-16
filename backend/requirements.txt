@@ -1,37 +1,32 @@
 # ========== Web 框架 ==========
-fastapi==0.110.0
-uvicorn==0.27.1
+fastapi>=0.100.0
+uvicorn>=0.20.0
 
 # ========== 数据库 ==========
-pymysql==1.1.0
+pymysql>=1.0.0
 dbutils>=3.0.0
 
 # ========== 认证 ==========
-python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
+python-jose[cryptography]>=3.0.0
+passlib[bcrypt]>=1.7.0
 
 # ========== 数据模型 ==========
-pydantic==2.4.2
-pydantic-settings==2.1.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
 
 # ========== 工具 ==========
-python-multipart==0.0.9
-python-dotenv==1.0.0
+python-multipart>=0.0.5
+python-dotenv>=1.0.0
 
 # ========== NLP / 情感分析模型 ==========
-jieba==0.42.1
-pandas==2.1.4
-numpy==1.26.4
+jieba>=0.42.0
+pandas>=1.3.0
+numpy>=1.20.0
 
-# ========== PyTorch（CPU 版，部署用，约 200MB）==========
-# 如需 GPU 版，替换为下面注释掉的命令
-# pip install torch==2.2.0 torchvision==0.17.0 --index-url https://download.pytorch.org/whl/cu124
-torch==2.2.0
-torchvision==0.17.0
+# ========== PyTorch（CPU 版，需单独安装）==========
+# pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+# torch>=2.0.0
+# torchvision>=0.15.0
 
-# ========== ChromaDB / AI 功能（可选，后续扩展用）==========
-chromadb==0.4.24
-volcengine-python-sdk==2.0.100
-python-docx==1.1.0
-PyPDF2==3.0.1
-openpyxl==3.1.2
+# ========== 可选依赖（如报错可注释掉）==========
+openpyxl>=3.0.0
