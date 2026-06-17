@@ -56,8 +56,13 @@ async function changePassword() {
 <template>
   <div class="profile-page">
     <div class="page-header">
-      <UserIcon class="page-icon" :size="32" />
-      <h1>账号设置</h1>
+      <div class="header-left">
+        <UserIcon class="page-icon" :size="28" />
+        <div>
+          <h1>账号设置</h1>
+          <p>管理您的个人信息与登录密码</p>
+        </div>
+      </div>
     </div>
 
     <!-- 基本信息 -->
@@ -141,8 +146,11 @@ async function changePassword() {
 
 <style scoped>
 .profile-page { animation: slide-up-enter 0.5s var(--ease-out) both; }
-.page-header { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-6); }
-.page-header h1 { font-size: var(--text-2xl); font-weight: var(--font-bold); color: var(--text-primary); margin: 0; }
+.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-5); }
+.header-left { display: flex; align-items: center; gap: var(--space-3); }
+.page-icon { color: var(--color-brand-600); }
+.header-left h1 { font-size: var(--text-2xl); font-weight: var(--font-bold); color: var(--text-primary); margin: 0 0 var(--space-1); }
+.header-left p { font-size: var(--text-sm); color: var(--text-secondary); margin: 0; }
 .page-icon { display: inline-flex; align-items: center; }
 
 .profile-card { margin-bottom: var(--space-6); padding: var(--space-6); animation: slide-up-enter 0.6s var(--ease-out) both; }
