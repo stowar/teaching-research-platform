@@ -16,6 +16,8 @@ import { GraduationCap, Target, Rocket, Wrench, Mail } from 'lucide-vue-next'
         <h1>关于项目</h1>
         <p class="hero-subtitle">虚拟教研社区 — 专为职业院校英语教师打造的教研协作平台</p>
       </div>
+      <div class="hero-dots" aria-hidden="true"></div>
+      <div class="hero-gradient" aria-hidden="true"></div>
       <div class="hero-glow" aria-hidden="true"></div>
     </div>
 
@@ -34,7 +36,8 @@ import { GraduationCap, Target, Rocket, Wrench, Mail } from 'lucide-vue-next'
           <li><strong>教研社区</strong>：发帖讨论、互助答疑、分享教学经验</li>
           <li><strong>教研资料部</strong>：教案课件、真题题库一键下载</li>
           <li><strong>AI聊天室</strong>：智能教研助手，RAG深度检索</li>
-          <li><strong>消息中心</strong>：教师互动交流、通知推送</li>
+          <li><strong>情感分析</strong>：自研模型，教学评价智能分析</li>
+          <li><strong>个人中心</strong>：消息通知、我的帖子、资料管理</li>
         </ul>
       </div>
 
@@ -44,14 +47,15 @@ import { GraduationCap, Target, Rocket, Wrench, Mail } from 'lucide-vue-next'
         <ul>
           <li><strong>后端</strong>：Python + FastAPI</li>
           <li><strong>前端</strong>：Vue 3 + Vite</li>
-          <li><strong>数据库</strong>：PostgreSQL</li>
+          <li><strong>数据库</strong>：MySQL</li>
+          <li><strong>部署</strong>：阿里云 ECS + Nginx + Supervisor</li>
         </ul>
       </div>
 
       <div class="about-card card" style="animation-delay: 0.4s">
         <div class="card-icon" aria-hidden="true" style="background: var(--color-warning-100); color: var(--color-warning-600)"><Mail :size="24" /></div>
         <h2>联系我们</h2>
-        <p>如有任何问题或建议，欢迎通过消息中心与我们联系，我们将尽快回复。</p>
+        <p>如有任何问题或建议，欢迎通过邮箱898367778@qq.com与我联系，我将尽快回复。</p>
       </div>
     </div>
 
@@ -85,10 +89,34 @@ import { GraduationCap, Target, Rocket, Wrench, Mail } from 'lucide-vue-next'
   z-index: 1;
 }
 
+.hero-gradient {
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, var(--color-brand-500) 0%, var(--color-brand-400) 30%, var(--color-brand-300) 50%, var(--color-brand-400) 70%, var(--color-brand-500) 100%);
+  background-size: 400% 400%;
+  animation: gradient-flow 8s ease infinite;
+  opacity: 0.3;
+}
+@keyframes gradient-flow {
+  0%,100% { background-position:0% 50%; }
+  50% { background-position:100% 50%; }
+}
+
+.hero-dots {
+  position: absolute; inset: 0; z-index: 0;
+  opacity: 0.06;
+  background-image: radial-gradient(circle, #fff 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
 .hero-icon {
   margin-bottom: var(--space-3);
   display: inline-block;
-  animation: bounce-in 0.6s var(--ease-spring) 0.2s both;
+  color: var(--color-brand-300);
+  animation: bounce-in 0.6s var(--ease-spring) 0.2s both, hero-float 3s ease-in-out 1s infinite;
+}
+@keyframes hero-float {
+  0%,100% { transform:translateY(0); }
+  50% { transform:translateY(-6px); }
 }
 
 .about-hero h1 {
