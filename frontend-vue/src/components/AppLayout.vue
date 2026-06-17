@@ -8,7 +8,7 @@ import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.js'
 import { useTheme } from '@/composables/useTheme.js'
-import { GraduationCap, Sun, Moon, Home, MessageSquare, BookOpen, Bot, UserCircle, ShieldCheck, Brain } from 'lucide-vue-next'
+import { GraduationCap, Sun, Moon, Home, MessageSquare, BookOpen, Bot, Bell, ShieldCheck, Brain } from 'lucide-vue-next'
 
 const router = useRouter()
 const route = useRoute()
@@ -27,7 +27,7 @@ const navItems = computed(() => {
     { name: 'resources', label: '教研资料部', path: '/resources', icon: BookOpen },
     { name: 'ai-chat', label: 'AI聊天室', path: '/ai-chat', icon: Bot },
     { name: 'sentiment', label: '情感分析', path: '/sentiment', icon: Brain },
-    { name: 'account', label: '个人中心', path: '/account', icon: UserCircle },
+    { name: 'account', label: '个人中心', path: '/account', icon: Bell },
   ]
   if (isAdmin.value) {
     items.push({ name: 'admin-users', label: '用户管理', path: '/admin/users', icon: ShieldCheck })
