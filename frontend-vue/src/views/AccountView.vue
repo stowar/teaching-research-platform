@@ -252,10 +252,10 @@ onMounted(fetchAll)
 .section-empty .empty-sub { font-size: var(--text-xs); max-width: 260px; line-height: 1.5; }
 
 /* 通知 */
-.notif-list { display: flex; flex-direction: column; }
+.notif-list { display: flex; flex-direction: column; gap: var(--space-2); }
 .notif-item {
   display: flex; align-items: center; gap: var(--space-3);
-  padding: var(--space-3) var(--space-3);
+  padding: var(--space-3);
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: all var(--duration-fast) var(--ease-out);
