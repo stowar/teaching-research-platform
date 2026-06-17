@@ -105,29 +105,38 @@ onMounted(fetchAll)
       <!-- 消息 -->
       <div class="section">
         <div class="section-header">
-          <h3><Bell :size="16" /> 消息</h3>
+          <h3><Bell :size="16" /> 消息中心</h3>
           <div class="section-actions">
-            <span class="unread-badge" v-if="unreadCount">{{ unreadCount }} 未读</span>
+            <span class="unread-badge" v-if="unreadCount">{{ unreadCount }} 条未读</span>
             <button v-if="unreadCount" class="btn-text" @click="markAllRead"><CheckCheck :size="13" /> 全部已读</button>
           </div>
         </div>
-        <div v-if="notifications.length === 0" class="section-empty">暂无消息</div>
+        <div v-if="notifications.length === 0" class="section-empty">
+          <Bell :size="32" />
+          <span>暂无消息</span>
+          <span class="empty-sub">当有人评论或点赞你的帖子时，你会在这里收到通知</span>
+        </div>
         <div v-else class="notif-list">
           <div
             v-for="notif in notifications"
             :key="notif.id"
-            :class="['notif-card', { unread: !notif.is_read }]"
+            :class="['notif-item', { unread: !notif.is_read }]"
             @click="goToPost(notif.post_id)"
           >
-            <div :class="['notif-icon', notif.type]"><component :is="typeIcon(notif.type)" :size="13" /></div>
-            <div class="notif-body">
-              <span class="notif-text">
-                <strong>{{ notif.sender_name }}</strong> {{ typeLabel(notif.type) }}你的帖子
-              </span>
-              <span class="notif-time">{{ formatTime(notif.create_time) }}</span>
+            <div :class="['notif-dot', notif.type]">
+              <component :is="typeIcon(notif.type)" :size="14" />
             </div>
-            <button v-if="!notif.is_read" class="mark-read" @click.stop="markRead(notif)">已读</button>
-            <button class="btn-del" @click.stop="deleteNotif(notif)"><X :size="12" /></button>
+            <div class="notif-content">
+              <div class="notif-main">
+                <strong>{{ notif.sender_name || '匿名' }}</strong>
+                <span>{{ typeLabel(notif.type) }}了你的帖子</span>
+                <span class="notif-time">{{ formatTime(notif.create_time) }}</span>
+              </div>
+            </div>
+            <div class="notif-actions">
+              <span v-if="!notif.is_read" class="unread-dot"></span>
+              <button class="btn-del" @click.stop="deleteNotif(notif)" title="删除"><X :size="14" /></button>
+            </div>
           </div>
         </div>
       </div>
@@ -236,30 +245,54 @@ onMounted(fetchAll)
   display: inline-flex; align-items: center; gap: 3px;
 }
 .btn-text:hover { text-decoration: underline; }
-.section-empty { text-align: center; color: var(--text-tertiary); font-size: var(--text-sm); padding: var(--space-4) 0; }
+.section-empty {
+  text-align: center; color: var(--text-tertiary); padding: var(--space-8) var(--space-4);
+  display: flex; flex-direction: column; align-items: center; gap: var(--space-2);
+}
+.section-empty .empty-sub { font-size: var(--text-xs); max-width: 260px; line-height: 1.5; }
 
 /* 通知 */
 .notif-list { display: flex; flex-direction: column; }
-.notif-card {
+.notif-item {
   display: flex; align-items: center; gap: var(--space-3);
-  padding: var(--space-3);
+  padding: var(--space-3) var(--space-3);
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background var(--duration-fast) var(--ease-out);
+  transition: all var(--duration-fast) var(--ease-out);
+  position: relative;
 }
-.notif-card:hover { background: var(--bg-hover); }
-.notif-card.unread { background: var(--color-brand-50); border-left: 2px solid var(--color-brand-400); }
-.notif-icon { width: 28px; height: 28px; border-radius: var(--radius-full); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.notif-icon.comment { background: var(--color-info-100); color: var(--color-info-600); }
-.notif-icon.like { background: var(--color-danger-100); color: var(--color-danger-600); }
-.notif-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.notif-text { font-size: var(--text-sm); color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.notif-text strong { color: var(--text-primary); }
-.notif-time { font-size: var(--text-xs); color: var(--text-tertiary); }
-.mark-read { font-size: var(--text-xs); background: none; border: 1px solid var(--border-light); color: var(--text-tertiary); padding: 2px 6px; border-radius: var(--radius-sm); cursor: pointer; flex-shrink: 0; }
-.mark-read:hover { color: var(--text-link); border-color: var(--color-brand-300); }
-.btn-del { background: none; border: none; color: var(--text-tertiary); cursor: pointer; padding: 2px; flex-shrink: 0; border-radius: var(--radius-sm); transition: all var(--duration-fast) var(--ease-out); opacity: 0; }
-.notif-card:hover .btn-del { opacity: 1; }
+.notif-item:hover { background: var(--bg-hover); }
+.notif-item.unread { background: var(--color-brand-50); }
+.notif-dot {
+  width: 36px; height: 36px;
+  border-radius: var(--radius-full);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.notif-dot.comment { background: var(--color-info-100); color: var(--color-info-600); }
+.notif-dot.like { background: var(--color-danger-100); color: var(--color-danger-600); }
+
+.notif-content { flex: 1; min-width: 0; }
+.notif-main {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px;
+  font-size: var(--text-sm); color: var(--text-secondary);
+}
+.notif-main strong { color: var(--text-primary); }
+.notif-time { font-size: var(--text-xs); color: var(--text-tertiary); margin-left: auto; }
+
+.notif-actions { display: flex; align-items: center; gap: var(--space-2); flex-shrink: 0; }
+.unread-dot {
+  width: 8px; height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-brand-500);
+}
+.btn-del {
+  background: none; border: none; color: var(--text-tertiary);
+  cursor: pointer; padding: 4px; border-radius: var(--radius-sm);
+  transition: all var(--duration-fast) var(--ease-out);
+  opacity: 0;
+}
+.notif-item:hover .btn-del { opacity: 1; }
 .btn-del:hover { color: var(--color-danger-600); background: var(--color-danger-50); }
 
 /* 我的帖子 */
@@ -277,7 +310,7 @@ onMounted(fetchAll)
 
 @keyframes slide-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
 
-[data-theme="dark"] .notif-card.unread { background: rgba(99,102,241,0.06); }
+[data-theme="dark"] .notif-item.unread { background: rgba(99,102,241,0.08); }
 @media (max-width: 768px) {
   .action-cards { grid-template-columns: 1fr 1fr 1fr; }
 }
