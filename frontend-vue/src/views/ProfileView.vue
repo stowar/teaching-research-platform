@@ -57,7 +57,7 @@ async function changePassword() {
   <div class="profile-page">
     <div class="page-header">
       <UserIcon class="page-icon" :size="32" />
-      <h1>个人中心</h1>
+      <h1>账号设置</h1>
     </div>
 
     <!-- 基本信息 -->
