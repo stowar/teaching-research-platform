@@ -174,7 +174,7 @@ async function changePassword() {
 
 <style scoped>
 .profile-page {
-  max-width: 520px; margin: var(--space-8) auto;
+  max-width: 520px;
   animation: slide-up 0.5s var(--ease-out) both;
 }
 .page-header {
