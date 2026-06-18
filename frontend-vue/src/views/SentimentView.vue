@@ -275,10 +275,10 @@ watch(result, () => nextTick(() => setTimeout(drawWave, 100)))
           </div>
 
           <!-- 注意力共振图 -->
-          <div class="heatmap-section">
+          <div class="viz-section">
             <div class="section-header">
               <span class="section-title">注意力共振图</span>
-              <span class="section-desc">波浪越高 = 模型越关注 · 颜色越深 = 权重越大</span>
+              <span class="section-desc">波浪越高 = 模型越关注 · 悬停查看词名与权重</span>
             </div>
             <div class="heatmap-wrap">
               <canvas ref="waveCanvas" class="wave-canvas" @mousemove="onWaveMove" @mouseleave="onWaveLeave"></canvas>
@@ -286,9 +286,13 @@ watch(result, () => nextTick(() => setTimeout(drawWave, 100)))
                 {{ waveTooltip.word }} <b>{{ waveTooltip.weight }}%</b>
               </div>
             </div>
-            <div class="heatmap-header">
-              <span class="heatmap-header-title">注意力热力词</span>
-              <span class="heatmap-header-desc">颜色越深权重越高 · 数值为注意力百分比</span>
+          </div>
+
+          <!-- 注意力热力词 -->
+          <div class="viz-section">
+            <div class="section-header">
+              <span class="section-title">注意力热力词</span>
+              <span class="section-desc">颜色越深 = 模型越关注该词</span>
             </div>
             <div class="heatmap">
               <span
@@ -299,7 +303,7 @@ watch(result, () => nextTick(() => setTimeout(drawWave, 100)))
                   backgroundColor: heatColor(result.attn_weights[i], maxAttention(result.attn_weights)),
                   color: heatTextColor(result.attn_weights[i], maxAttention(result.attn_weights))
                 }"
-                :title="`权重: ${(result.attn_weights[i] * 100).toFixed(2)}%`"
+                :title="`${word}: ${(result.attn_weights[i] * 100).toFixed(2)}%`"
               >{{ word }}</span>
             </div>
 
@@ -600,9 +604,13 @@ watch(result, () => nextTick(() => setTimeout(drawWave, 100)))
 }
 
 /* 热力图 */
-.heatmap-section {
+.viz-section {
   padding-top: var(--space-4);
   border-top: 1px solid var(--border-light);
+  margin-top: var(--space-4);
+}
+.viz-section:first-of-type {
+  margin-top: 0;
 }
 
 .section-header {
@@ -644,21 +652,6 @@ watch(result, () => nextTick(() => setTimeout(drawWave, 100)))
   z-index: 10;
 }
 .wave-tip b { color: #c7d2fe; }
-.heatmap-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--space-2);
-}
-.heatmap-header-title {
-  font-size: var(--text-xs);
-  font-weight: var(--font-semibold);
-  color: var(--text-secondary);
-}
-.heatmap-header-desc {
-  font-size: var(--text-xs);
-  color: var(--text-tertiary);
-}
 .heatmap {
   display: flex;
   flex-wrap: wrap;
