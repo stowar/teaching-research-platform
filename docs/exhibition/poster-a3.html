@@ -113,7 +113,7 @@
 
   /* Hero */
   .hero {
-    text-align: center; margin-bottom: 44px; position: relative;
+    text-align: center; margin-bottom: 26px; position: relative;
   }
   .hero-icon {
     width: 48px; height: 48px; margin: 0 auto 14px;
@@ -150,6 +150,37 @@
   }
   .divider span {
     font-size: 10px; letter-spacing: 3px; color: rgba(255,255,255,.30); font-weight: 300;
+  }
+
+  /* 截图 */
+  .screens {
+    display: flex; gap: 8px; margin-bottom: 20px;
+    justify-content: center;
+  }
+  .screen-slot {
+    background: rgba(255,255,255,.02);
+    border: 1px solid rgba(255,255,255,.05);
+    border-radius: 10px; overflow: hidden;
+    flex: 1;
+    box-shadow: 0 6px 28px rgba(0,0,0,.3);
+    position: relative;
+  }
+  .screen-slot::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.05), transparent);
+  }
+  .screen-bar {
+    height: 18px; background: rgba(255,255,255,.02);
+    display: flex; align-items: center; padding: 0 8px; gap: 4px;
+  }
+  .screen-dot { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,.06); }
+  .screen-body {
+    height: 100px; display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,.08); font-size: 26px;
+  }
+  .screen-label {
+    text-align: center; font-size: 8px; color: rgba(255,255,255,.20);
+    letter-spacing: 1px; padding: 6px 0;
   }
 
   /* 卡片 */
@@ -240,6 +271,25 @@
       <div class="main-title">虚拟教研社区</div>
       <div class="sub-title"><b>聚师成林</b> · 研无止境</div>
       <div class="divider"><span>TEACHING RESEARCH COMMUNITY</span></div>
+    </div>
+
+    <!-- 截图展示 -->
+    <div class="screens">
+      <div class="screen-slot">
+        <div class="screen-bar"><span class="screen-dot"></span><span class="screen-dot"></span><span class="screen-dot"></span></div>
+        <div class="screen-body">💬</div>
+        <div class="screen-label">教研社区</div>
+      </div>
+      <div class="screen-slot">
+        <div class="screen-bar"><span class="screen-dot"></span><span class="screen-dot"></span><span class="screen-dot"></span></div>
+        <div class="screen-body">🧠</div>
+        <div class="screen-label">情感分析</div>
+      </div>
+      <div class="screen-slot">
+        <div class="screen-bar"><span class="screen-dot"></span><span class="screen-dot"></span><span class="screen-dot"></span></div>
+        <div class="screen-body">🎨</div>
+        <div class="screen-label">暗色模式</div>
+      </div>
     </div>
 
     <div class="grid">
