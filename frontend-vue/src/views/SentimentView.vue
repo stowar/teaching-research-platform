@@ -76,9 +76,9 @@ function drawWave() {
   const ctx = canvas.getContext('2d')
   const w = canvas.offsetWidth
   const h = canvas.offsetHeight
-  canvas.width = w * devicePixelRatio
-  canvas.height = h * devicePixelRatio
-  ctx.scale(devicePixelRatio, devicePixelRatio)
+  canvas.width = w * window.devicePixelRatio
+  canvas.height = h * window.devicePixelRatio
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio)
 
   ctx.clearRect(0, 0, w, h)
 
