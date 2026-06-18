@@ -60,12 +60,12 @@
     width: 300px; height: 300px;
     border: 1px solid rgba(129,140,248,.08);
     border-radius: 50%;
-    top: 14%; left: -130px;
+    top: 12%; left: -130px;
   }
   .geo-ring.r2 {
     width: 200px; height: 200px;
     top: auto; left: auto;
-    bottom: 5%; right: -80px;
+    bottom: 4%; right: -80px;
     border-color: rgba(165,180,252,.06);
   }
   .geo-square {
@@ -73,16 +73,16 @@
     width: 52px; height: 52px;
     border: 1px solid rgba(129,140,248,.10);
     transform: rotate(45deg);
-    top: 48%; right: 8%;
+    top: 55%; right: 7%;
   }
 
   /* ---- 线条 ---- */
   .line-h {
     position: absolute; left: 0; right: 0; height: 1px; z-index: 2;
   }
-  .l1 { top: 14%; background: linear-gradient(90deg, transparent, rgba(129,140,248,.30), transparent); }
-  .l2 { top: 52%; background: linear-gradient(90deg, transparent, rgba(99,102,241,.15), transparent); }
-  .l3 { top: 86%; background: linear-gradient(90deg, transparent, rgba(129,140,248,.20), transparent); }
+  .l1 { top: 12%; background: linear-gradient(90deg, transparent, rgba(129,140,248,.30), transparent); }
+  .l2 { top: 50%; background: linear-gradient(90deg, transparent, rgba(99,102,241,.15), transparent); }
+  .l3 { top: 68%; background: linear-gradient(90deg, transparent, rgba(129,140,248,.20), transparent); }
 
   /* ---- 光晕 ---- */
   .glow { position: absolute; border-radius: 50%; z-index: 0; }
@@ -90,19 +90,19 @@
     background: radial-gradient(circle, rgba(99,102,241,.10) 0%, transparent 60%); }
   .g2 { width: 420px; height: 420px; bottom: -140px; right: -100px;
     background: radial-gradient(circle, rgba(165,180,252,.07) 0%, transparent 55%); }
-  .g3 { width: 260px; height: 260px; top: 46%; left: 40%;
+  .g3 { width: 260px; height: 260px; top: 44%; left: 38%;
     background: radial-gradient(circle, rgba(129,140,248,.05) 0%, transparent 60%); }
 
   /* ---- 内容 ---- */
   .c {
     position: relative; z-index: 3;
     height: 100%; display: flex; flex-direction: column;
-    padding: 48px 56px;
+    padding: 40px 56px 32px;
   }
 
   /* 徽章 */
   .badge-row {
-    display: flex; justify-content: center; gap: 14px; margin-bottom: 26px;
+    display: flex; justify-content: center; gap: 14px; margin-bottom: 22px;
   }
   .badge {
     padding: 5px 16px; border-radius: 50px;
@@ -114,10 +114,10 @@
 
   /* Hero */
   .hero {
-    text-align: center; margin-bottom: 36px; position: relative;
+    text-align: center; margin-bottom: 28px; position: relative;
   }
   .hero-icon {
-    width: 56px; height: 56px; margin: 0 auto 14px;
+    width: 52px; height: 52px; margin: 0 auto 12px;
     color: #a5b4fc; display: block;
     animation: float 4s ease-in-out infinite;
   }
@@ -127,16 +127,16 @@
     60% { transform: translateY(-2px); }
   }
   .main-title {
-    font-size: 62px; font-weight: 900; letter-spacing: 10px;
+    font-size: 56px; font-weight: 900; letter-spacing: 10px;
     background: linear-gradient(180deg, #fff 0%, #c7d2fe 50%, #818cf8 100%);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     background-clip: text;
-    margin-bottom: 6px; line-height: 1.1;
+    margin-bottom: 4px; line-height: 1.1;
   }
   .sub-title {
-    font-size: 20px; font-weight: 300; letter-spacing: 14px;
+    font-size: 18px; font-weight: 300; letter-spacing: 14px;
     color: rgba(255,255,255,.65);
-    margin-bottom: 16px;
+    margin-bottom: 14px;
   }
   .sub-title b { font-weight: 600; color: rgba(255,255,255,.85); }
   .divider {
@@ -150,47 +150,50 @@
     background: linear-gradient(90deg, rgba(165,180,252,.4), transparent);
   }
   .divider span {
-    font-size: 11px; letter-spacing: 4px; color: rgba(255,255,255,.28); font-weight: 300;
+    font-size: 10px; letter-spacing: 4px; color: rgba(255,255,255,.28); font-weight: 300;
   }
 
-  /* ---- 截图区 ---- */
-  .screens {
-    display: flex; gap: 10px; margin-bottom: 28px;
-    justify-content: center;
+  /* ---- 卡片网格 ---- */
+  .grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px; margin-bottom: 18px;
   }
-  .screen-slot {
-    background: rgba(255,255,255,.025);
-    border: 1px solid rgba(255,255,255,.06);
-    border-radius: 12px; overflow: hidden;
-    flex: 1; max-width: 240px;
-    box-shadow: 0 8px 36px rgba(0,0,0,.3);
+  .card {
     position: relative;
+    background: rgba(255,255,255,.025);
+    border: 1px solid rgba(255,255,255,.05);
+    border-radius: 12px; padding: 14px 16px;
+    overflow: hidden;
   }
-  .screen-slot::before {
+  .card::before {
     content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
     background: linear-gradient(90deg, transparent, rgba(255,255,255,.06), transparent);
   }
-  .screen-bar {
-    height: 24px; background: rgba(255,255,255,.03);
-    display: flex; align-items: center; padding: 0 10px; gap: 5px;
+  .card-inner { display: flex; align-items: flex-start; gap: 10px; position: relative; z-index: 1; }
+  .cicon {
+    width: 34px; height: 34px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; flex-shrink: 0;
   }
-  .screen-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.08); }
-  .screen-body {
-    height: 140px; display: flex; align-items: center; justify-content: center;
-    color: rgba(255,255,255,.10); font-size: 32px;
+  .ci0 { background: rgba(99,102,241,.20); }
+  .ci1 { background: rgba(139,92,246,.20); }
+  .ci2 { background: rgba(6,182,212,.20); }
+  .ci3 { background: rgba(34,197,94,.20); }
+  .ci4 { background: rgba(245,158,11,.20); }
+  .ci5 { background: rgba(239,68,68,.20); }
+  .cbody h4 {
+    font-size: 12px; font-weight: 700; color: #fff;
+    margin-bottom: 2px; letter-spacing: 1px;
   }
-  .screen-label {
-    text-align: center; font-size: 9px; color: rgba(255,255,255,.25);
-    letter-spacing: 1px; padding: 8px 0;
+  .cbody p {
+    font-size: 9px; color: rgba(255,255,255,.32); line-height: 1.55; font-weight: 300;
   }
 
   /* ---- 架构 ---- */
-  .arch-section {
-    margin-bottom: 22px;
-  }
+  .arch-section { margin-bottom: 16px; }
   .arch-label {
     text-align: center; font-size: 9px; font-weight: 500; letter-spacing: 3px;
-    color: rgba(255,255,255,.20); margin-bottom: 10px;
+    color: rgba(255,255,255,.18); margin-bottom: 8px;
   }
   .arch-flow {
     display: flex; align-items: center; gap: 0;
@@ -200,7 +203,7 @@
     background: rgba(255,255,255,.02);
     border: 1px solid rgba(255,255,255,.05);
     border-radius: 10px;
-    padding: 14px 16px; text-align: center;
+    padding: 12px 14px; text-align: center;
     position: relative;
   }
   .arch-node::before {
@@ -209,27 +212,27 @@
   }
   .arch-node .ly {
     font-size: 8px; font-weight: 700; letter-spacing: .12em;
-    color: #818cf8; text-transform: uppercase; margin-bottom: 6px;
+    color: #818cf8; text-transform: uppercase; margin-bottom: 5px;
   }
-  .arch-node h4 { font-size: 12px; font-weight: 700; color: #e8e9f0; margin-bottom: 4px; }
-  .arch-node p { font-size: 9px; color: rgba(255,255,255,.35); line-height: 1.6; }
+  .arch-node h4 { font-size: 11px; font-weight: 700; color: #e8e9f0; margin-bottom: 3px; }
+  .arch-node p { font-size: 8px; color: rgba(255,255,255,.32); line-height: 1.55; }
   .arch-node p b { color: #a5b4fc; font-weight: 600; }
   .arch-arrow {
-    flex-shrink: 0; width: 28px;
+    flex-shrink: 0; width: 24px;
     display: flex; align-items: center; justify-content: center;
-    color: rgba(255,255,255,.10); font-size: 16px;
+    color: rgba(255,255,255,.10); font-size: 14px;
   }
   .arch-rule {
     background: rgba(129,140,248,.03);
     border: 1px dashed rgba(129,140,248,.10);
-    border-radius: 8px; padding: 7px 20px; text-align: center;
-    margin-top: 8px;
-    font-size: 10px; color: rgba(255,255,255,.30);
+    border-radius: 8px; padding: 6px 20px; text-align: center;
+    margin-top: 6px;
+    font-size: 9px; color: rgba(255,255,255,.28);
   }
   .arch-rule strong {
     color: #818cf8; font-weight: 600;
     font-family: "SF Mono", "JetBrains Mono", "Consolas", monospace;
-    font-size: 9px;
+    font-size: 8px;
   }
 
   /* ---- 底部 ---- */
@@ -249,7 +252,7 @@
     display: flex; align-items: center; gap: 12px;
   }
   .qr-box img {
-    width: 56px; height: 56px;
+    width: 54px; height: 54px;
     border-radius: 6px; background: #ffffff; padding: 3px;
   }
   .qr-note {
@@ -290,23 +293,32 @@
       <div class="divider"><span>TEACHING RESEARCH COMMUNITY</span></div>
     </div>
 
-    <!-- 截图区 -->
-    <div class="screens">
-      <div class="screen-slot">
-        <div class="screen-bar"><span class="screen-dot"></span><span class="screen-dot"></span><span class="screen-dot"></span></div>
-        <div class="screen-body">💬</div>
-        <div class="screen-label">教研社区 · 帖子列表</div>
-      </div>
-      <div class="screen-slot">
-        <div class="screen-bar"><span class="screen-dot"></span><span class="screen-dot"></span><span class="screen-dot"></span></div>
-        <div class="screen-body">🧠</div>
-        <div class="screen-label">情感分析 · 热力图</div>
-      </div>
-      <div class="screen-slot">
-        <div class="screen-bar"><span class="screen-dot"></span><span class="screen-dot"></span><span class="screen-dot"></span></div>
-        <div class="screen-body">🎨</div>
-        <div class="screen-label">暗色模式 · 设计系统</div>
-      </div>
+    <!-- 卡片网格 2x3 -->
+    <div class="grid">
+      <div class="card"><div class="card-inner">
+        <div class="cicon ci0">💬</div>
+        <div class="cbody"><h4>教研社区</h4><p>发帖讨论 · Markdown<br>分类筛选 · 点赞通知</p></div>
+      </div></div>
+      <div class="card"><div class="card-inner">
+        <div class="cicon ci1">🧠</div>
+        <div class="cbody"><h4>情感分析</h4><p>BiGRU + Attention<br>热力图可视化</p></div>
+      </div></div>
+      <div class="card"><div class="card-inner">
+        <div class="cicon ci2">🤖</div>
+        <div class="cbody"><h4>AI 聊天室</h4><p>智能教研助手<br>打字机效果</p></div>
+      </div></div>
+      <div class="card"><div class="card-inner">
+        <div class="cicon ci3">📚</div>
+        <div class="cbody"><h4>教研资料部</h4><p>教案课件 · 真题题库<br>一站式下载</p></div>
+      </div></div>
+      <div class="card"><div class="card-inner">
+        <div class="cicon ci4">🔔</div>
+        <div class="cbody"><h4>消息通知</h4><p>实时提醒 · 未读标记<br>一键已读</p></div>
+      </div></div>
+      <div class="card"><div class="card-inner">
+        <div class="cicon ci5">🎨</div>
+        <div class="cbody"><h4>设计系统</h4><p>暗黑双模式<br>Design Tokens</p></div>
+      </div></div>
     </div>
 
     <!-- 架构图 -->
@@ -316,19 +328,19 @@
         <div class="arch-node">
           <div class="ly">Layer 01</div>
           <h4>API 路由层</h4>
-          <p>绑定端点 · response_model 声明<br>仅访问 Service 与 VO · <b>禁入 Model/DO</b></p>
+          <p>绑定端点 · response_model 声明<br>仅访问 Service 与 VO · <b>禁入 DO</b></p>
         </div>
         <div class="arch-arrow">→</div>
         <div class="arch-node">
           <div class="ly">Layer 02</div>
           <h4>Service 业务层</h4>
-          <p>权限校验 · 通知触发 · 计数同步<br><b>DO → VO 转换</b> · 返回 ApiResponse</p>
+          <p>权限校验 · 通知触发<br><b>DO → VO 转换 · ApiResponse</b></p>
         </div>
         <div class="arch-arrow">→</div>
         <div class="arch-node">
           <div class="ly">Layer 03</div>
           <h4>DB 数据层</h4>
-          <p>pymysql · PooledDB 连接池<br>raw SQL · <b>返回 DO 对象</b></p>
+          <p>pymysql · PooledDB<br>raw SQL · <b>返回 DO 对象</b></p>
         </div>
       </div>
       <div class="arch-rule">
