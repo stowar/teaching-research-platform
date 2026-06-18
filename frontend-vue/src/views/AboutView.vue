@@ -26,7 +26,7 @@ import { GraduationCap, Target, Rocket, Wrench, Mail } from 'lucide-vue-next'
       <div class="about-card card" style="animation-delay: 0.1s">
         <div class="card-icon" aria-hidden="true" style="background: var(--color-brand-100); color: var(--color-brand-600)"><Target :size="24" /></div>
         <h2>平台介绍</h2>
-        <p>聚师成林，研无止境。本平台旨在为英语教师提供教研交流、资源共享、AI赋能的一站式协作环境。</p>
+        <p>我所在的高职院校里，英语教师们日常教研靠微信群——文件过期就没了，好经验随聊天记录沉底。我想用一个平台把教研从碎片里捞出来。一个人做全栈，从原型到部署，每一行代码背后都是对"什么样的教研工具真正有用"的思考。</p>
       </div>
 
       <div class="about-card card" style="animation-delay: 0.2s">
