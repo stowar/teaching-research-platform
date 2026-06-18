@@ -300,10 +300,7 @@ watch(result, () => nextTick(() => setTimeout(drawWave, 100)))
                   color: heatTextColor(result.attn_weights[i], maxAttention(result.attn_weights))
                 }"
                 :title="`权重: ${(result.attn_weights[i] * 100).toFixed(2)}%`"
-              >
-                <span class="heat-pct">{{ (result.attn_weights[i] * 100).toFixed(1) }}%</span>
-                {{ word }}
-              </span>
+              >{{ word }}</span>
             </div>
 
           </div>
@@ -675,16 +672,6 @@ watch(result, () => nextTick(() => setTimeout(drawWave, 100)))
   font-weight: var(--font-medium);
   transition: transform var(--duration-fast) var(--ease-out);
   cursor: default;
-  display: inline-flex;
-  flex-direction: column-reverse;
-  align-items: center;
-  line-height: 1.3;
-}
-.heat-pct {
-  font-size: 8px;
-  opacity: 0.7;
-  font-weight: var(--font-normal);
-  line-height: 1;
 }
 
 .heat-word:hover {
