@@ -236,29 +236,27 @@ watch(result, () => nextTick(() => setTimeout(drawWave, 100)))
             </div>
           </div>
 
-          <!-- 注意力热力图 -->
+          <!-- 注意力共振图 -->
           <div class="heatmap-section">
             <div class="section-header">
               <span class="section-title">注意力共振图</span>
               <span class="section-desc">波浪越高 = 模型越关注 · 颜色越深 = 权重越大</span>
             </div>
-            <div class="heatmap-wrap">
-              <canvas ref="waveCanvas" class="wave-canvas"></canvas>
-              <div class="heatmap">
-                <span
-                  v-for="(word, i) in result.words"
-                  :key="i"
-                  class="heat-word"
-                  :style="{
-                    backgroundColor: heatColor(result.attn_weights[i], maxAttention(result.attn_weights)),
-                    color: heatTextColor(result.attn_weights[i], maxAttention(result.attn_weights))
-                  }"
-                  :title="`权重: ${(result.attn_weights[i] * 100).toFixed(2)}%`"
-                >
-                  <span class="heat-pct">{{ (result.attn_weights[i] * 100).toFixed(1) }}%</span>
-                  {{ word }}
-                </span>
-              </div>
+            <canvas ref="waveCanvas" class="wave-canvas"></canvas>
+            <div class="heatmap">
+              <span
+                v-for="(word, i) in result.words"
+                :key="i"
+                class="heat-word"
+                :style="{
+                  backgroundColor: heatColor(result.attn_weights[i], maxAttention(result.attn_weights)),
+                  color: heatTextColor(result.attn_weights[i], maxAttention(result.attn_weights))
+                }"
+                :title="`权重: ${(result.attn_weights[i] * 100).toFixed(2)}%`"
+              >
+                <span class="heat-pct">{{ (result.attn_weights[i] * 100).toFixed(1) }}%</span>
+                {{ word }}
+              </span>
             </div>
 
           </div>
@@ -581,23 +579,16 @@ watch(result, () => nextTick(() => setTimeout(drawWave, 100)))
   color: var(--text-tertiary);
 }
 
-.heatmap-wrap {
-  position: relative;
-}
 .wave-canvas {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  pointer-events: none;
-  z-index: 2;
-  opacity: 0.7;
+  display: block;
+  width: 100%;
+  height: 80px;
+  margin-bottom: var(--space-3);
 }
 .heatmap {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-  position: relative;
-  padding-top: 40px;
 }
 
 .heat-word {
