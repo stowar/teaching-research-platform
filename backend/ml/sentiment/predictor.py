@@ -83,6 +83,26 @@ def predict(text: str):
 
     # 预处理
     words = normalize_string(text)
+
+    # 短文本规则兜底：≤3 个词的输入走关键词匹配，神经网络在极端短文本上不可靠
+    if words and len(words) <= 3:
+        pos_kw = {'好','很好','非常好','特别好','真好','太好了','不错','很不错','挺好的','还行','还可以',
+                   '可以','满意','很满意','优秀','很棒','真棒','超级棒','棒','赞','给力','认真','用心',
+                   '负责','靠谱','专业','喜欢','很喜欢','超喜欢','有意思','有趣','值得','推荐','学到了'}
+        neg_kw = {'差','很差','非常差','太差了','差劲','差了','太差','不好','不怎么样','不行',
+                   '真不行','糟糕','烂','太烂了','垃圾','水','糊弄','敷衍','无聊','枯燥',
+                   '没意思','没劲','失望','无语','浪费时间','不值','后悔','别选','听不懂','差评'}
+        score = 0
+        for w in words:
+            if w in pos_kw: score += 1
+            elif w in neg_kw: score -= 1
+        if score > 0:
+            return {"sentiment":"正面好评","pos_prob":0.65,"neg_prob":0.35,"words":words,"attn_weights":[1.0/len(words)]*len(words)}
+        elif score < 0:
+            return {"sentiment":"负面差评","pos_prob":0.35,"neg_prob":0.65,"words":words,"attn_weights":[1.0/len(words)]*len(words)}
+        else:
+            return {"sentiment":"中性评价","pos_prob":0.50,"neg_prob":0.50,"words":words,"attn_weights":[1.0/len(words)]*len(words)}
+
     if not words:
         return {
             "sentiment": "无法判断",
