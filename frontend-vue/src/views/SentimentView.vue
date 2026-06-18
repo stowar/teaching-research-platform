@@ -68,6 +68,8 @@ function avgAttention(weights) {
 }
 
 const waveCanvas = ref(null)
+const waveTooltip = ref({ show: false, word: '', x: 0, y: 0 })
+let wavePoints = []
 
 function drawWave() {
   if (!result.value) return
@@ -83,6 +85,7 @@ function drawWave() {
   ctx.clearRect(0, 0, w, h)
 
   const weights = result.value.attn_weights
+  const words = result.value.words
   const maxW = maxAttention(weights)
   const n = weights.length
   if (!n || !maxW) return
@@ -90,8 +93,11 @@ function drawWave() {
   const stepX = w / n
   const points = weights.map((v, i) => ({
     x: stepX * i + stepX / 2,
-    y: h - (v / maxW) * (h - 4) - 2
+    y: h - (v / maxW) * (h - 18) - 14,
+    word: words[i],
+    weight: v
   }))
+  wavePoints = points
 
   // 渐变填充
   const grad = ctx.createLinearGradient(0, 0, 0, h)
@@ -99,44 +105,64 @@ function drawWave() {
   grad.addColorStop(0.5, 'rgba(99,102,241,0.15)')
   grad.addColorStop(1, 'rgba(99,102,241,0.02)')
 
-  // 画面积图
   ctx.beginPath()
   ctx.moveTo(points[0].x, h)
   for (let i = 0; i < points.length; i++) {
-    if (i === 0) {
-      ctx.lineTo(points[0].x, points[0].y)
-    } else {
-      const cp1x = (points[i - 1].x + points[i].x) / 2
-      const cp1y = points[i - 1].y
-      const cp2x = (points[i - 1].x + points[i].x) / 2
-      const cp2y = points[i].y
-      ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, points[i].x, points[i].y)
+    if (i === 0) ctx.lineTo(points[0].x, points[0].y)
+    else {
+      const cx = (points[i-1].x + points[i].x) / 2
+      ctx.bezierCurveTo(cx, points[i-1].y, cx, points[i].y, points[i].x, points[i].y)
     }
   }
-  ctx.lineTo(points[points.length - 1].x, h)
+  ctx.lineTo(points[points.length-1].x, h)
   ctx.closePath()
   ctx.fillStyle = grad
   ctx.fill()
 
-  // 画波浪线
+  // 波浪线
   ctx.beginPath()
   ctx.moveTo(points[0].x, points[0].y)
   for (let i = 1; i < points.length; i++) {
-    const cp1x = (points[i - 1].x + points[i].x) / 2
-    const cp2x = (points[i - 1].x + points[i].x) / 2
-    ctx.bezierCurveTo(cp1x, points[i - 1].y, cp2x, points[i].y, points[i].x, points[i].y)
+    const cx = (points[i-1].x + points[i].x) / 2
+    ctx.bezierCurveTo(cx, points[i-1].y, cx, points[i].y, points[i].x, points[i].y)
   }
   ctx.strokeStyle = 'rgba(79,70,229,0.7)'
   ctx.lineWidth = 2
   ctx.stroke()
 
-  // 画顶点
+  // 顶点 + 词标签
   points.forEach(p => {
     ctx.beginPath()
-    ctx.arc(p.x, p.y, 3, 0, Math.PI * 2)
+    ctx.arc(p.x, p.y, 4, 0, Math.PI*2)
     ctx.fillStyle = '#4f46e5'
     ctx.fill()
+    ctx.strokeStyle = '#fff'
+    ctx.lineWidth = 1.5
+    ctx.stroke()
+
+    ctx.font = '10px "PingFang SC","Microsoft YaHei",sans-serif'
+    ctx.fillStyle = '#4f46e5'
+    ctx.textAlign = 'center'
+    ctx.fillText(p.word, p.x, p.y - 10)
   })
+}
+
+function onWaveMove(e) {
+  const canvas = waveCanvas.value
+  if (!canvas) return
+  const rect = canvas.getBoundingClientRect()
+  const mx = e.clientX - rect.left
+  const my = e.clientY - rect.top
+  const near = wavePoints.find(p => Math.hypot(p.x - mx, p.y - my) < 18)
+  if (near) {
+    waveTooltip.value = { show: true, word: near.word, weight: (near.weight*100).toFixed(1), x: e.clientX - rect.left, y: near.y - 24 }
+  } else {
+    waveTooltip.value = { show: false, word: '', weight: '', x: 0, y: 0 }
+  }
+}
+
+function onWaveLeave() {
+  waveTooltip.value = { show: false, word: '', weight: '', x: 0, y: 0 }
 }
 
 watch(result, () => nextTick(() => setTimeout(drawWave, 100)))
@@ -242,7 +268,16 @@ watch(result, () => nextTick(() => setTimeout(drawWave, 100)))
               <span class="section-title">注意力共振图</span>
               <span class="section-desc">波浪越高 = 模型越关注 · 颜色越深 = 权重越大</span>
             </div>
-            <canvas ref="waveCanvas" class="wave-canvas"></canvas>
+            <div class="heatmap-wrap">
+              <canvas ref="waveCanvas" class="wave-canvas" @mousemove="onWaveMove" @mouseleave="onWaveLeave"></canvas>
+              <div v-if="waveTooltip.show" class="wave-tip" :style="{ left: waveTooltip.x + 'px', top: waveTooltip.y + 'px' }">
+                {{ waveTooltip.word }} <b>{{ waveTooltip.weight }}%</b>
+              </div>
+            </div>
+            <div class="heatmap-header">
+              <span class="heatmap-header-title">注意力热力词</span>
+              <span class="heatmap-header-desc">颜色越深权重越高 · 数值为注意力百分比</span>
+            </div>
             <div class="heatmap">
               <span
                 v-for="(word, i) in result.words"
@@ -579,11 +614,41 @@ watch(result, () => nextTick(() => setTimeout(drawWave, 100)))
   color: var(--text-tertiary);
 }
 
+.heatmap-wrap { position: relative; }
 .wave-canvas {
   display: block;
   width: 100%;
-  height: 80px;
-  margin-bottom: var(--space-3);
+  height: 110px;
+  margin-bottom: var(--space-5);
+  cursor: crosshair;
+}
+.wave-tip {
+  position: absolute;
+  pointer-events: none;
+  background: var(--color-brand-600);
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: nowrap;
+  transform: translate(-50%, -100%);
+  z-index: 10;
+}
+.wave-tip b { color: #c7d2fe; }
+.heatmap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+.heatmap-header-title {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  color: var(--text-secondary);
+}
+.heatmap-header-desc {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
 }
 .heatmap {
   display: flex;
