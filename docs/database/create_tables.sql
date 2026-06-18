@@ -55,6 +55,7 @@ CREATE TABLE posts (
     comment_count INT(11) NOT NULL DEFAULT 0 COMMENT '评论数',
     is_pinned TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否置顶：1是 0否',
     is_essence TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否精华：1是 0否',
+    is_anonymous TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否匿名：1是 0否',
     status TINYINT(1) NOT NULL DEFAULT 1 COMMENT '状态：1正常 0隐藏 2删除',
     create_time DATETIME NOT NULL COMMENT '创建时间',
     update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -69,6 +70,7 @@ CREATE TABLE comments (
     user_id INT(11) NOT NULL COMMENT '评论者ID',
     parent_id INT(11) DEFAULT NULL COMMENT '回复的评论ID，NULL表示直接回复帖子',
     content TEXT NOT NULL COMMENT '评论内容',
+    is_anonymous TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否匿名：1是 0否',
     status TINYINT(1) NOT NULL DEFAULT 1 COMMENT '状态：1正常 0隐藏',
     create_time DATETIME NOT NULL COMMENT '创建时间',
     PRIMARY KEY (id)
