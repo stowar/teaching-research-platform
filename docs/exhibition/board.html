@@ -153,36 +153,55 @@
     font-size: 10px; letter-spacing: 4px; color: rgba(255,255,255,.28); font-weight: 300;
   }
 
-  /* ---- 截图展示 ---- */
-  .screens {
-    display: flex; gap: 10px; margin-bottom: 18px;
-    justify-content: center;
+  /* ---- 技术栈 + 亮点 ---- */
+  .tech-section { margin-bottom: 16px; }
+  .tech-cats {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 8px; margin-bottom: 12px;
   }
-  .screen-slot {
+  .tech-cat {
     background: rgba(255,255,255,.02);
     border: 1px solid rgba(255,255,255,.05);
-    border-radius: 12px; overflow: hidden;
-    flex: 1; max-width: 250px;
-    box-shadow: 0 8px 32px rgba(0,0,0,.3);
+    border-radius: 10px; padding: 12px 14px;
     position: relative;
   }
-  .screen-slot::before {
+  .tech-cat::before {
     content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,.06), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.05), transparent);
   }
-  .screen-bar {
-    height: 22px; background: rgba(255,255,255,.025);
-    display: flex; align-items: center; padding: 0 10px; gap: 5px;
+  .tech-cat-label {
+    font-size: 8px; font-weight: 700; letter-spacing: .14em;
+    color: rgba(255,255,255,.20); text-transform: uppercase;
+    margin-bottom: 8px;
   }
-  .screen-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.06); }
-  .screen-body {
-    height: 120px; display: flex; align-items: center; justify-content: center;
-    color: rgba(255,255,255,.08); font-size: 30px;
+  .tech-cat-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+  .tt {
+    font-size: 8px; font-weight: 600; letter-spacing: .03em;
+    padding: 3px 9px; border-radius: 4px;
   }
-  .screen-label {
-    text-align: center; font-size: 8px; color: rgba(255,255,255,.22);
-    letter-spacing: 1px; padding: 7px 0;
+  .tt.be { background: rgba(99,102,241,.18); color: #a5b4fc; }
+  .tt.fe { background: rgba(52,211,153,.12); color: #6ee7b7; }
+  .tt.db { background: rgba(251,191,36,.12); color: #fcd34d; }
+  .tt.de { background: rgba(167,139,250,.15); color: #c4b5fd; }
+  .tt.ai { background: rgba(251,113,133,.12); color: #fda4af; }
+
+  .hl-strip {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 8px;
   }
+  .hl-item {
+    background: rgba(255,255,255,.02);
+    border: 1px solid rgba(255,255,255,.05);
+    border-radius: 10px; padding: 12px 14px;
+    position: relative;
+  }
+  .hl-item::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.05), transparent);
+  }
+  .hl-icon { font-size: 18px; margin-bottom: 6px; }
+  .hl-item h4 { font-size: 11px; font-weight: 700; color: #e8e9f0; margin-bottom: 2px; }
+  .hl-item p { font-size: 8px; color: rgba(255,255,255,.28); line-height: 1.55; font-weight: 300; }
 
   /* ---- 卡片网格 ---- */
   .grid {
@@ -352,22 +371,60 @@
       </div></div>
     </div>
 
-    <!-- 截图展示 -->
-    <div class="screens">
-      <div class="screen-slot">
-        <div class="screen-bar"><span class="screen-dot"></span><span class="screen-dot"></span><span class="screen-dot"></span></div>
-        <div class="screen-body">💬</div>
-        <div class="screen-label">教研社区 · 帖子列表 + 分类筛选</div>
+    <!-- 技术栈 + 设计亮点 -->
+    <div class="tech-section">
+      <div class="tech-cats">
+        <div class="tech-cat">
+          <div class="tech-cat-label">后端</div>
+          <div class="tech-cat-tags">
+            <span class="tt be">Python</span><span class="tt be">FastAPI</span><span class="tt be">JWT</span>
+            <span class="tt be">Pydantic</span><span class="tt be">pymysql</span><span class="tt be">passlib</span>
+          </div>
+        </div>
+        <div class="tech-cat">
+          <div class="tech-cat-label">前端</div>
+          <div class="tech-cat-tags">
+            <span class="tt fe">Vue 3</span><span class="tt fe">Vite</span><span class="tt fe">Pinia</span>
+            <span class="tt fe">Vue Router</span><span class="tt fe">Axios</span><span class="tt fe">markdown-it</span>
+          </div>
+        </div>
+        <div class="tech-cat">
+          <div class="tech-cat-label">数据库 / 部署</div>
+          <div class="tech-cat-tags">
+            <span class="tt db">MySQL</span><span class="tt db">PooledDB</span><span class="tt db">索引优化</span>
+            <span class="tt de">Nginx</span><span class="tt de">Supervisor</span><span class="tt de">阿里云 ECS</span>
+          </div>
+        </div>
+        <div class="tech-cat">
+          <div class="tech-cat-label">AI / ML</div>
+          <div class="tech-cat-tags">
+            <span class="tt ai">PyTorch</span><span class="tt ai">BiGRU</span><span class="tt ai">Self-Attention</span>
+            <span class="tt ai">Embedding</span><span class="tt ai">Softmax</span>
+          </div>
+        </div>
       </div>
-      <div class="screen-slot">
-        <div class="screen-bar"><span class="screen-dot"></span><span class="screen-dot"></span><span class="screen-dot"></span></div>
-        <div class="screen-body">🧠</div>
-        <div class="screen-label">情感分析 · 注意力权重热力图</div>
-      </div>
-      <div class="screen-slot">
-        <div class="screen-bar"><span class="screen-dot"></span><span class="screen-dot"></span><span class="screen-dot"></span></div>
-        <div class="screen-body">🎨</div>
-        <div class="screen-label">暗色模式 · Design Tokens 设计系统</div>
+
+      <div class="hl-strip">
+        <div class="hl-item">
+          <div class="hl-icon">🏗️</div>
+          <h4>VO / DO 分层架构</h4>
+          <p>DO 含全量 DB 字段 · VO 脱敏+格式化 · ApiResponse&lt;T&gt; 泛型信封 · API 禁入 Model 层</p>
+        </div>
+        <div class="hl-item">
+          <div class="hl-icon">🛡️</div>
+          <h4>全局异常拦截</h4>
+          <p>@app.exception_handler 统一捕获 · 1 个 Handler 替代 16 处 try-except · JSON 格式错误响应</p>
+        </div>
+        <div class="hl-item">
+          <div class="hl-icon">⚡</div>
+          <h4>连接池 + 性能优化</h4>
+          <p>PooledDB 10 连接 · 单次查询 1-2ms · posts 表 4 索引 · 反规范化计数字段</p>
+        </div>
+        <div class="hl-item">
+          <div class="hl-icon">🔐</div>
+          <h4>安全防护</h4>
+          <p>bcrypt 密码哈希 · JWT 过期校验 · status 禁用检查 · 密码不在任何响应中出现</p>
+        </div>
       </div>
     </div>
 
