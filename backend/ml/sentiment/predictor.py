@@ -112,11 +112,9 @@ def predict(text: str):
     pos_prob = float(probs[0][1])
     sentiment = "正面好评" if pos_prob > neg_prob else "负面差评"
 
-    # 提取有效词的注意力权重（去掉填充部分），对有效词重新归一化使和为 1
+    # 提取有效词的注意力权重（去掉填充部分）
     attn = attn_weights.squeeze(0).squeeze(1).cpu().numpy().tolist()
-    attn = attn[:original_len]
-    total = sum(attn)
-    attn = [round(a / total, 4) for a in attn] if total > 0 else attn
+    attn = [round(a, 6) for a in attn[:original_len]]
 
     return {
         "sentiment": sentiment,

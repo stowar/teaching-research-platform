@@ -165,7 +165,7 @@ function onWaveMove(e) {
   }
   if (idx >= 0) {
     const p = wavePoints[idx]
-    waveTooltip.value = { show: true, word: p.word, weight: (p.weight*100).toFixed(0), x: p.x, y: p.y - 28 }
+    waveTooltip.value = { show: true, word: p.word, weight: (p.weight*100).toFixed(2), x: p.x, y: p.y - 28 }
   } else {
     waveTooltip.value = { show: false, word: '', weight: '', x: 0, y: 0 }
   }
@@ -283,7 +283,7 @@ watch(result, () => nextTick(() => setTimeout(drawWave, 100)))
             <div class="heatmap-wrap">
               <canvas ref="waveCanvas" class="wave-canvas" @mousemove="onWaveMove" @mouseleave="onWaveLeave"></canvas>
               <div v-if="waveTooltip.show" class="wave-tip" :style="{ left: waveTooltip.x + 'px', top: waveTooltip.y + 'px' }">
-                {{ waveTooltip.word }} <b>{{ waveTooltip.weight }}</b>
+                {{ waveTooltip.word }} <b>{{ waveTooltip.weight }}%</b>
               </div>
             </div>
           </div>
@@ -303,7 +303,7 @@ watch(result, () => nextTick(() => setTimeout(drawWave, 100)))
                   backgroundColor: heatColor(result.attn_weights[i], maxAttention(result.attn_weights)),
                   color: heatTextColor(result.attn_weights[i], maxAttention(result.attn_weights))
                 }"
-                :title="`${word}: ${(result.attn_weights[i] * 100).toFixed(0)}`"
+                :title="`权重: ${(result.attn_weights[i] * 100).toFixed(2)}%`"
               >{{ word }}</span>
             </div>
 
