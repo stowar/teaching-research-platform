@@ -4,7 +4,7 @@
  * 展示平台介绍、核心功能、技术栈等信息
  * 使用 Design Tokens 和卡片布局，保持与其他页面一致的视觉语言
  */
-import { GraduationCap, Target, Rocket, Wrench, Mail } from 'lucide-vue-next'
+import { GraduationCap, Target, Rocket, Wrench, Zap, Mail } from 'lucide-vue-next'
 </script>
 
 <template>
@@ -50,6 +50,12 @@ import { GraduationCap, Target, Rocket, Wrench, Mail } from 'lucide-vue-next'
           <li><strong>数据库</strong>：MySQL</li>
           <li><strong>部署</strong>：阿里云 ECS + Nginx + Supervisor</li>
         </ul>
+      </div>
+
+      <div class="about-card card" style="animation-delay: 0.35s">
+        <div class="card-icon" aria-hidden="true" style="background: var(--color-warning-100); color: var(--color-warning-600)"><Zap :size="24" /></div>
+        <h2>设计哲学</h2>
+        <p>情感模型搭载了六层温度缩放体系——注意力熵检测、极端词保护、置信度门控、中性词强制高温、转折词触发机制、短文本规则兜底。温度不是万能的，它只能让模型不那么自信，翻不了方向。真正的天花板是数据——足够的标注数据远比精巧的后处理更有价值。承认模型的局限，用规则守住底线，这是一种工程上的诚实。</p>
       </div>
 
       <div class="about-card card" style="animation-delay: 0.4s">
