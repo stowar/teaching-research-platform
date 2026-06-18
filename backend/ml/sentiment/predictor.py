@@ -155,28 +155,45 @@ def predict(text: str):
     max_entropy = float(torch.log(torch.tensor(original_len, dtype=torch.float)))
     # 熵比：0=极度集中(清晰评价) 1=完全均匀(模糊评价)
     entropy_ratio = attn_entropy / (max_entropy + 1e-8)
-    # 温度在 2.0 ~ 5.0 之间动态调节
-    temperature = 2.0 + entropy_ratio * 3.0
+
+    # 先用低温做一次试探性 softmax，判断模型是否确定
+    probs_raw = F.softmax(output, dim=1)
+    prey_raw_pos = float(probs_raw[0][1])
+
+    # 中性信号词：出现时不盲信模型的极端判断
+    neutral_kw = {'还行','一般','吧','普通','差不多','就那样','还行吧','不好不坏',
+                  '勉强','凑合','马马虎虎','说得过去','过得去','中规中矩','平平'}
+    has_neutral_kw = any(kw in text for kw in neutral_kw)
+
+    # 温度选择：模型确定(>80%或<20%)降温，但中性/模糊评语不降温
+    # 有中性词 → 强制高温高混，趋向 50%
+    if has_neutral_kw:
+        temperature = 3.0 + entropy_ratio * 2.5
+        max_blend = 0.8
+    elif (prey_raw_pos > 0.80 or prey_raw_pos < 0.20):
+        temperature = 1.2 + entropy_ratio * 1.0
+        max_blend = 0.1
+    elif 0.35 < prey_raw_pos < 0.65:
+        temperature = 2.0 + entropy_ratio * 3.0
+        max_blend = 0.7
+    else:
+        t = min(1.0, abs(prey_raw_pos - 0.5) / 0.3)
+        temperature = (2.0 + entropy_ratio * 3.0) * (1-t) + (1.2 + entropy_ratio * 1.0) * t
+        max_blend = max(0.1, 0.7 * (1-t) + 0.1 * t)
+
+    # 极端情绪词再降一波
+    extreme_kw = {'太棒','超级','无敌','绝了','完美','爱死','令人发指','恶心','极其','避雷',
+                  '全校最','史上最','这辈子最','受不了','想吐','崩溃','疯了','救命','天哪',
+                  '从来没有','无可挑剔','不可思议','惊艳','震撼','炸裂'}
+    if any(kw in text for kw in extreme_kw):
+        temperature = 1.0 + entropy_ratio * 0.5
+        max_blend = 0.0
 
     probs = F.softmax(output / temperature, dim=1)
     raw_neg = float(probs[0][0])
     raw_pos = float(probs[0][1])
-
-    # 检测极端情绪词：出现时大幅降温降混，让模型敢于给极端分
-    extreme_kw = {'太棒','超级','无敌','绝了','完美','爱死','令人发指','恶心','极其','避雷',
-                  '全校最','史上最','这辈子最','受不了','想吐','崩溃','疯了','救命','天哪',
-                  '从来没有','无可挑剔','不可思议','惊艳','震撼','炸裂'}
-    has_extreme = any(kw in text for kw in extreme_kw)
-
-    # 温度：极端词用低温保留强信号，模糊评语用高温趋向 50%
-    if has_extreme:
-        temperature = 1.2 + entropy_ratio * 1.0
-        max_blend = 0.1
-    else:
-        temperature = 2.0 + entropy_ratio * 3.0
-        max_blend = 0.7
-    # 原始模型的确定度（0=50% 1=100%）：模型自己都不确定才需要混
     raw_conf = abs(raw_pos - raw_neg)
+
     blend = min(entropy_ratio * max_blend, (1 - raw_conf) * 0.85)
     neg_prob = round(raw_neg * (1 - blend) + 0.5 * blend, 4)
     pos_prob = round(raw_pos * (1 - blend) + 0.5 * blend, 4)
