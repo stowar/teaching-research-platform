@@ -69,12 +69,12 @@ function avgAttention(weights) {
 
 const waveCanvas = ref(null)
 const waveTooltip = ref({ show: false, word: '', x: 0, y: 0 })
+const hoverIdx = ref(-1)
 let wavePoints = []
 
 function drawWave() {
-  if (!result.value) return
   const canvas = waveCanvas.value
-  if (!canvas) return
+  if (!canvas || !result.value) return
   const ctx = canvas.getContext('2d')
   const w = canvas.offsetWidth
   const h = canvas.offsetHeight
@@ -91,9 +91,11 @@ function drawWave() {
   if (!n || !maxW) return
 
   const stepX = w / n
+  const padTop = 22
+  const padBot = 10
   const points = weights.map((v, i) => ({
     x: stepX * i + stepX / 2,
-    y: h - (v / maxW) * (h - 18) - 14,
+    y: padTop + (h - padTop - padBot) * (1 - v / maxW),
     word: words[i],
     weight: v
   }))
@@ -102,7 +104,7 @@ function drawWave() {
   // 渐变填充
   const grad = ctx.createLinearGradient(0, 0, 0, h)
   grad.addColorStop(0, 'rgba(79,70,229,0.35)')
-  grad.addColorStop(0.5, 'rgba(99,102,241,0.15)')
+  grad.addColorStop(0.5, 'rgba(99,102,241,0.12)')
   grad.addColorStop(1, 'rgba(99,102,241,0.02)')
 
   ctx.beginPath()
@@ -127,23 +129,26 @@ function drawWave() {
     ctx.bezierCurveTo(cx, points[i-1].y, cx, points[i].y, points[i].x, points[i].y)
   }
   ctx.strokeStyle = 'rgba(79,70,229,0.7)'
-  ctx.lineWidth = 2
+  ctx.lineWidth = 1.5
   ctx.stroke()
 
   // 顶点 + 词标签
-  points.forEach(p => {
+  points.forEach((p, i) => {
+    const r = i === hoverIdx.value ? 7 : 4
     ctx.beginPath()
-    ctx.arc(p.x, p.y, 4, 0, Math.PI*2)
-    ctx.fillStyle = '#4f46e5'
+    ctx.arc(p.x, p.y, r, 0, Math.PI*2)
+    ctx.fillStyle = i === hoverIdx.value ? '#6366f1' : '#4f46e5'
     ctx.fill()
-    ctx.strokeStyle = '#fff'
-    ctx.lineWidth = 1.5
-    ctx.stroke()
+    if (i === hoverIdx.value) {
+      ctx.strokeStyle = '#fff'
+      ctx.lineWidth = 2.5
+      ctx.stroke()
+    }
 
-    ctx.font = '10px "PingFang SC","Microsoft YaHei",sans-serif'
-    ctx.fillStyle = '#4f46e5'
+    ctx.font = (i === hoverIdx.value ? 'bold 10px' : '9px') + ' "PingFang SC","Microsoft YaHei",sans-serif'
+    ctx.fillStyle = '#4338ca'
     ctx.textAlign = 'center'
-    ctx.fillText(p.word, p.x, p.y - 10)
+    ctx.fillText(p.word, p.x, p.y - r - 6)
   })
 }
 
@@ -153,16 +158,23 @@ function onWaveMove(e) {
   const rect = canvas.getBoundingClientRect()
   const mx = e.clientX - rect.left
   const my = e.clientY - rect.top
-  const near = wavePoints.find(p => Math.hypot(p.x - mx, p.y - my) < 18)
-  if (near) {
-    waveTooltip.value = { show: true, word: near.word, weight: (near.weight*100).toFixed(1), x: e.clientX - rect.left, y: near.y - 24 }
+  const idx = wavePoints.findIndex(p => Math.hypot(p.x - mx, p.y - my) < 20)
+  if (idx !== hoverIdx.value) {
+    hoverIdx.value = idx
+    drawWave()
+  }
+  if (idx >= 0) {
+    const p = wavePoints[idx]
+    waveTooltip.value = { show: true, word: p.word, weight: (p.weight*100).toFixed(1), x: p.x, y: p.y - 28 }
   } else {
     waveTooltip.value = { show: false, word: '', weight: '', x: 0, y: 0 }
   }
 }
 
 function onWaveLeave() {
+  hoverIdx.value = -1
   waveTooltip.value = { show: false, word: '', weight: '', x: 0, y: 0 }
+  drawWave()
 }
 
 watch(result, () => nextTick(() => setTimeout(drawWave, 100)))
@@ -618,7 +630,7 @@ watch(result, () => nextTick(() => setTimeout(drawWave, 100)))
 .wave-canvas {
   display: block;
   width: 100%;
-  height: 110px;
+  height: 150px;
   margin-bottom: var(--space-5);
   cursor: crosshair;
 }
