@@ -9,16 +9,9 @@
 
   body {
     font-family: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", -apple-system, sans-serif;
-    background: #111;
-    display: flex; justify-content: center; align-items: flex-start;
-    padding: 40px;
-  }
-
-  .hi-res {
-    width: 3508px; height: 4961px; overflow: hidden;
-  }
-  .hi-res-inner {
-    transform: scale(5); transform-origin: top left;
+    background: #d1d5db;
+    display: flex; justify-content: center; align-items: center;
+    min-height: 100vh; padding: 20px;
   }
 
   .poster {
@@ -32,7 +25,7 @@
 
   @media print {
     body { background: white; padding: 0; }
-    .hi-res { width: 297mm; height: 420mm; }
+    .poster { width: 297mm; height: 420mm; box-shadow: none; }
   }
 
   /* ---- 点阵 ---- */
@@ -249,7 +242,7 @@
 </style>
 </head>
 <body>
-<div class="hi-res"><div class="hi-res-inner"><div class="poster">
+<div class="poster">
   <div class="dots"></div>
   <div class="flow"></div>
   <div class="glow g1"></div>
@@ -347,6 +340,6 @@
       </div>
     </div>
   </div>
-</div></div></div>
+</div>
 </body>
 </html>
