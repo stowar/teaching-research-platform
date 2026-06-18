@@ -153,6 +153,37 @@
     font-size: 10px; letter-spacing: 4px; color: rgba(255,255,255,.28); font-weight: 300;
   }
 
+  /* ---- 截图展示 ---- */
+  .screens {
+    display: flex; gap: 10px; margin-bottom: 18px;
+    justify-content: center;
+  }
+  .screen-slot {
+    background: rgba(255,255,255,.02);
+    border: 1px solid rgba(255,255,255,.05);
+    border-radius: 12px; overflow: hidden;
+    flex: 1; max-width: 250px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.3);
+    position: relative;
+  }
+  .screen-slot::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.06), transparent);
+  }
+  .screen-bar {
+    height: 22px; background: rgba(255,255,255,.025);
+    display: flex; align-items: center; padding: 0 10px; gap: 5px;
+  }
+  .screen-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.06); }
+  .screen-body {
+    height: 120px; display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,.08); font-size: 30px;
+  }
+  .screen-label {
+    text-align: center; font-size: 8px; color: rgba(255,255,255,.22);
+    letter-spacing: 1px; padding: 7px 0;
+  }
+
   /* ---- 卡片网格 ---- */
   .grid {
     display: grid; grid-template-columns: 1fr 1fr 1fr;
@@ -319,6 +350,25 @@
         <div class="cicon ci5">🎨</div>
         <div class="cbody"><h4>设计系统</h4><p>暗黑双模式<br>Design Tokens</p></div>
       </div></div>
+    </div>
+
+    <!-- 截图展示 -->
+    <div class="screens">
+      <div class="screen-slot">
+        <div class="screen-bar"><span class="screen-dot"></span><span class="screen-dot"></span><span class="screen-dot"></span></div>
+        <div class="screen-body">💬</div>
+        <div class="screen-label">教研社区 · 帖子列表 + 分类筛选</div>
+      </div>
+      <div class="screen-slot">
+        <div class="screen-bar"><span class="screen-dot"></span><span class="screen-dot"></span><span class="screen-dot"></span></div>
+        <div class="screen-body">🧠</div>
+        <div class="screen-label">情感分析 · 注意力权重热力图</div>
+      </div>
+      <div class="screen-slot">
+        <div class="screen-bar"><span class="screen-dot"></span><span class="screen-dot"></span><span class="screen-dot"></span></div>
+        <div class="screen-body">🎨</div>
+        <div class="screen-label">暗色模式 · Design Tokens 设计系统</div>
+      </div>
     </div>
 
     <!-- 架构图 -->
