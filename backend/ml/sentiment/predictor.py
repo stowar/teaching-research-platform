@@ -162,8 +162,20 @@ def predict(text: str):
     raw_neg = float(probs[0][0])
     raw_pos = float(probs[0][1])
 
-    # 混合比例：把模型输出向 50% 拉，熵越高拉得越多
-    blend = entropy_ratio * 0.7  # 最多拉 70% 向中间
+    # 检测极端情绪词：出现时大幅降温降混，让模型敢于给极端分
+    extreme_kw = {'太棒','超级','无敌','绝了','完美','爱死','令人发指','恶心','极其','避雷',
+                  '全校最','史上最','这辈子最','受不了','想吐','崩溃','疯了','救命','天哪',
+                  '从来没有','无可挑剔','不可思议','惊艳','震撼','炸裂'}
+    has_extreme = any(kw in text for kw in extreme_kw)
+
+    # 温度：极端词用低温保留强信号，模糊评语用高温趋向 50%
+    if has_extreme:
+        temperature = 1.2 + entropy_ratio * 1.0
+        max_blend = 0.1
+    else:
+        temperature = 2.0 + entropy_ratio * 3.0
+        max_blend = 0.7
+    blend = entropy_ratio * max_blend  # 混合比例：把模型输出向 50% 拉
     neg_prob = round(raw_neg * (1 - blend) + 0.5 * blend, 4)
     pos_prob = round(raw_pos * (1 - blend) + 0.5 * blend, 4)
 
