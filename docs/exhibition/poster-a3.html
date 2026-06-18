@@ -168,6 +168,19 @@
     display: block;
     border-radius: 10px;
   }
+  .screen-cap {
+    text-align: center;
+    margin-top: 6px;
+  }
+  .screen-cap .cap-title {
+    font-size: 9px; font-weight: 600; color: rgba(255,255,255,.50);
+    letter-spacing: 1px;
+  }
+  .screen-cap .cap-desc {
+    font-size: 7px; color: rgba(255,255,255,.22);
+    letter-spacing: .5px;
+    margin-top: 2px;
+  }
 
   /* 卡片 */
   .grid {
@@ -261,14 +274,26 @@
 
     <!-- 截图展示 -->
     <div class="screens">
-      <div class="screen-slot">
-        <img src="screen1.png" alt="Screen 1">
+      <div>
+        <div class="screen-slot"><img src="screen1.png" alt="教研社区"></div>
+        <div class="screen-cap">
+          <div class="cap-title">教研社区</div>
+          <div class="cap-desc">帖子列表 · 分类筛选 · 搜索分页</div>
+        </div>
       </div>
-      <div class="screen-slot">
-        <img src="screen2.png" alt="Screen 2">
+      <div>
+        <div class="screen-slot"><img src="screen2.png" alt="情感分析"></div>
+        <div class="screen-cap">
+          <div class="cap-title">情感分析</div>
+          <div class="cap-desc">自研 Attention-GRU 模型 · 注意力热力图</div>
+        </div>
       </div>
-      <div class="screen-slot">
-        <img src="screen3.png" alt="Screen 3">
+      <div>
+        <div class="screen-slot"><img src="screen3.png" alt="设计系统"></div>
+        <div class="screen-cap">
+          <div class="cap-title">设计系统</div>
+          <div class="cap-desc">暗色模式 · Design Tokens · 玻璃拟态</div>
+        </div>
       </div>
     </div>
 
