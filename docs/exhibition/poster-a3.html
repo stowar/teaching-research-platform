@@ -7,27 +7,20 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
-  /* A3: 297×420mm at 300dpi = 3508×4961px. Screen preview at ~1/3 scale. */
   body {
     font-family: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", -apple-system, sans-serif;
     background: #d1d5db;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    padding: 20px;
+    display: flex; justify-content: center; align-items: center;
+    min-height: 100vh; padding: 20px;
   }
 
   .poster {
-    width: 701px;
-    height: 992px;
-    background: #0c0c14;
-    color: #e8e9f0;
-    overflow: hidden;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 20px 80px rgba(0,0,0,.3);
+    width: 701px; height: 992px;
+    position: relative; overflow: hidden;
+    background: radial-gradient(ellipse at 30% 20%, #1a1050 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 80%, #0d1b3e 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, #0f0829 0%, #060418 100%);
+    box-shadow: 0 20px 80px rgba(0,0,0,.35);
   }
 
   @media print {
@@ -35,203 +28,263 @@
     .poster { width: 297mm; height: 420mm; box-shadow: none; }
   }
 
-  /* ---- Glow ---- */
-  .glow-t { position: absolute; top: -60px; right: -80px; width: 500px; height: 500px;
-    background: radial-gradient(circle, rgba(99,102,241,.12) 0%, transparent 60%); pointer-events: none; }
-  .glow-b { position: absolute; bottom: -40px; left: -60px; width: 400px; height: 400px;
-    background: radial-gradient(circle, rgba(167,139,250,.10) 0%, transparent 60%); pointer-events: none; }
+  /* ---- 点阵 ---- */
+  .dots {
+    position: absolute; inset: 0; z-index: 1; opacity: .04;
+    background-image: radial-gradient(circle at 20% 30%, #fff 1px, transparent 1px),
+                      radial-gradient(circle at 70% 60%, #fff .8px, transparent .8px),
+                      radial-gradient(circle at 40% 80%, #fff 1.2px, transparent 1.2px);
+    background-size: 28px 28px, 44px 44px, 36px 36px;
+    background-position: 0 0, 14px 14px, 7px 21px;
+  }
 
-  /* ---- Hero ---- */
+  /* ---- 流动渐变 ---- */
+  .flow {
+    position: absolute; inset: 0; z-index: 0;
+    background: linear-gradient(160deg, #6366f1, #4f46e5, #a5b4fc, #818cf8, #3730a3, #6366f1);
+    background-size: 300% 300%;
+    animation: flow 12s ease infinite;
+    opacity: .14;
+    mix-blend-mode: screen;
+  }
+  @keyframes flow {
+    0%,100% { background-position: 0% 0%; }
+    25% { background-position: 100% 0%; }
+    50% { background-position: 100% 100%; }
+    75% { background-position: 0% 100%; }
+  }
+
+  /* ---- 几何装饰 ---- */
+  .geo-ring {
+    position: absolute; z-index: 1;
+    width: 280px; height: 280px;
+    border: 1px solid rgba(129,140,248,.08);
+    border-radius: 50%;
+    top: 16%; left: -110px;
+  }
+  .geo-ring.r2 {
+    width: 180px; height: 180px;
+    top: auto; left: auto;
+    bottom: 6%; right: -60px;
+    border-color: rgba(165,180,252,.06);
+  }
+  .geo-square {
+    position: absolute; z-index: 1;
+    width: 48px; height: 48px;
+    border: 1px solid rgba(129,140,248,.10);
+    transform: rotate(45deg);
+    top: 52%; right: 12%;
+  }
+
+  /* ---- 线条 ---- */
+  .line-h {
+    position: absolute; left: 0; right: 0; height: 1px; z-index: 2;
+  }
+  .l1 { top: 16%; background: linear-gradient(90deg, transparent, rgba(129,140,248,.3), transparent); }
+  .l2 { top: 78%; background: linear-gradient(90deg, transparent, rgba(99,102,241,.15), transparent); }
+
+  /* ---- 光晕 ---- */
+  .glow { position: absolute; border-radius: 50%; z-index: 0; }
+  .g1 { width: 500px; height: 500px; top: -200px; left: -160px;
+    background: radial-gradient(circle, rgba(99,102,241,.12) 0%, transparent 60%); }
+  .g2 { width: 360px; height: 360px; bottom: -120px; right: -80px;
+    background: radial-gradient(circle, rgba(165,180,252,.08) 0%, transparent 55%); }
+  .g3 { width: 200px; height: 200px; top: 44%; left: 50%;
+    background: radial-gradient(circle, rgba(129,140,248,.06) 0%, transparent 60%); }
+
+  /* ---- 内容 ---- */
+  .c {
+    position: relative; z-index: 3;
+    height: 100%; display: flex; flex-direction: column;
+    padding: 56px 60px;
+  }
+
+  /* 徽章 */
+  .badge-row {
+    display: flex; justify-content: center; gap: 12px; margin-bottom: 28px;
+  }
+  .badge {
+    padding: 4px 14px; border-radius: 50px;
+    font-size: 10px; font-weight: 500; letter-spacing: 1px;
+    border: 1px solid rgba(255,255,255,.10);
+    background: rgba(255,255,255,.04);
+    color: rgba(255,255,255,.45);
+  }
+
+  /* Hero */
   .hero {
-    position: relative; z-index: 1;
-    flex: 1;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    text-align: center;
-    padding: 40px 60px;
+    text-align: center; margin-bottom: 44px; position: relative;
   }
-  .hero-tag {
-    font-size: 12px; font-weight: 700; letter-spacing: .2em;
-    color: #818cf8; text-transform: uppercase;
-    margin-bottom: 20px;
-    padding: 6px 16px;
-    border: 1px solid rgba(129,140,248,.25);
-    border-radius: 6px;
+  .hero-icon {
+    width: 48px; height: 48px; margin: 0 auto 14px;
+    color: #a5b4fc; display: block;
+    animation: float 4s ease-in-out infinite;
   }
-  .hero h1 {
-    font-size: 52px; font-weight: 900; letter-spacing: -.02em;
-    line-height: 1.15; color: #f1f2f6;
+  @keyframes float {
+    0%,100% { transform: translateY(0); }
+    30% { transform: translateY(-8px); }
+    60% { transform: translateY(-2px); }
+  }
+  .main-title {
+    font-size: 56px; font-weight: 900; letter-spacing: 8px;
+    background: linear-gradient(180deg, #fff 0%, #c7d2fe 50%, #818cf8 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 6px; line-height: 1.1;
+  }
+  .sub-title {
+    font-size: 18px; font-weight: 300; letter-spacing: 12px;
+    color: rgba(255,255,255,.65);
     margin-bottom: 16px;
   }
-  .hero h1 span {
-    background: linear-gradient(135deg, #818cf8, #a78bfa);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+  .sub-title b { font-weight: 600; color: rgba(255,255,255,.85); }
+  .divider {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
   }
-  .hero-sub {
-    font-size: 16px; color: #9093a8; line-height: 1.7;
-    max-width: 480px; margin-bottom: 8px;
+  .divider::before, .divider::after {
+    content: ''; width: 50px; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(165,180,252,.4));
+  }
+  .divider::after {
+    background: linear-gradient(90deg, rgba(165,180,252,.4), transparent);
+  }
+  .divider span {
+    font-size: 10px; letter-spacing: 3px; color: rgba(255,255,255,.30); font-weight: 300;
   }
 
-  /* ---- Screenshot Area ---- */
-  .screens {
-    position: relative; z-index: 1;
-    display: flex; gap: 14px;
-    padding: 0 48px 20px;
-    justify-content: center;
+  /* 卡片 */
+  .grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; flex: 1; margin-bottom: 32px;
   }
-  .screen-slot {
-    background: rgba(255,255,255,.03);
-    border: 1px solid rgba(255,255,255,.08);
-    border-radius: 14px;
+  .card {
+    position: relative;
+    background: rgba(255,255,255,.025);
+    border: 1px solid rgba(255,255,255,.05);
+    border-radius: 14px; padding: 18px 20px;
     overflow: hidden;
-    flex: 1; max-width: 300px;
-    box-shadow: 0 8px 40px rgba(0,0,0,.4);
   }
-  .screen-bar {
-    height: 28px;
-    background: rgba(255,255,255,.04);
-    display: flex; align-items: center;
-    padding: 0 12px; gap: 6px;
+  .card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.06), transparent);
   }
-  .screen-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.12); }
-  .screen-body {
-    height: 180px;
+  .card-inner { display: flex; align-items: flex-start; gap: 12px; position: relative; z-index: 1; }
+  .cicon {
+    width: 38px; height: 38px; border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
-    color: rgba(255,255,255,.15);
-    font-size: 40px;
+    font-size: 17px; flex-shrink: 0;
   }
-  .screen-label {
-    text-align: center; font-size: 10px; color: #5c5f78;
-    padding: 10px 0; letter-spacing: .06em;
+  .ci0 { background: rgba(99,102,241,.20); }
+  .ci1 { background: rgba(139,92,246,.20); }
+  .ci2 { background: rgba(6,182,212,.20); }
+  .ci3 { background: rgba(34,197,94,.20); }
+  .ci4 { background: rgba(245,158,11,.20); }
+  .ci5 { background: rgba(239,68,68,.20); }
+  .cbody h4 {
+    font-size: 14px; font-weight: 700; color: #fff;
+    margin-bottom: 3px; letter-spacing: 1px;
+  }
+  .cbody p {
+    font-size: 10px; color: rgba(255,255,255,.35); line-height: 1.6; font-weight: 300;
   }
 
-  /* ---- Feature Strip ---- */
-  .feat-strip {
-    position: relative; z-index: 1;
-    display: flex; gap: 0;
-    border-top: 1px solid rgba(255,255,255,.06);
-    padding: 0 48px;
+  /* 底部 */
+  .footer { display: flex; justify-content: space-between; align-items: flex-end; }
+  .fleft { display: flex; flex-direction: column; gap: 8px; }
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag {
+    padding: 4px 10px; border-radius: 50px;
+    font-size: 9px; font-weight: 400; letter-spacing: .5px;
+    background: rgba(255,255,255,.04); color: rgba(255,255,255,.38);
+    border: 1px solid rgba(255,255,255,.05);
   }
-  .feat-item {
-    flex: 1; text-align: center;
-    padding: 24px 16px;
-    border-right: 1px solid rgba(255,255,255,.04);
-  }
-  .feat-item:last-child { border-right: none; }
-  .feat-item .icon { font-size: 26px; margin-bottom: 8px; }
-  .feat-item h3 { font-size: 13px; font-weight: 700; color: #e8e9f0; margin-bottom: 4px; }
-  .feat-item p { font-size: 9px; color: #686b80; line-height: 1.5; }
-
-  /* ---- Bottom Bar ---- */
-  .bottombar {
-    position: relative; z-index: 1;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 20px 48px;
-    border-top: 1px solid rgba(255,255,255,.06);
-  }
-  .tech-tags { display: flex; gap: 8px; flex-wrap: wrap; }
-  .t-tag {
-    font-size: 9px; font-weight: 600; letter-spacing: .04em;
-    padding: 4px 10px; border-radius: 5px;
-    color: rgba(255,255,255,.5);
-    border: 1px solid rgba(255,255,255,.08);
-  }
-  .qr-area {
+  .qr-box {
     display: flex; align-items: center; gap: 12px;
   }
-  .qr-area img {
-    width: 60px; height: 60px;
+  .qr-box img {
+    width: 54px; height: 54px;
     border-radius: 6px; background: #ffffff; padding: 3px;
   }
-  .qr-area .qr-info {
-    font-size: 9px; color: #686b80; line-height: 1.6;
+  .qr-note {
+    font-size: 9px; color: rgba(255,255,255,.20); letter-spacing: 2px;
+    font-weight: 300; text-align: right; line-height: 1.6;
   }
-  .qr-area .qr-info strong { color: #b0b3c0; font-size: 10px; }
 </style>
 </head>
 <body>
 <div class="poster">
-  <div class="glow-t"></div>
-  <div class="glow-b"></div>
+  <div class="dots"></div>
+  <div class="flow"></div>
+  <div class="glow g1"></div>
+  <div class="glow g2"></div>
+  <div class="glow g3"></div>
+  <div class="geo-ring"></div>
+  <div class="geo-ring r2"></div>
+  <div class="geo-square"></div>
+  <div class="line-h l1"></div>
+  <div class="line-h l2"></div>
 
-  <!-- ===== Hero ===== -->
-  <div class="hero">
-    <div class="hero-tag">AI-Powered Teaching Community</div>
-    <h1>虚拟教研<span>社区</span></h1>
-    <p class="hero-sub">
-      面向职业院校英语教师的智能教研协作平台 — 社区讨论 · AI 聊天 · 情感分析 · 资料共享
-    </p>
-  </div>
+  <div class="c">
+    <div class="badge-row">
+      <span class="badge">AI-Powered</span>
+      <span class="badge">独立全栈作品</span>
+      <span class="badge">AI + 教育</span>
+    </div>
 
-  <!-- ===== Screenshots ===== -->
-  <div class="screens">
-    <div class="screen-slot">
-      <div class="screen-bar"><span class="screen-dot"></span><span class="screen-dot"></span><span class="screen-dot"></span></div>
-      <div class="screen-body">💬</div>
-      <div class="screen-label">教研社区 — 帖子列表</div>
+    <div class="hero">
+      <svg class="hero-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/>
+        <path d="M22 10v6"/>
+        <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/>
+      </svg>
+      <div class="main-title">虚拟教研社区</div>
+      <div class="sub-title"><b>聚师成林</b> · 研无止境</div>
+      <div class="divider"><span>TEACHING RESEARCH COMMUNITY</span></div>
     </div>
-    <div class="screen-slot">
-      <div class="screen-bar"><span class="screen-dot"></span><span class="screen-dot"></span><span class="screen-dot"></span></div>
-      <div class="screen-body">🧠</div>
-      <div class="screen-label">情感分析 — 注意力热力图</div>
-    </div>
-    <div class="screen-slot">
-      <div class="screen-bar"><span class="screen-dot"></span><span class="screen-dot"></span><span class="screen-dot"></span></div>
-      <div class="screen-body">🎨</div>
-      <div class="screen-label">暗色模式 — 设计系统</div>
-    </div>
-  </div>
 
-  <!-- ===== Features ===== -->
-  <div class="feat-strip">
-    <div class="feat-item">
-      <div class="icon">🏗️</div>
-      <h3>三层架构</h3>
-      <p>API → Service → DB<br>VO/DO 双模型分层</p>
+    <div class="grid">
+      <div class="card"><div class="card-inner">
+        <div class="cicon ci0">💬</div>
+        <div class="cbody"><h4>教研社区</h4><p>发帖讨论 · Markdown · 分类筛选<br>点赞通知 · 匿名发布 · 嵌套评论</p></div>
+      </div></div>
+      <div class="card"><div class="card-inner">
+        <div class="cicon ci1">🧠</div>
+        <div class="cbody"><h4>情感分析</h4><p>自研 Attention-GRU 模型<br>注意力热力图可视化 · PyTorch</p></div>
+      </div></div>
+      <div class="card"><div class="card-inner">
+        <div class="cicon ci2">🤖</div>
+        <div class="cbody"><h4>AI 聊天室</h4><p>智能教研助手 · 打字机效果<br>多会话管理 · 暗色模式</p></div>
+      </div></div>
+      <div class="card"><div class="card-inner">
+        <div class="cicon ci3">📚</div>
+        <div class="cbody"><h4>教研资料部</h4><p>教案课件 · 真题题库<br>一站式教学资源下载</p></div>
+      </div></div>
+      <div class="card"><div class="card-inner">
+        <div class="cicon ci4">🔔</div>
+        <div class="cbody"><h4>消息通知</h4><p>评论点赞实时提醒<br>未读标记 · 一键已读</p></div>
+      </div></div>
+      <div class="card"><div class="card-inner">
+        <div class="cicon ci5">🎨</div>
+        <div class="cbody"><h4>设计系统</h4><p>暗黑双模式 · Design Tokens<br>流动渐变 · 玻璃拟态导航</p></div>
+      </div></div>
     </div>
-    <div class="feat-item">
-      <div class="icon">🧠</div>
-      <h3>自研 AI 模型</h3>
-      <p>BiGRU + Attention<br>PyTorch 推理引擎</p>
-    </div>
-    <div class="feat-item">
-      <div class="icon">🎨</div>
-      <h3>Design Tokens</h3>
-      <p>暗色模式 · 玻璃拟态<br>CSS 变量全站统一</p>
-    </div>
-    <div class="feat-item">
-      <div class="icon">⚡</div>
-      <h3>连接池优化</h3>
-      <p>PooledDB 10 连接<br>查询 1-2ms</p>
-    </div>
-    <div class="feat-item">
-      <div class="icon">🛡️</div>
-      <h3>全局异常拦截</h3>
-      <p>1 个 Handler<br>替代 16 处 try-except</p>
-    </div>
-  </div>
 
-  <!-- ===== Bottombar ===== -->
-  <div class="bottombar">
-    <div class="tech-tags">
-      <span class="t-tag">Python</span>
-      <span class="t-tag">FastAPI</span>
-      <span class="t-tag">Vue 3</span>
-      <span class="t-tag">MySQL</span>
-      <span class="t-tag">PyTorch</span>
-      <span class="t-tag">Nginx</span>
-      <span class="t-tag">ECS</span>
-    </div>
-    <div class="qr-area">
-      <img src="qrcode.png" alt="QR">
-      <div class="qr-info">
-        <strong>扫码体验</strong><br>
-        http://8.138.124.111
+    <div class="footer">
+      <div class="fleft">
+        <div class="tags">
+          <span class="tag">Vue 3</span>
+          <span class="tag">FastAPI</span>
+          <span class="tag">PyTorch</span>
+          <span class="tag">MySQL</span>
+          <span class="tag">Design Tokens</span>
+        </div>
+      </div>
+      <div class="qr-box">
+        <div class="qr-note">SCAN TO<br>EXPLORE</div>
+        <img src="qrcode.png" alt="QR">
       </div>
     </div>
   </div>
-
 </div>
 </body>
 </html>
