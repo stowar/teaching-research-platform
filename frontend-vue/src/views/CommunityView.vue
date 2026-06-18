@@ -49,8 +49,8 @@ async function fetchPosts() {
     if (keyword.value) params.keyword = keyword.value
     if (onlyMine.value && auth.user) params.user_id = auth.user.id
     const res = await api.get('/community/posts', { params })
-    posts.value = res.data || []
-    total.value = res.total || posts.value.length
+    posts.value = res.data?.items || []
+    total.value = res.data?.total || posts.value.length
     totalPages.value = Math.max(1, Math.ceil(total.value / pageSize.value))
   } catch (e) {
     error.value = '加载失败，请检查后端服务'

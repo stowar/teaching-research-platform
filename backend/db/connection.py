@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -
+# -*- coding: utf-8 -*-
 # @Time    : 2023/5/27 16:05
 
 import pymysql
@@ -18,6 +18,8 @@ _pool = PooledDB(
     host=settings.DB_HOST,
     port=settings.DB_PORT,
     user=settings.DB_USER,
+    # .encode('utf-8').decode('latin-1') 是为了处理密码中的特殊字符（如 # @ 等），
+    # 避免 pymysql 在连接时因字符集转换导致认证失败
     password=str(settings.DB_PASSWORD).encode('utf-8').decode('latin-1'),
     db=settings.DB_NAME,
     charset='utf8mb4',
@@ -63,16 +65,3 @@ def execute_update(sql,params=None):
         conn.close()
 
 
-if __name__ == '__main__':
-
-    sql = "SELECT * FROM users"
-    users = execute_query(sql)
-    print(users)
-
-    sql = "SELECT * FROM users WHERE id = %s"
-    user = execute_one(sql, (1,))
-    print(user)
-
-    # sql = "UPDATE users SET name = %s WHERE id = %s"
-    # execute_update(sql, ("最高权限管理员", 1))
-    # print( "更新成功")

@@ -1,5 +1,23 @@
 from backend.db.connection import execute_query, execute_one, execute_update
+from backend.model.community import PostDO, CommentDO, NotificationDO, CategoryDO
 from datetime import datetime
+
+
+def count_posts(category_id=None, keyword=None, user_id=None):
+    """统计符合条件的帖子总数"""
+    sql = "SELECT COUNT(*) AS cnt FROM posts WHERE status = 1"
+    params = []
+    if category_id:
+        sql += " AND category_id = %s"
+        params.append(category_id)
+    if user_id:
+        sql += " AND user_id = %s"
+        params.append(user_id)
+    if keyword:
+        sql += " AND (title LIKE %s OR content LIKE %s)"
+        params.extend([f"%{keyword}%", f"%{keyword}%"])
+    result = execute_one(sql, params)
+    return result["cnt"] if result else 0
 
 
 def get_post_list(category_id=None, sort='new', keyword=None, user_id=None, page=1, page_size=10):
@@ -51,11 +69,12 @@ def get_post_list(category_id=None, sort='new', keyword=None, user_id=None, page
     params.append(page_size)
     params.append(offset)
 
-    return execute_query(sql, params)
+    rows = execute_query(sql, params)
+    return [PostDO.model_validate(r) for r in rows]
 
 
 def get_post_by_id(post_id):
-    """根据id获取帖子（含作者名）"""
+    """根据id获取帖子（含作者名），返回 PostDO"""
     sql = """
         SELECT p.*, u.name AS author_name, c.name AS category_name
         FROM posts p
@@ -63,7 +82,8 @@ def get_post_by_id(post_id):
         LEFT JOIN categories c ON p.category_id = c.id
         WHERE p.id = %s AND p.status = 1
     """
-    return execute_one(sql, (post_id,))
+    row = execute_one(sql, (post_id,))
+    return PostDO.model_validate(row) if row else None
 
 
 def create_post(post_data, user_id):
@@ -132,9 +152,9 @@ def update_post_like_count(post_id, delta_likes=0, delta_comments=0):
 # ===================== 分类 =====================
 
 def get_all_categories():
-    """获取所有分类"""
-    sql = "SELECT * FROM categories ORDER BY sort_order ASC"
-    return execute_query(sql)
+    """获取所有分类，返回 list[CategoryDO]"""
+    rows = execute_query("SELECT * FROM categories ORDER BY sort_order ASC")
+    return [CategoryDO.model_validate(r) for r in rows]
 
 
 # ===================== 评论 =====================
@@ -150,7 +170,8 @@ def get_comments_by_post(post_id, page=1, page_size=20):
         ORDER BY c.create_time ASC
         LIMIT %s OFFSET %s
     """
-    return execute_query(sql, (post_id, page_size, offset))
+    rows = execute_query(sql, (post_id, page_size, offset))
+    return [CommentDO.model_validate(r) for r in rows]
 
 
 def create_comment(post_id, user_id, content, parent_id=None, is_anonymous=0):
@@ -167,9 +188,9 @@ def delete_comment(comment_id):
 
 
 def get_comment_by_id(comment_id):
-    """根据ID获取单条评论"""
-    sql = "SELECT * FROM comments WHERE id = %s AND status = 1"
-    return execute_one(sql, (comment_id,))
+    """根据ID获取单条评论，返回 CommentDO"""
+    row = execute_one("SELECT * FROM comments WHERE id = %s AND status = 1", (comment_id,))
+    return CommentDO.model_validate(row) if row else None
 
 
 # ===================== 通知 =====================
@@ -192,7 +213,8 @@ def get_notifications(user_id, page=1, page_size=20):
         ORDER BY n.create_time DESC
         LIMIT %s OFFSET %s
     """
-    return execute_query(sql, (user_id, page_size, offset))
+    rows = execute_query(sql, (user_id, page_size, offset))
+    return [NotificationDO.model_validate(r) for r in rows]
 
 
 def get_unread_count(user_id):

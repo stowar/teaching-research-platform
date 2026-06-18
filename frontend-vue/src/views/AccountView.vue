@@ -24,9 +24,9 @@ async function fetchAll() {
       api.get('/community/notifications'),
       api.get('/community/posts', { params: { user_id: auth.user?.id, page_size: 5 } })
     ])
-    notifications.value = notifRes.data || []
-    unreadCount.value = notifRes.unread || 0
-    myPosts.value = postRes.data || []
+    notifications.value = notifRes.data?.items || []
+    unreadCount.value = notifRes.data?.unread || 0
+    myPosts.value = postRes.data?.items || []
   } catch { /* ignore */ }
   finally { loading.value = false }
 }

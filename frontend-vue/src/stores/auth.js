@@ -34,11 +34,10 @@ export const useAuthStore = defineStore('auth', () => {
   async function login(phone, password) {
     const res = await api.post('/auth/login', { phone, password })
     if (res.code === 200) {
-      token.value = res.access_token
-      user.value = res.user
-      // 持久化存储到 localStorage，刷新页面后不会丢失登录状态
-      localStorage.setItem('token', res.access_token)
-      localStorage.setItem('user', JSON.stringify(res.user))
+      token.value = res.data.access_token
+      user.value = res.data.user
+      localStorage.setItem('token', res.data.access_token)
+      localStorage.setItem('user', JSON.stringify(res.data.user))
     }
     return res
   }

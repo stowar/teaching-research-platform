@@ -27,8 +27,8 @@ async function analyze() {
   result.value = null
 
   try {
-    const data = await api.post('/sentiment/predict', { text: text.value.trim() })
-    result.value = data
+    const res = await api.post('/sentiment/predict', { text: text.value.trim() })
+    result.value = res.data
   } catch (e) {
     error.value = e.message || '分析失败，请检查后端服务是否启动'
   } finally {

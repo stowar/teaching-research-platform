@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 # @ Time    2026/5/11 20:05
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from backend.core.config import settings
+from backend.core.exceptions import BusinessException
 from backend.api.v1.auth import router as auth_router
 from backend.api.v1.users import router_user as users_router
 from backend.api.v1.admin import router_admin as admin_router
@@ -12,15 +14,24 @@ from backend.api.v1.sentiment import router as sentiment_router
 from backend.api.v1.community import router as community_router
 
 
-
 app = FastAPI(title=settings.PROJECT_NAME)
 
-# 注册认证路由
-app.include_router(auth_router,prefix=settings.API_V1_STR)
+# 注册路由
+app.include_router(auth_router, prefix=settings.API_V1_STR)
 app.include_router(users_router, prefix=settings.API_V1_STR)
 app.include_router(admin_router, prefix=settings.API_V1_STR)
 app.include_router(sentiment_router, prefix=settings.API_V1_STR)
 app.include_router(community_router, prefix=settings.API_V1_STR)
+
+
+@app.exception_handler(BusinessException)
+async def business_exception_handler(request: Request, exc: BusinessException):
+    """全局业务异常处理 — 所有层抛出的 BusinessException 统一在此转换为 HTTP 响应"""
+    return JSONResponse(
+        status_code=exc.code,
+        content={"code": exc.code, "msg": exc.message, "data": None},
+    )
+
 
 # 配置CORS
 app.add_middleware(

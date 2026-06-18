@@ -58,8 +58,3 @@ def get_user_id_from_token(token: str) -> Optional[int]:
     except JWTError:
         return None
 
-if __name__ == '__main__':
-    token = create_access_token(1)
-    print("真实Token:", token)
-    print("是否有效:", verify_token(token))
-    print("解析出的ID:", get_user_id_from_token(token))

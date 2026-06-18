@@ -6,6 +6,26 @@ from datetime import datetime
 
 
 # ======================
+# 0. DO：数据库表行完整映射（仅供 DB / Service 层使用，API 层禁入）
+# ======================
+class UserDO(BaseModel):
+    """users 表完整行 — 含 password，仅内部流转"""
+    id: int
+    phone: str
+    password: str
+    name: Optional[str] = None
+    school: Optional[str] = None
+    title: Optional[str] = None
+    role: str
+    status: int
+    create_time: datetime
+    update_time: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+# ======================
 # 1. 用户基础模型（公共字段抽取）
 # ======================
 class UserBase(BaseModel):
@@ -37,29 +57,3 @@ class UserUpdatePassword(BaseModel):
     new_password: str = Field(..., min_length=6, max_length=20, description="新密码")
 
 
-# ======================
-# 3. 响应模型（后端 → 前端，脱敏返回）
-# ======================
-class BaseResponse(BaseModel):
-    """返回code和msg"""
-    code: int = 200
-    msg: Optional[str] = Field(None, description="提示信息")
-
-
-class UserResponse(UserBase):
-    """用户完整响应模型（不含密码）"""
-    id: int
-    role: str       # 角色：user/admin
-    status: int      # 状态：1正常 0禁用
-    create_time: datetime
-    update_time: datetime
-
-    class Config:
-        from_attributes = True  # 兼容数据库 ORM 对象
-
-
-class LoginResponse(BaseResponse):
-    """登录响应（Token + 用户信息）"""
-    access_token: str
-    token_type: str = "bearer"
-    user: UserResponse

@@ -81,9 +81,9 @@ async function toggleLike() {
   }
   try {
     const res = await api.post(`/community/posts/${postId.value}/like`)
-    liked.value = res.liked || false
+    liked.value = res.data?.liked || false
     if (post.value) {
-      post.value.like_count = (post.value.like_count || 0) + (res.liked ? 1 : -1)
+      post.value.like_count = (post.value.like_count || 0) + (res.data?.liked ? 1 : -1)
     }
   } catch { /* ignore */ }
 }

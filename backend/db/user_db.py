@@ -1,20 +1,21 @@
 from backend.db.connection import execute_query, execute_one, execute_update
-from backend.model.user import UserCreate, UserUpdate
+from backend.model.user import UserDO, UserCreate, UserUpdate
 from backend.core.security import get_password_hash
 from datetime import datetime
 
 
-def get_user_by_id(user_id : int):
-    """根据id获取用户"""
+def get_user_by_id(user_id: int):
+    """根据id获取用户，返回 UserDO"""
     sql = "SELECT * FROM users WHERE id = %s"
-    result = execute_one(sql, (user_id,))
-    return result
+    row = execute_one(sql, (user_id,))
+    return UserDO.model_validate(row) if row else None
 
 
 def get_user_by_phone(phone: str):
-    """根据手机号获取用户"""
+    """根据手机号获取用户，返回 UserDO"""
     sql = "SELECT * FROM users WHERE phone = %s AND status = 1"
-    return execute_one(sql, (phone,))
+    row = execute_one(sql, (phone,))
+    return UserDO.model_validate(row) if row else None
 
 
 def create_user(user: UserCreate):
@@ -65,33 +66,8 @@ def update_user_status(user_id: int, status: int):
 
 
 def get_all_users():
-    """获取所有用户"""
-    sql = "SELECT * FROM users ORDER BY create_time DESC"
-    return execute_query(sql)
+    """获取所有用户，返回 list[UserDO]"""
+    rows = execute_query("SELECT * FROM users ORDER BY create_time DESC")
+    return [UserDO.model_validate(r) for r in rows]
 
 
-if __name__ == '__main__':
-    print(get_user_by_phone(1))
-
-    # test_user = UserCreate(
-    #     phone="12800138000",
-    #     password="123456",  # 正常密码，绝不会超长
-    #     name="测试用户",
-    #     school="测试学校",
-    #     title="教师"
-    # )
-    # result = create_user(test_user)
-    # print("成功：", result)
-
-    # print("更新结果：", update_user_info(
-    #     user_id=2,
-    #     # 只需要加一个 phone 参数，其他不变
-    #     user_update=UserUpdate(school="广西英华国际职业学院")
-    # ))
-
-    # print(update_password(2,"123456",UserUpdatePassword(new_password="1234567")))
-
-    # for user in get_all_users():
-    #     print(user)
-    #
-    print(get_user_by_id(1))

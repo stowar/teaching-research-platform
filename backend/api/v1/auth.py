@@ -3,43 +3,25 @@
 
 """登录/注册接口"""
 
-from fastapi import APIRouter,HTTPException,status
+from fastapi import APIRouter
 
-from backend.model.user import UserCreate,LoginResponse
+from backend.model.user import UserCreate
 from backend.model.auth import UserLogin
-from backend.services.auth import login_service,register_service
-from backend.core.exceptions import BusinessException
+from backend.services.auth import login_service, register_service
+from backend.core.vo.common import ApiResponse
+from backend.core.vo.user import LoginVO, UserVO
 
-# 创建路由的作用是创建接口
 router = APIRouter(prefix="/auth", tags=["认证授权"])
 
 
-@router.post("/login", response_model=LoginResponse,summary="用户登录")
+@router.post("/login", response_model=ApiResponse[LoginVO], summary="用户登录")
 def login(login_data: UserLogin):
-    """用户登录接口"""
-    try:
-        return login_service(login_data.phone, login_data.password)
-    except BusinessException as e:
-        raise HTTPException(status_code=e.code, detail=e.message)
+    return login_service(login_data.phone, login_data.password)
 
 
-@router.post("/register", summary="用户注册")
+@router.post("/register", response_model=ApiResponse[UserVO], summary="用户注册")
 def register(register_data: UserCreate):
-    """用户注册接口"""
-    try:
-        new_user = register_service(register_data)
-        return new_user
-    except BusinessException as e:
-        raise HTTPException(status_code=e.code, detail=e.message)
+    return register_service(register_data)
 
 
-if __name__ == '__main__':
-    # print(login(UserLogin(phone="13800138000", password="123456")))
-    print(register(UserCreate(
-        phone="13811114101",
-        name="测试用户",
-        password="123456",
-        school="测试学校",
-        title="老师"
-    )))
 
