@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>虚拟教研社区 — A3 宣传海报</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  /* A3: 297×420mm at 300dpi = 3508×4961px. Screen preview at ~1/3 scale. */
+  body {
+    font-family: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", -apple-system, sans-serif;
+    background: #d1d5db;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .poster {
+    width: 701px;
+    height: 992px;
+    background: #0c0c14;
+    color: #e8e9f0;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 80px rgba(0,0,0,.3);
+  }
+
+  @media print {
+    body { background: white; padding: 0; }
+    .poster { width: 297mm; height: 420mm; box-shadow: none; }
+  }
+
+  /* ---- Glow ---- */
+  .glow-t { position: absolute; top: -60px; right: -80px; width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(99,102,241,.12) 0%, transparent 60%); pointer-events: none; }
+  .glow-b { position: absolute; bottom: -40px; left: -60px; width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(167,139,250,.10) 0%, transparent 60%); pointer-events: none; }
+
+  /* ---- Hero ---- */
+  .hero {
+    position: relative; z-index: 1;
+    flex: 1;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    padding: 40px 60px;
+  }
+  .hero-tag {
+    font-size: 12px; font-weight: 700; letter-spacing: .2em;
+    color: #818cf8; text-transform: uppercase;
+    margin-bottom: 20px;
+    padding: 6px 16px;
+    border: 1px solid rgba(129,140,248,.25);
+    border-radius: 6px;
+  }
+  .hero h1 {
+    font-size: 52px; font-weight: 900; letter-spacing: -.02em;
+    line-height: 1.15; color: #f1f2f6;
+    margin-bottom: 16px;
+  }
+  .hero h1 span {
+    background: linear-gradient(135deg, #818cf8, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hero-sub {
+    font-size: 16px; color: #9093a8; line-height: 1.7;
+    max-width: 480px; margin-bottom: 8px;
+  }
+
+  /* ---- Screenshot Area ---- */
+  .screens {
+    position: relative; z-index: 1;
+    display: flex; gap: 14px;
+    padding: 0 48px 20px;
+    justify-content: center;
+  }
+  .screen-slot {
+    background: rgba(255,255,255,.03);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 14px;
+    overflow: hidden;
+    flex: 1; max-width: 300px;
+    box-shadow: 0 8px 40px rgba(0,0,0,.4);
+  }
+  .screen-bar {
+    height: 28px;
+    background: rgba(255,255,255,.04);
+    display: flex; align-items: center;
+    padding: 0 12px; gap: 6px;
+  }
+  .screen-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.12); }
+  .screen-body {
+    height: 180px;
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,.15);
+    font-size: 40px;
+  }
+  .screen-label {
+    text-align: center; font-size: 10px; color: #5c5f78;
+    padding: 10px 0; letter-spacing: .06em;
+  }
+
+  /* ---- Feature Strip ---- */
+  .feat-strip {
+    position: relative; z-index: 1;
+    display: flex; gap: 0;
+    border-top: 1px solid rgba(255,255,255,.06);
+    padding: 0 48px;
+  }
+  .feat-item {
+    flex: 1; text-align: center;
+    padding: 24px 16px;
+    border-right: 1px solid rgba(255,255,255,.04);
+  }
+  .feat-item:last-child { border-right: none; }
+  .feat-item .icon { font-size: 26px; margin-bottom: 8px; }
+  .feat-item h3 { font-size: 13px; font-weight: 700; color: #e8e9f0; margin-bottom: 4px; }
+  .feat-item p { font-size: 9px; color: #686b80; line-height: 1.5; }
+
+  /* ---- Bottom Bar ---- */
+  .bottombar {
+    position: relative; z-index: 1;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 48px;
+    border-top: 1px solid rgba(255,255,255,.06);
+  }
+  .tech-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+  .t-tag {
+    font-size: 9px; font-weight: 600; letter-spacing: .04em;
+    padding: 4px 10px; border-radius: 5px;
+    color: rgba(255,255,255,.5);
+    border: 1px solid rgba(255,255,255,.08);
+  }
+  .qr-area {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .qr-area img {
+    width: 60px; height: 60px;
+    border-radius: 6px; background: #ffffff; padding: 3px;
+  }
+  .qr-area .qr-info {
+    font-size: 9px; color: #686b80; line-height: 1.6;
+  }
+  .qr-area .qr-info strong { color: #b0b3c0; font-size: 10px; }
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="glow-t"></div>
+  <div class="glow-b"></div>
+
+  <!-- ===== Hero ===== -->
+  <div class="hero">
+    <div class="hero-tag">AI-Powered Teaching Community</div>
+    <h1>虚拟教研<span>社区</span></h1>
+    <p class="hero-sub">
+      面向职业院校英语教师的智能教研协作平台 — 社区讨论 · AI 聊天 · 情感分析 · 资料共享
+    </p>
+  </div>
+
+  <!-- ===== Screenshots ===== -->
+  <div class="screens">
+    <div class="screen-slot">
+      <div class="screen-bar"><span class="screen-dot"></span><span class="screen-dot"></span><span class="screen-dot"></span></div>
+      <div class="screen-body">💬</div>
+      <div class="screen-label">教研社区 — 帖子列表</div>
+    </div>
+    <div class="screen-slot">
+      <div class="screen-bar"><span class="screen-dot"></span><span class="screen-dot"></span><span class="screen-dot"></span></div>
+      <div class="screen-body">🧠</div>
+      <div class="screen-label">情感分析 — 注意力热力图</div>
+    </div>
+    <div class="screen-slot">
+      <div class="screen-bar"><span class="screen-dot"></span><span class="screen-dot"></span><span class="screen-dot"></span></div>
+      <div class="screen-body">🎨</div>
+      <div class="screen-label">暗色模式 — 设计系统</div>
+    </div>
+  </div>
+
+  <!-- ===== Features ===== -->
+  <div class="feat-strip">
+    <div class="feat-item">
+      <div class="icon">🏗️</div>
+      <h3>三层架构</h3>
+      <p>API → Service → DB<br>VO/DO 双模型分层</p>
+    </div>
+    <div class="feat-item">
+      <div class="icon">🧠</div>
+      <h3>自研 AI 模型</h3>
+      <p>BiGRU + Attention<br>PyTorch 推理引擎</p>
+    </div>
+    <div class="feat-item">
+      <div class="icon">🎨</div>
+      <h3>Design Tokens</h3>
+      <p>暗色模式 · 玻璃拟态<br>CSS 变量全站统一</p>
+    </div>
+    <div class="feat-item">
+      <div class="icon">⚡</div>
+      <h3>连接池优化</h3>
+      <p>PooledDB 10 连接<br>查询 1-2ms</p>
+    </div>
+    <div class="feat-item">
+      <div class="icon">🛡️</div>
+      <h3>全局异常拦截</h3>
+      <p>1 个 Handler<br>替代 16 处 try-except</p>
+    </div>
+  </div>
+
+  <!-- ===== Bottombar ===== -->
+  <div class="bottombar">
+    <div class="tech-tags">
+      <span class="t-tag">Python</span>
+      <span class="t-tag">FastAPI</span>
+      <span class="t-tag">Vue 3</span>
+      <span class="t-tag">MySQL</span>
+      <span class="t-tag">PyTorch</span>
+      <span class="t-tag">Nginx</span>
+      <span class="t-tag">ECS</span>
+    </div>
+    <div class="qr-area">
+      <img src="qrcode.png" alt="QR">
+      <div class="qr-info">
+        <strong>扫码体验</strong><br>
+        http://8.138.124.111
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
