@@ -462,7 +462,7 @@ function maxAttention(weights) {
 }
 
 .prob-fill.negative {
-  background: linear-gradient(90deg, var(--color-danger-400), var(--color-danger-500));
+  background: linear-gradient(90deg, var(--color-danger-300), var(--color-danger-500));
 }
 
 .prob-value {
