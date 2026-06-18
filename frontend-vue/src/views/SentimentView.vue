@@ -62,6 +62,10 @@ function heatTextColor(weight, maxWeight) {
 function maxAttention(weights) {
   return weights.length ? Math.max(...weights) : 0
 }
+
+function avgAttention(weights) {
+  return weights.length ? weights.reduce((a, b) => a + b, 0) / weights.length : 0
+}
 </script>
 
 <template>
@@ -178,6 +182,29 @@ function maxAttention(weights) {
                 <span class="heat-pct">{{ (result.attn_weights[i] * 100).toFixed(1) }}%</span>
                 {{ word }}
               </span>
+            </div>
+
+            <!-- 共振图 -->
+            <div class="resonance-section">
+              <div class="section-header">
+                <span class="section-title">注意力共振图</span>
+                <span class="section-desc">柱高 = 注意力强度，虚线 = 均值</span>
+              </div>
+              <div class="resonance-chart">
+                <div
+                  v-for="(word, i) in result.words"
+                  :key="i"
+                  class="resonance-bar-group"
+                >
+                  <div class="resonance-value">{{ (result.attn_weights[i] * 100).toFixed(1) }}</div>
+                  <div
+                    class="resonance-bar"
+                    :style="{ height: (result.attn_weights[i] / maxAttention(result.attn_weights) * 100) + '%' }"
+                  ></div>
+                  <div class="resonance-label">{{ word }}</div>
+                </div>
+                <div class="resonance-avg" :style="{ bottom: (avgAttention(result.attn_weights) / maxAttention(result.attn_weights) * 100) + '%' }"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -527,6 +554,64 @@ function maxAttention(weights) {
 .heat-word:hover {
   transform: scale(1.05);
   z-index: 1;
+}
+
+/* 共振图 */
+.resonance-section {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-light);
+}
+.resonance-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 140px;
+  padding: 0 var(--space-1);
+  position: relative;
+}
+.resonance-bar-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+  gap: 4px;
+}
+.resonance-bar {
+  width: 100%;
+  max-width: 24px;
+  min-height: 2px;
+  background: linear-gradient(180deg, var(--color-brand-400), var(--color-brand-600));
+  border-radius: 4px 4px 0 0;
+  transition: height 0.6s var(--ease-out);
+}
+.resonance-value {
+  font-size: 9px;
+  color: var(--text-tertiary);
+  font-weight: var(--font-semibold);
+}
+.resonance-label {
+  font-size: 9px;
+  color: var(--text-secondary);
+  text-align: center;
+  word-break: break-all;
+  line-height: 1.2;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.resonance-avg {
+  position: absolute;
+  left: 0; right: 0;
+  height: 0;
+  border-top: 1.5px dashed var(--color-danger-400);
+  opacity: 0.5;
+  pointer-events: none;
+}
+[data-theme="dark"] .resonance-bar {
+  background: linear-gradient(180deg, var(--color-brand-300), var(--color-brand-500));
 }
 
 /* 动画 */
