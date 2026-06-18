@@ -4,7 +4,7 @@
  * 接入自研 PyTorch 模型（Embedding + BiGRU + Attention）
  * 支持单条文本预测、注意力权重可视化热力图
  */
-import { ref } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 import api from '@/api/client.js'
 import { Brain, Send, RotateCcw, AlertCircle, TrendingUp, TrendingDown } from 'lucide-vue-next'
 
@@ -66,6 +66,80 @@ function maxAttention(weights) {
 function avgAttention(weights) {
   return weights.length ? weights.reduce((a, b) => a + b, 0) / weights.length : 0
 }
+
+const waveCanvas = ref(null)
+
+function drawWave() {
+  if (!result.value) return
+  const canvas = waveCanvas.value
+  if (!canvas) return
+  const ctx = canvas.getContext('2d')
+  const w = canvas.offsetWidth
+  const h = canvas.offsetHeight
+  canvas.width = w * devicePixelRatio
+  canvas.height = h * devicePixelRatio
+  ctx.scale(devicePixelRatio, devicePixelRatio)
+
+  ctx.clearRect(0, 0, w, h)
+
+  const weights = result.value.attn_weights
+  const maxW = maxAttention(weights)
+  const n = weights.length
+  if (!n || !maxW) return
+
+  const stepX = w / n
+  const points = weights.map((v, i) => ({
+    x: stepX * i + stepX / 2,
+    y: h - (v / maxW) * (h - 4) - 2
+  }))
+
+  // 渐变填充
+  const grad = ctx.createLinearGradient(0, 0, 0, h)
+  grad.addColorStop(0, 'rgba(79,70,229,0.35)')
+  grad.addColorStop(0.5, 'rgba(99,102,241,0.15)')
+  grad.addColorStop(1, 'rgba(99,102,241,0.02)')
+
+  // 画面积图
+  ctx.beginPath()
+  ctx.moveTo(points[0].x, h)
+  for (let i = 0; i < points.length; i++) {
+    if (i === 0) {
+      ctx.lineTo(points[0].x, points[0].y)
+    } else {
+      const cp1x = (points[i - 1].x + points[i].x) / 2
+      const cp1y = points[i - 1].y
+      const cp2x = (points[i - 1].x + points[i].x) / 2
+      const cp2y = points[i].y
+      ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, points[i].x, points[i].y)
+    }
+  }
+  ctx.lineTo(points[points.length - 1].x, h)
+  ctx.closePath()
+  ctx.fillStyle = grad
+  ctx.fill()
+
+  // 画波浪线
+  ctx.beginPath()
+  ctx.moveTo(points[0].x, points[0].y)
+  for (let i = 1; i < points.length; i++) {
+    const cp1x = (points[i - 1].x + points[i].x) / 2
+    const cp2x = (points[i - 1].x + points[i].x) / 2
+    ctx.bezierCurveTo(cp1x, points[i - 1].y, cp2x, points[i].y, points[i].x, points[i].y)
+  }
+  ctx.strokeStyle = 'rgba(79,70,229,0.7)'
+  ctx.lineWidth = 2
+  ctx.stroke()
+
+  // 画顶点
+  points.forEach(p => {
+    ctx.beginPath()
+    ctx.arc(p.x, p.y, 3, 0, Math.PI * 2)
+    ctx.fillStyle = '#4f46e5'
+    ctx.fill()
+  })
+}
+
+watch(result, () => nextTick(() => setTimeout(drawWave, 100)))
 </script>
 
 <template>
@@ -165,47 +239,28 @@ function avgAttention(weights) {
           <!-- 注意力热力图 -->
           <div class="heatmap-section">
             <div class="section-header">
-              <span class="section-title">注意力热力图</span>
-              <span class="section-desc">颜色越深，模型越关注该词</span>
+              <span class="section-title">注意力共振图</span>
+              <span class="section-desc">波浪越高 = 模型越关注 · 颜色越深 = 权重越大</span>
             </div>
-            <div class="heatmap">
-              <span
-                v-for="(word, i) in result.words"
-                :key="i"
-                class="heat-word"
-                :style="{
-                  backgroundColor: heatColor(result.attn_weights[i], maxAttention(result.attn_weights)),
-                  color: heatTextColor(result.attn_weights[i], maxAttention(result.attn_weights))
-                }"
-                :title="`权重: ${(result.attn_weights[i] * 100).toFixed(2)}%`"
-              >
-                <span class="heat-pct">{{ (result.attn_weights[i] * 100).toFixed(1) }}%</span>
-                {{ word }}
-              </span>
-            </div>
-
-            <!-- 共振图 -->
-            <div class="resonance-section">
-              <div class="section-header">
-                <span class="section-title">注意力共振图</span>
-                <span class="section-desc">柱高 = 注意力强度，虚线 = 均值</span>
-              </div>
-              <div class="resonance-chart">
-                <div
+            <div class="heatmap-wrap">
+              <canvas ref="waveCanvas" class="wave-canvas"></canvas>
+              <div class="heatmap">
+                <span
                   v-for="(word, i) in result.words"
                   :key="i"
-                  class="resonance-bar-group"
+                  class="heat-word"
+                  :style="{
+                    backgroundColor: heatColor(result.attn_weights[i], maxAttention(result.attn_weights)),
+                    color: heatTextColor(result.attn_weights[i], maxAttention(result.attn_weights))
+                  }"
+                  :title="`权重: ${(result.attn_weights[i] * 100).toFixed(2)}%`"
                 >
-                  <div class="resonance-value">{{ (result.attn_weights[i] * 100).toFixed(1) }}</div>
-                  <div
-                    class="resonance-bar"
-                    :style="{ height: (result.attn_weights[i] / maxAttention(result.attn_weights) * 100) + '%' }"
-                  ></div>
-                  <div class="resonance-label">{{ word }}</div>
-                </div>
-                <div class="resonance-avg" :style="{ bottom: (avgAttention(result.attn_weights) / maxAttention(result.attn_weights) * 100) + '%' }"></div>
+                  <span class="heat-pct">{{ (result.attn_weights[i] * 100).toFixed(1) }}%</span>
+                  {{ word }}
+                </span>
               </div>
             </div>
+
           </div>
         </div>
       </div>
@@ -526,10 +581,23 @@ function avgAttention(weights) {
   color: var(--text-tertiary);
 }
 
+.heatmap-wrap {
+  position: relative;
+}
+.wave-canvas {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.7;
+}
 .heatmap {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
+  position: relative;
+  padding-top: 40px;
 }
 
 .heat-word {
@@ -554,64 +622,6 @@ function avgAttention(weights) {
 .heat-word:hover {
   transform: scale(1.05);
   z-index: 1;
-}
-
-/* 共振图 */
-.resonance-section {
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--border-light);
-}
-.resonance-chart {
-  display: flex;
-  align-items: flex-end;
-  gap: 4px;
-  height: 140px;
-  padding: 0 var(--space-1);
-  position: relative;
-}
-.resonance-bar-group {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  height: 100%;
-  justify-content: flex-end;
-  gap: 4px;
-}
-.resonance-bar {
-  width: 100%;
-  max-width: 24px;
-  min-height: 2px;
-  background: linear-gradient(180deg, var(--color-brand-400), var(--color-brand-600));
-  border-radius: 4px 4px 0 0;
-  transition: height 0.6s var(--ease-out);
-}
-.resonance-value {
-  font-size: 9px;
-  color: var(--text-tertiary);
-  font-weight: var(--font-semibold);
-}
-.resonance-label {
-  font-size: 9px;
-  color: var(--text-secondary);
-  text-align: center;
-  word-break: break-all;
-  line-height: 1.2;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.resonance-avg {
-  position: absolute;
-  left: 0; right: 0;
-  height: 0;
-  border-top: 1.5px dashed var(--color-danger-400);
-  opacity: 0.5;
-  pointer-events: none;
-}
-[data-theme="dark"] .resonance-bar {
-  background: linear-gradient(180deg, var(--color-brand-300), var(--color-brand-500));
 }
 
 /* 动画 */
