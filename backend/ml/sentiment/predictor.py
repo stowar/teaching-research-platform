@@ -148,10 +148,15 @@ def predict(text: str):
     neg_prob = round(raw_neg * (1 - blend) + 0.5 * blend, 4)
     pos_prob = round(raw_pos * (1 - blend) + 0.5 * blend, 4)
 
-    sentiment = "正面好评" if pos_prob > neg_prob else "负面差评"
-    # 两边差距小于 0.15 标记为中性（即 42.5% vs 57.5% 以内）
-    if abs(pos_prob - neg_prob) < 0.15:
+    # 四档梯度标签
+    if pos_prob > 0.65:
+        sentiment = "强好评"
+    elif pos_prob > 0.50:
+        sentiment = "温和正面"
+    elif pos_prob > 0.35:
         sentiment = "中性评价"
+    else:
+        sentiment = "差评"
 
     # 提取有效词的注意力权重（去掉填充部分），对有效词重新归一化使和为 1
     attn = attn_weights.squeeze(0).squeeze(1).cpu().numpy().tolist()

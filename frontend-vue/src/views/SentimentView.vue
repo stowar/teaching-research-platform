@@ -6,7 +6,7 @@
  */
 import { ref, watch, nextTick } from 'vue'
 import api from '@/api/client.js'
-import { Brain, Send, RotateCcw, AlertCircle, TrendingUp, TrendingDown } from 'lucide-vue-next'
+import { Brain, Send, RotateCcw, AlertCircle, TrendingUp, TrendingDown, ThumbsUp, Minus } from 'lucide-vue-next'
 
 const text = ref('')
 const loading = ref(false)
@@ -65,6 +65,13 @@ function maxAttention(weights) {
 
 function avgAttention(weights) {
   return weights.length ? weights.reduce((a, b) => a + b, 0) / weights.length : 0
+}
+
+function sentimentClass(s) {
+  if (s === '强好评') return 'strong-pos'
+  if (s === '温和正面') return 'mild-pos'
+  if (s === '中性评价') return 'neutral'
+  return 'neg'
 }
 
 const waveCanvas = ref(null)
@@ -250,8 +257,10 @@ watch(result, () => nextTick(() => setTimeout(drawWave, 100)))
         <div v-else-if="result" class="result-body">
           <!-- 情感总览 -->
           <div class="sentiment-overview">
-            <div :class="['sentiment-badge', result.sentiment === '正面好评' ? 'positive' : 'negative']">
-              <TrendingUp v-if="result.sentiment === '正面好评'" :size="20" />
+            <div :class="['sentiment-badge', sentimentClass(result.sentiment)]">
+              <TrendingUp v-if="result.sentiment === '强好评'" :size="20" />
+              <ThumbsUp v-else-if="result.sentiment === '温和正面'" :size="20" />
+              <Minus v-else-if="result.sentiment === '中性评价'" :size="20" />
               <TrendingDown v-else :size="20" />
               <span>{{ result.sentiment }}</span>
             </div>
@@ -540,13 +549,22 @@ watch(result, () => nextTick(() => setTimeout(drawWave, 100)))
   margin-bottom: var(--space-4);
 }
 
-.sentiment-badge.positive {
+.sentiment-badge.strong-pos {
   background: var(--color-success-50);
   color: var(--color-success-700);
   border: 1px solid var(--color-success-200);
 }
-
-.sentiment-badge.negative {
+.sentiment-badge.mild-pos {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+.sentiment-badge.neutral {
+  background: var(--color-warning-50);
+  color: var(--color-warning-700);
+  border: 1px solid var(--color-warning-200);
+}
+.sentiment-badge.neg {
   background: var(--color-danger-50);
   color: var(--color-danger-700);
   border: 1px solid var(--color-danger-200);
@@ -691,14 +709,17 @@ watch(result, () => nextTick(() => setTimeout(drawWave, 100)))
 }
 
 /* 暗黑模式 */
-[data-theme="dark"] .sentiment-badge.positive {
-  background: rgba(34, 197, 94, 0.12);
-  border-color: rgba(34, 197, 94, 0.25);
+[data-theme="dark"] .sentiment-badge.strong-pos {
+  background: rgba(34, 197, 94, 0.15); border-color: rgba(34, 197, 94, 0.30);
 }
-
-[data-theme="dark"] .sentiment-badge.negative {
-  background: rgba(239, 68, 68, 0.12);
-  border-color: rgba(239, 68, 68, 0.25);
+[data-theme="dark"] .sentiment-badge.mild-pos {
+  background: rgba(34, 197, 94, 0.08); border-color: rgba(34, 197, 94, 0.18);
+}
+[data-theme="dark"] .sentiment-badge.neutral {
+  background: rgba(251, 191, 36, 0.10); border-color: rgba(251, 191, 36, 0.20);
+}
+[data-theme="dark"] .sentiment-badge.neg {
+  background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.25);
 }
 
 [data-theme="dark"] .example-chip:hover {
