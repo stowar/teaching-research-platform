@@ -1,0 +1,200 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">
+<title>虚拟教研社区 — 开发过程</title>
+<style>
+body { font-family: 'PingFang SC','Microsoft YaHei',sans-serif; max-width: 700px; margin: 0 auto; padding: 40px; color: #1a1c22; line-height: 1.8; }
+h1 { font-size: 24px; border-bottom: 2px solid #4f46e5; padding-bottom: 8px; }
+h2 { font-size: 18px; margin-top: 28px; color: #4338ca; }
+h3 { font-size: 14px; }
+table { border-collapse: collapse; width: 100%%; margin: 12px 0; }
+th, td { border: 1px solid #d1d5db; padding: 6px 10px; font-size: 13px; text-align: left; }
+th { background: #f3f4f6; }
+code { background: #f1f5f9; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+@media print { body { padding: 0; } }
+</style></head><body><h1>虚拟教研社区 — 开发过程</h1>
+<h2>一、调研</h2>
+<p>走访了校内 8 位英语教师，了解她们日常教研的痛点：</p>
+<ul>
+<li>微信群聊记录无法沉淀，有价值的讨论被新消息淹没</li>
+<li>教案和课件分散在各人电脑里，找不到统一存放的地方</li>
+<li>学生评教只有分数，没有对评语文本的系统分析</li>
+<li>新教师入职后缺少学习优秀教案的渠道</li>
+</ul>
+<p>结论：教师们需要一个<strong>能沉淀讨论、能共享资料、能分析反馈</strong>的教研平台，而不是又一个聊天群。</p>
+<hr />
+<h2>二、需求</h2>
+<p>从调研中提炼了四个核心需求和六个功能模块：</p>
+<h3>核心需求</h3>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>需求</th>
+<th>对应模块</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R1</td>
+<td>发帖讨论、评论互动</td>
+<td>教研社区</td>
+</tr>
+<tr>
+<td>R2</td>
+<td>教案和题库集中管理</td>
+<td>教研资料部</td>
+</tr>
+<tr>
+<td>R3</td>
+<td>学生评语情感分析</td>
+<td>情感分析</td>
+</tr>
+<tr>
+<td>R4</td>
+<td>个人消息与资料管理</td>
+<td>个人中心 + 账号设置</td>
+</tr>
+</tbody>
+</table>
+<h3>功能模块划分</h3>
+<ul>
+<li><strong>认证模块</strong>：手机号注册登录、JWT 鉴权、角色权限</li>
+<li><strong>教研社区</strong>：帖子 CRUD、Markdown 编辑、分类筛选、搜索分页、点赞、嵌套评论、通知系统</li>
+<li><strong>情感分析</strong>：PyTorch 推理、注意力权重可视化</li>
+<li><strong>AI 聊天室</strong>：多会话管理、打字机输出</li>
+<li><strong>教研资料部</strong>：资源分类下载（规划中）</li>
+<li><strong>个人中心</strong>：消息通知、我的帖子、资料编辑</li>
+</ul>
+<hr />
+<h2>三、原型</h2>
+<p>先做了一版 Streamlit 原型快速验证页面交互逻辑，确认了三个设计方向：</p>
+<ul>
+<li>导航栏 + 内容区 + 页脚的三段式布局</li>
+<li>玻璃拟态导航栏 + 浅色/暗色双模式</li>
+<li>功能卡片作为首页快捷入口</li>
+</ul>
+<p>Streamlit 原型体验后发现问题：页面刷新状态丢失、组件样式难以定制、整体风格偏"仪表盘"而非"社区"。决定全部推倒，用 Vue 3 重新搭建前端。</p>
+<p>Vue 版本首先确立了 Design Token 体系，把品牌色、间距、阴影、圆角全部抽成 CSS 变量。这意味着后续加任何新页面，只需要引用变量就能自动保持视觉统一。</p>
+<hr />
+<h2>四、开发</h2>
+<h3>后端（FastAPI + MySQL）</h3>
+<p>按三层架构递进开发：</p>
+<table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>内容</th>
+<th>产出</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>数据库建表</td>
+<td>7 张表：用户、帖子、评论、分类、点赞、通知 + SQL 初始化脚本</td>
+</tr>
+<tr>
+<td>2</td>
+<td>DB 层</td>
+<td>30+ 函数，pymysql + PooledDB 连接池，裸 SQL</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Model 层</td>
+<td>Pydantic 请求/响应模型 + DO/VO 双层模型</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Service 层</td>
+<td>业务逻辑：权限校验、通知触发、DO→VO 转换</td>
+</tr>
+<tr>
+<td>5</td>
+<td>API 层</td>
+<td>29 个 RESTful 端点，声明 response_model</td>
+</tr>
+<tr>
+<td>6</td>
+<td>全局异常</td>
+<td>1 个 @exception_handler 替代 16 处 try-except</td>
+</tr>
+</tbody>
+</table>
+<h3>前端（Vue 3 + Vite）</h3>
+<ul>
+<li>12 个页面 + AppLayout 全局布局</li>
+<li>Pinia 状态管理（auth store）</li>
+<li>Vue Router 路由守卫</li>
+<li>Design Tokens 统一视觉语言</li>
+<li>暗色模式全局适配</li>
+<li>markdown-it 渲染帖子正文</li>
+</ul>
+<h3>情感分析模型</h3>
+<ul>
+<li>基于 Hotel_Emotion_Predict 项目的 Embedding + BiGRU + Self-Attention 架构</li>
+<li>用 600 条教学评价数据微调训练</li>
+<li>字典持久化为 JSON，模型文件独立加载</li>
+<li>支持 CPU/GPU 自适应推理</li>
+</ul>
+<h3>部署</h3>
+<ul>
+<li>阿里云 ECS + Nginx 反向代理 + Supervisor 进程守护</li>
+<li>前端 dist 通过 Nginx 直接托管，API 请求代理到 Uvicorn</li>
+<li>连接池 10 连接，Nginx gzip + 缓存头</li>
+</ul>
+<hr />
+<h2>五、测试</h2>
+<h3>功能测试</h3>
+<p>逐模块验证核心流程：</p>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>验证点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>注册 → 登录</td>
+<td>手机号校验、密码加密、JWT 签发</td>
+</tr>
+<tr>
+<td>登录 → 发帖</td>
+<td>标题/内容/分类/匿名、Markdown 渲染</td>
+</tr>
+<tr>
+<td>浏览 → 点赞</td>
+<td>幂等切换、计数同步、通知触发</td>
+</tr>
+<tr>
+<td>评论 → 回复</td>
+<td>嵌套评论树、匿名评论</td>
+</tr>
+<tr>
+<td>通知 → 已读</td>
+<td>单条已读、一键全部已读</td>
+</tr>
+<tr>
+<td>情感分析</td>
+<td>文本输入、概率输出、热力图权重</td>
+</tr>
+<tr>
+<td>暗色模式</td>
+<td>全页面切换、localStorage 持久化</td>
+</tr>
+<tr>
+<td>禁用用户</td>
+<td>有效 token 无法通过 status 校验</td>
+</tr>
+</tbody>
+</table>
+<h3>兼容测试</h3>
+<ul>
+<li>Chrome / Edge / Firefox 浏览器测试通过</li>
+<li>768px 以下响应式布局适配</li>
+</ul>
+<h3>性能测试</h3>
+<ul>
+<li>单次查询：1-2ms（PooledDB 连接池）</li>
+<li>20 并发社区帖子列表：&lt; 50ms</li>
+<li>情感分析推理：&lt; 100ms（CPU 模式）</li>
+</ul></body></html>
