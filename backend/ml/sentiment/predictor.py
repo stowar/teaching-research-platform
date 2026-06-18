@@ -175,7 +175,9 @@ def predict(text: str):
     else:
         temperature = 2.0 + entropy_ratio * 3.0
         max_blend = 0.7
-    blend = entropy_ratio * max_blend  # 混合比例：把模型输出向 50% 拉
+    # 原始模型的确定度（0=50% 1=100%）：模型自己都不确定才需要混
+    raw_conf = abs(raw_pos - raw_neg)
+    blend = min(entropy_ratio * max_blend, (1 - raw_conf) * 0.85)
     neg_prob = round(raw_neg * (1 - blend) + 0.5 * blend, 4)
     pos_prob = round(raw_pos * (1 - blend) + 0.5 * blend, 4)
 
