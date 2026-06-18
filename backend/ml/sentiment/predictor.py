@@ -86,22 +86,41 @@ def predict(text: str):
 
     # 短文本规则兜底：≤3 个词的输入走关键词匹配，神经网络在极端短文本上不可靠
     if words and len(words) <= 3:
-        pos_kw = {'好','很好','非常好','特别好','真好','太好了','不错','很不错','挺好的','还行','还可以',
-                   '可以','满意','很满意','优秀','很棒','真棒','超级棒','棒','赞','给力','认真','用心',
-                   '负责','靠谱','专业','喜欢','很喜欢','超喜欢','有意思','有趣','值得','推荐','学到了'}
-        neg_kw = {'差','很差','非常差','太差了','差劲','差了','太差','不好','不怎么样','不行',
-                   '真不行','糟糕','烂','太烂了','垃圾','水','糊弄','敷衍','无聊','枯燥',
-                   '没意思','没劲','失望','无语','浪费时间','不值','后悔','别选','听不懂','差评'}
+        # jieba 可能把短词切成单字，用原始文本补一刀
+        raw_text = text.replace(' ', '').strip()
+        # 强信号词：单字/双字，含义非常明确 → 95% 置信
+        strong_pos = {'好','很好','棒','赞','优秀','不错','认真','用心','负责','专业','值得','推荐','喜欢'}
+        strong_neg = {'差','差评','差劲','烂','糟糕','垃圾','水','糊弄','敷衍','无聊','失望','无语','枯燥','别选'}
+        # 弱信号词：需要上下文才能确定 → 65% 置信
+        weak_pos = {'还行','还可以','可以','挺好','满意','给力','靠谱','有趣','学到了'}
+        weak_neg = {'不好','不行','不怎么样','没意思','没劲','不值','后悔','浪费时间','听不懂'}
+
         score = 0
-        for w in words:
-            if w in pos_kw: score += 1
-            elif w in neg_kw: score -= 1
+        is_strong = False
+        for w in words + [raw_text]:  # 把原始文本也放进去兜底 jieba 分词的误切割
+            if w in strong_pos:
+                score += 1; is_strong = True
+            elif w in strong_neg:
+                score -= 1; is_strong = True
+            elif w in weak_pos:
+                score += 1
+            elif w in weak_neg:
+                score -= 1
+
+        conf = 0.95 if is_strong else 0.65
         if score > 0:
-            return {"sentiment":"正面好评","pos_prob":0.65,"neg_prob":0.35,"words":words,"attn_weights":[1.0/len(words)]*len(words)}
+            pos_prob, neg_prob = conf, round(1 - conf, 4)
         elif score < 0:
-            return {"sentiment":"负面差评","pos_prob":0.35,"neg_prob":0.65,"words":words,"attn_weights":[1.0/len(words)]*len(words)}
+            pos_prob, neg_prob = round(1 - conf, 4), conf
         else:
-            return {"sentiment":"中性评价","pos_prob":0.50,"neg_prob":0.50,"words":words,"attn_weights":[1.0/len(words)]*len(words)}
+            pos_prob = neg_prob = 0.50
+
+        if pos_prob > 0.65: sentiment = "强好评"
+        elif pos_prob > 0.50: sentiment = "温和正面"
+        elif pos_prob > 0.35: sentiment = "中性评价"
+        else: sentiment = "差评"
+
+        return {"sentiment":sentiment,"pos_prob":pos_prob,"neg_prob":neg_prob,"words":words,"attn_weights":[1.0/len(words)]*len(words)}
 
     if not words:
         return {
