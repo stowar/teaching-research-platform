@@ -232,4 +232,4 @@ logs/
 .env.production
 
 # Docker
-.dockerignore
+.dockerignore*.zip

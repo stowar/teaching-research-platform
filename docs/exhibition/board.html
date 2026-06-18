@@ -5,376 +5,282 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>虚拟教研社区 — 展板</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-
-  :root {
-    --bg-deep: #06060b;
-    --bg-card: rgba(255,255,255,.03);
-    --border: rgba(255,255,255,.06);
-    --border-hover: rgba(255,255,255,.12);
-    --text: #eeeff2;
-    --text2: #9899a6;
-    --text3: #5c5d6a;
-    --indigo: #818cf8;
-    --indigo-dim: rgba(129,140,248,.12);
-    --violet: #a78bfa;
-    --emerald: #34d399;
-    --emerald-dim: rgba(52,211,153,.12);
-    --rose: #fb7185;
-    --rose-dim: rgba(251,113,133,.12);
-    --amber: #fbbf24;
-    --amber-dim: rgba(251,191,36,.12);
-    --cyan: #22d3ee;
-    --cyan-dim: rgba(34,211,238,.12);
-    --glass: rgba(255,255,255,.04);
-  }
-
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
-    font-family: 'Inter', 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
-    background: #010103;
+    font-family: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", -apple-system, sans-serif;
+    background: #e5e7eb;
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    padding: 24px;
+    padding: 20px;
   }
 
   .board {
     width: 900px;
     height: 1200px;
-    background: var(--bg-deep);
-    color: var(--text);
+    background: #fafbfc;
+    color: #1a1c22;
     overflow: hidden;
     position: relative;
     display: flex;
     flex-direction: column;
-  }
-
-  /* ---- background decoration ---- */
-  .bg-glow-1 {
-    position: absolute;
-    width: 600px; height: 600px;
-    background: radial-gradient(circle, rgba(129,140,248,.06) 0%, transparent 60%);
-    top: -120px; right: -160px;
-    pointer-events: none;
-  }
-  .bg-glow-2 {
-    position: absolute;
-    width: 500px; height: 500px;
-    background: radial-gradient(circle, rgba(167,139,250,.05) 0%, transparent 60%);
-    bottom: 80px; left: -100px;
-    pointer-events: none;
-  }
-  .bg-grid {
-    position: absolute; inset: 0;
-    background-image:
-      linear-gradient(rgba(255,255,255,.015) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,.015) 1px, transparent 1px);
-    background-size: 30px 30px;
-    pointer-events: none;
+    box-shadow: 0 20px 80px rgba(0,0,0,.18);
   }
 
   @media print {
-    body { background: #06060b; padding: 0; }
-    .board { width: 18cm; height: 24cm; }
+    body { background: white; padding: 0; }
+    .board { width: 18cm; height: 24cm; box-shadow: none; }
   }
 
   /* ---- Header ---- */
   .header {
-    position: relative;
-    z-index: 1;
-    padding: 40px 48px 32px;
+    background: linear-gradient(135deg, #1e1b4b 0%, #3730a3 50%, #4f46e5 100%);
+    color: #ffffff;
+    padding: 36px 48px;
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    border-bottom: 1px solid var(--border);
     flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
   }
-  .header-left { }
-  .header-tag {
+  .header::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at 80% 20%, rgba(255,255,255,.08) 0%, transparent 50%),
+                radial-gradient(circle at 20% 80%, rgba(167,139,250,.15) 0%, transparent 40%);
+    pointer-events: none;
+  }
+  .header-left { position: relative; z-index: 1; }
+  .header-badge {
     display: inline-block;
-    font-size: 11px; font-weight: 600; letter-spacing: .12em;
-    color: var(--indigo);
+    font-size: 10px; font-weight: 700; letter-spacing: .15em;
+    color: rgba(255,255,255,.7);
     text-transform: uppercase;
-    margin-bottom: 12px;
-    padding: 4px 10px;
-    border: 1px solid rgba(129,140,248,.2);
+    margin-bottom: 14px;
+    padding: 5px 12px;
+    border: 1px solid rgba(255,255,255,.18);
     border-radius: 4px;
   }
   .header h1 {
-    font-size: 40px; font-weight: 900; letter-spacing: -.02em;
-    color: var(--text);
-    line-height: 1.1;
-    margin-bottom: 8px;
+    font-size: 42px; font-weight: 900; letter-spacing: -.02em;
+    line-height: 1.15;
+    margin-bottom: 10px;
   }
-  .header h1 span { color: var(--indigo); }
+  .header h1 em {
+    font-style: normal;
+    background: linear-gradient(135deg, #c7d2fe, #a5b4fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
   .header-desc {
-    font-size: 13px; color: var(--text2); line-height: 1.5; max-width: 480px;
+    font-size: 13px; color: rgba(255,255,255,.6);
+    line-height: 1.7; max-width: 460px;
   }
-  .header-right {
-    display: flex; flex-direction: column; align-items: flex-end; gap: 6px;
+  .header-right { position: relative; z-index: 1; display: flex; gap: 28px; }
+  .hstat { text-align: center; }
+  .hstat .num {
+    font-size: 36px; font-weight: 900; letter-spacing: -.02em;
+    color: #c7d2fe;
+    line-height: 1;
   }
-  .header-stat {
-    text-align: right;
-  }
-  .header-stat .num {
-    font-size: 28px; font-weight: 900; color: var(--indigo);
-    letter-spacing: -.02em;
-  }
-  .header-stat .lbl {
-    font-size: 10px; color: var(--text3); text-transform: uppercase;
-    letter-spacing: .08em;
+  .hstat .lbl {
+    font-size: 10px; color: rgba(255,255,255,.45);
+    text-transform: uppercase; letter-spacing: .1em; margin-top: 4px;
   }
 
   /* ---- Body ---- */
   .body {
-    position: relative;
-    z-index: 1;
     flex: 1;
-    padding: 28px 48px;
+    padding: 24px 48px;
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 20px;
     min-height: 0;
   }
 
-  /* ---- Section Title ---- */
   .sec-title {
     font-size: 10px; font-weight: 700; letter-spacing: .14em;
-    color: var(--text3); text-transform: uppercase;
-    margin-bottom: 14px;
+    color: #8b8fa3; text-transform: uppercase;
+    margin-bottom: 10px;
   }
 
-  /* ---- Architecture Flow ---- */
+  /* ---- Architecture ---- */
   .arch-flow {
-    display: flex;
-    align-items: center;
-    gap: 0;
+    display: flex; align-items: center; gap: 0;
   }
   .arch-node {
     flex: 1;
-    background: var(--glass);
-    border: 1px solid var(--border);
-    border-radius: 12px;
+    background: #ffffff;
+    border: 1px solid #e8e9ed;
+    border-radius: 10px;
     padding: 18px 20px;
     text-align: center;
-    position: relative;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04);
   }
   .arch-node .layer {
-    font-size: 9px; font-weight: 700; letter-spacing: .1em;
-    color: var(--indigo); text-transform: uppercase;
+    font-size: 9px; font-weight: 700; letter-spacing: .12em;
+    color: #4f46e5; text-transform: uppercase;
     margin-bottom: 8px;
   }
-  .arch-node h3 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .arch-node h3 { font-size: 15px; font-weight: 800; margin-bottom: 6px; color: #1a1c22; }
   .arch-node p {
-    font-size: 10px; color: var(--text2); line-height: 1.5;
+    font-size: 10px; color: #5c5f6e; line-height: 1.6;
   }
-  .arch-node p code {
-    font-size: 9px; background: rgba(255,255,255,.05);
-    padding: 1px 5px; border-radius: 3px;
-    color: var(--text2);
+  .arch-node p b { color: #1a1c22; }
+  .arch-node p em {
+    font-style: normal; font-weight: 700;
+    padding: 1px 6px; border-radius: 3px;
+    font-size: 9px;
   }
+  .em-red { background: #fef2f2; color: #dc2626; }
+  .em-green { background: #f0fdf4; color: #16a34a; }
+  .em-amber { background: #fffbeb; color: #d97706; }
   .arch-arrow {
-    flex-shrink: 0;
-    width: 40px;
-    display: flex; align-items: center; justify-content: center;
-    color: var(--text3); font-size: 18px;
-    font-weight: 300;
+    flex-shrink: 0; width: 44px; display: flex;
+    align-items: center; justify-content: center;
+    color: #c4c7d0; font-size: 22px; font-weight: 200;
   }
-  .arch-rule-strip {
-    background: rgba(129,140,248,.06);
-    border: 1px dashed rgba(129,140,248,.15);
-    border-radius: 8px;
-    padding: 10px 20px;
-    text-align: center;
-    margin-top: 12px;
-    font-size: 10px; color: var(--text3);
+  .arch-rule {
+    background: #f8f9fb; border: 1px dashed #dde0e8;
+    border-radius: 8px; padding: 10px 24px; text-align: center;
+    margin-top: 10px;
+    font-size: 11px; color: #5c5f6e;
   }
-  .arch-rule-strip strong { color: var(--indigo); font-weight: 600; }
+  .arch-rule strong {
+    color: #4f46e5; font-weight: 700;
+    font-family: "SF Mono", "JetBrains Mono", "Consolas", monospace;
+    font-size: 10px;
+  }
 
-  /* ---- Features Grid ---- */
+  /* ---- Features ---- */
   .features {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 14px;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
   }
   .feat-card {
-    background: var(--glass);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 22px 18px;
-    transition: border-color .3s;
+    background: #ffffff;
+    border: 1px solid #e8e9ed;
+    border-radius: 12px;
+    padding: 20px 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.03);
     position: relative;
-    overflow: hidden;
   }
   .feat-card::before {
-    content: '';
-    position: absolute; top: 0; left: 0; right: 0;
-    height: 2px;
+    content: ''; position: absolute; top: 0; left: 16px; right: 16px;
+    height: 3px; border-radius: 0 0 3px 3px;
   }
-  .feat-card.c1::before { background: linear-gradient(90deg, var(--indigo), transparent); }
-  .feat-card.c2::before { background: linear-gradient(90deg, var(--violet), transparent); }
-  .feat-card.c3::before { background: linear-gradient(90deg, var(--emerald), transparent); }
-  .feat-card.c4::before { background: linear-gradient(90deg, var(--amber), transparent); }
+  .feat-card.c1::before { background: #4f46e5; }
+  .feat-card.c2::before { background: #7c3aed; }
+  .feat-card.c3::before { background: #059669; }
+  .feat-card.c4::before { background: #d97706; }
+  .feat-icon { font-size: 24px; margin-bottom: 10px; line-height: 1; }
+  .feat-card h3 { font-size: 14px; font-weight: 800; margin-bottom: 5px; color: #1a1c22; }
+  .feat-card p { font-size: 10px; color: #5c5f6e; line-height: 1.65; }
 
-  .feat-icon {
-    font-size: 22px; margin-bottom: 12px; line-height: 1;
-  }
-  .feat-card h3 { font-size: 14px; font-weight: 700; margin-bottom: 6px; letter-spacing: -.01em; }
-  .feat-card p {
-    font-size: 10px; color: var(--text2); line-height: 1.6;
-  }
+  /* ---- Bottom ---- */
+  .bottom-strip { display: flex; gap: 12px; align-items: stretch; }
 
-  /* ---- Bottom Strip ---- */
-  .bottom-strip {
-    display: flex;
-    gap: 14px;
-    align-items: stretch;
-  }
-  .bottom-card {
-    background: var(--glass);
-    border: 1px solid var(--border);
-    border-radius: 14px;
+  .card-white {
+    background: #ffffff;
+    border: 1px solid #e8e9ed;
+    border-radius: 12px;
     padding: 16px 20px;
-    display: flex; flex-direction: column;
-    justify-content: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,.03);
   }
 
   /* Tech Tags */
-  .tech-pills {
-    display: flex; flex-wrap: wrap; gap: 6px;
-  }
-  .tech-pill {
+  .tech-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill {
     font-size: 9px; font-weight: 600; letter-spacing: .02em;
-    padding: 5px 10px; border-radius: 6px;
-    white-space: nowrap;
+    padding: 4px 10px; border-radius: 5px;
   }
-  .t-be { background: rgba(129,140,248,.12); color: var(--indigo); }
-  .t-fe { background: rgba(52,211,153,.10); color: var(--emerald); }
-  .t-db { background: rgba(251,191,36,.10); color: var(--amber); }
-  .t-de { background: rgba(167,139,250,.12); color: var(--violet); }
-  .t-ai { background: rgba(251,113,133,.10); color: var(--rose); }
+  .p-be { background: #eef2ff; color: #4338ca; }
+  .p-fe { background: #ecfdf5; color: #059669; }
+  .p-db { background: #fffbeb; color: #b45309; }
+  .p-de { background: #f5f3ff; color: #6d28d9; }
+  .p-ai { background: #fff1f2; color: #be185d; }
 
-  /* Metrics */
-  .metrics-row {
-    display: flex; gap: 20px;
-  }
-  .metric-item { text-align: center; }
-  .metric-item .m-num {
-    font-size: 26px; font-weight: 900; letter-spacing: -.02em;
-    background: linear-gradient(135deg, var(--indigo), var(--violet));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    line-height: 1.2;
-  }
-  .metric-item .m-lbl {
-    font-size: 9px; color: var(--text3); letter-spacing: .06em;
-  }
-
-  /* QR */
-  .qr-card {
-    display: flex; align-items: center; gap: 14px;
-    background: rgba(255,255,255,.02);
-    border: 1px solid rgba(255,255,255,.08);
-    border-radius: 14px;
-    padding: 14px 18px;
-  }
-  .qr-card img {
-    width: 72px; height: 72px;
-    border-radius: 8px;
-    background: white;
-    padding: 4px;
-  }
-  .qr-text { font-size: 10px; color: var(--text2); line-height: 1.5; }
-  .qr-text strong { color: var(--text); }
-
-  /* Design highlights */
+  /* Highlight Grid */
   .hl-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    flex: 1;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex: 1;
   }
   .hl-item {
-    background: var(--glass);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px 16px;
+    background: #f8f9fb; border: 1px solid #eef0f3;
+    border-radius: 8px; padding: 12px 14px;
   }
-  .hl-item h4 { font-size: 11px; font-weight: 700; margin-bottom: 3px; }
-  .hl-item p { font-size: 9px; color: var(--text2); line-height: 1.5; }
+  .hl-item h4 { font-size: 11px; font-weight: 700; color: #1a1c22; margin-bottom: 2px; }
+  .hl-item p { font-size: 9px; color: #5c5f6e; line-height: 1.5; }
+
+  /* QR */
+  .qr-box {
+    display: flex; align-items: center; gap: 14px;
+    background: #f8f9fb; border: 1px solid #eef0f3;
+    border-radius: 12px; padding: 16px 18px;
+    flex-shrink: 0; width: 212px;
+  }
+  .qr-box img {
+    width: 72px; height: 72px;
+    border-radius: 6px; border: 1px solid #e0e2e8;
+    padding: 3px; background: #ffffff;
+  }
+  .qr-text { font-size: 10px; color: #5c5f6e; line-height: 1.6; }
+  .qr-text strong { color: #1a1c22; font-size: 11px; }
 
   /* ---- Footer ---- */
   .footer {
-    position: relative; z-index: 1;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid #e8e9ed;
     padding: 14px 48px;
     display: flex; justify-content: space-between;
-    font-size: 9px; color: var(--text3); letter-spacing: .04em;
+    font-size: 9px; color: #8b8fa3; letter-spacing: .04em;
     flex-shrink: 0;
   }
 </style>
 </head>
 <body>
 <div class="board">
-  <div class="bg-glow-1"></div>
-  <div class="bg-glow-2"></div>
-  <div class="bg-grid"></div>
 
   <!-- ===== Header ===== -->
   <div class="header">
     <div class="header-left">
-      <div class="header-tag">Teaching Research Platform</div>
-      <h1>虚拟教研<span>社区</span></h1>
-      <p class="header-desc">
-        面向职业院校英语教师的智能教研协作平台 — 集社区讨论、资料共享、AI 聊天、
-        情感分析于一体，搭载自研 PyTorch 注意力模型与 VO/DO 三层架构。
-      </p>
+      <div class="header-badge">Teaching Research Platform</div>
+      <h1>虚拟教研<em>社区</em></h1>
+      <p class="header-desc">面向职业院校英语教师的智能教研协作平台 — 集社区讨论、AI 聊天、情感分析于一体，搭载自研 Attention-GRU 模型，采用 VO/DO 三层分层架构</p>
     </div>
     <div class="header-right">
-      <div class="header-stat">
-        <div class="num">29</div>
-        <div class="lbl">API 端点</div>
-      </div>
-      <div class="header-stat">
-        <div class="num">3</div>
-        <div class="lbl">架构层级</div>
-      </div>
-      <div class="header-stat">
-        <div class="num">12</div>
-        <div class="lbl">前端页面</div>
-      </div>
+      <div class="hstat"><div class="num">29</div><div class="lbl">API 端点</div></div>
+      <div class="hstat"><div class="num">3</div><div class="lbl">架构层级</div></div>
+      <div class="hstat"><div class="num">12</div><div class="lbl">前端页面</div></div>
     </div>
   </div>
 
   <!-- ===== Body ===== -->
   <div class="body">
 
-    <!-- Architecture Flow -->
+    <!-- Architecture -->
     <div>
       <div class="sec-title">System Architecture</div>
       <div class="arch-flow">
         <div class="arch-node">
           <div class="layer">Layer 01</div>
           <h3>API 路由层</h3>
-          <p>绑定 HTTP 端点 · <code>response_model</code> 声明<br>唯一访问 Service 与 VO · <b style="color:#fb7185">禁入 Model/DO</b></p>
+          <p>绑定端点 · response_model 声明<br>仅访问 Service 与 VO &nbsp;·&nbsp; <em class="em-red">禁入 Model/DO</em></p>
         </div>
-        <div class="arch-arrow">─</div>
+        <div class="arch-arrow">→</div>
         <div class="arch-node">
           <div class="layer">Layer 02</div>
           <h3>Service 业务层</h3>
-          <p>权限校验 · 计数同步 · 通知触发<br><b style="color:#34d399">DO → VO 转换</b> · 返回 ApiResponse</p>
+          <p>权限校验 · 通知触发 · 计数同步<br><em class="em-green">DO → VO 转换</em> · 返回 ApiResponse</p>
         </div>
-        <div class="arch-arrow">─</div>
+        <div class="arch-arrow">→</div>
         <div class="arch-node">
           <div class="layer">Layer 03</div>
           <h3>DB 数据层</h3>
-          <p>pymysql · PooledDB 连接池<br>raw SQL · <b style="color:#fbbf24">返回 DO 对象</b></p>
+          <p>pymysql · PooledDB 连接池<br>raw SQL · <em class="em-amber">返回 DO 对象</em></p>
         </div>
       </div>
-      <div class="arch-rule-strip">
+      <div class="arch-rule">
         全局异常拦截 &nbsp;·&nbsp; <strong>@app.exception_handler(BusinessException)</strong> &nbsp;·&nbsp; 零 try-except 路由层
       </div>
     </div>
@@ -391,75 +297,75 @@
         <div class="feat-card c2">
           <div class="feat-icon">🧠</div>
           <h3>自研情感分析</h3>
-          <p>Embedding + BiGRU + Self-Attention · PyTorch 推理 · 注意力权重可视化热力图</p>
+          <p>Embedding + BiGRU + Self-Attention · PyTorch CPU 推理 · 注意力权重可视化热力图</p>
         </div>
         <div class="feat-card c3">
           <div class="feat-icon">🤖</div>
           <h3>AI 聊天室</h3>
-          <p>会话管理 · 打字机逐字输出 · 教研领域预设回复 · 暗色模式适配</p>
+          <p>多会话管理 · 打字机逐字输出 · 教研领域预设回复 · 暗色模式适配</p>
         </div>
         <div class="feat-card c4">
           <div class="feat-icon">🎨</div>
           <h3>设计系统</h3>
-          <p>Design Tokens · 暗色模式 · 玻璃拟态导航 · CSS 变量全站统一 · 响应式断点</p>
+          <p>Design Tokens · CSS 变量 · 暗色模式 · 玻璃拟态导航 · 响应式适配 · 动效库</p>
         </div>
       </div>
     </div>
 
-    <!-- Bottom Strip: Tech + Design + QR + Metrics -->
+    <!-- Bottom Strip -->
     <div class="bottom-strip">
-      <div class="bottom-card" style="flex:1.4">
+      <div class="card-white" style="flex:1.4">
         <div class="sec-title">Tech Stack</div>
         <div class="tech-pills">
-          <span class="tech-pill t-be">Python 3</span>
-          <span class="tech-pill t-be">FastAPI</span>
-          <span class="tech-pill t-be">JWT Auth</span>
-          <span class="tech-pill t-be">Pydantic</span>
-          <span class="tech-pill t-be">pymysql</span>
-          <span class="tech-pill t-fe">Vue 3</span>
-          <span class="tech-pill t-fe">Vite</span>
-          <span class="tech-pill t-fe">Pinia</span>
-          <span class="tech-pill t-fe">CSS Tokens</span>
-          <span class="tech-pill t-fe">Vue Router</span>
-          <span class="tech-pill t-db">MySQL 8</span>
-          <span class="tech-pill t-db">PooledDB</span>
-          <span class="tech-pill t-de">Nginx</span>
-          <span class="tech-pill t-de">Supervisor</span>
-          <span class="tech-pill t-de">阿里云 ECS</span>
-          <span class="tech-pill t-ai">PyTorch</span>
-          <span class="tech-pill t-ai">BiGRU</span>
-          <span class="tech-pill t-ai">Self-Attention</span>
+          <span class="pill p-be">Python 3</span>
+          <span class="pill p-be">FastAPI</span>
+          <span class="pill p-be">JWT</span>
+          <span class="pill p-be">Pydantic</span>
+          <span class="pill p-be">pymysql</span>
+          <span class="pill p-fe">Vue 3</span>
+          <span class="pill p-fe">Vite</span>
+          <span class="pill p-fe">Pinia</span>
+          <span class="pill p-fe">CSS Tokens</span>
+          <span class="pill p-fe">Vue Router</span>
+          <span class="pill p-db">MySQL 8</span>
+          <span class="pill p-db">PooledDB</span>
+          <span class="pill p-de">Nginx</span>
+          <span class="pill p-de">Supervisor</span>
+          <span class="pill p-de">阿里云 ECS</span>
+          <span class="pill p-ai">PyTorch</span>
+          <span class="pill p-ai">BiGRU</span>
+          <span class="pill p-ai">Attention</span>
         </div>
       </div>
 
-      <div class="bottom-card" style="flex:.9">
+      <div class="card-white" style="flex:.9">
         <div class="sec-title">Design Highlights</div>
         <div class="hl-grid">
           <div class="hl-item">
             <h4>VO / DO 分层</h4>
-            <p>DO 含全量 DB 字段，VO 脱敏+格式化，ApiResponse&lt;T&gt; 泛型信封</p>
+            <p>DO 含全量 DB 字段 · VO 脱敏 + 格式化 · ApiResponse&lt;T&gt; 泛型信封</p>
           </div>
           <div class="hl-item">
             <h4>全局异常拦截</h4>
-            <p>1 个 handler 替代 16 处 try-except，响应格式统一</p>
+            <p>1 个 handler 替代 16 处 try-except · 错误响应格式统一</p>
           </div>
           <div class="hl-item">
             <h4>连接池优化</h4>
-            <p>PooledDB 10 连接，查询 1-2ms，20 并发 &lt; 50ms</p>
+            <p>PooledDB · 单次查询 1-2ms · 20 并发 &lt; 50ms</p>
           </div>
           <div class="hl-item">
             <h4>禁用用户防护</h4>
-            <p>status 校验在 deps 层，有效 token 也无法绕过</p>
+            <p>status 校验在 deps 层 · 有效 token 也无法绕过禁用检查</p>
           </div>
         </div>
       </div>
 
-      <div class="qr-card" style="flex-shrink:0;width:200px">
-        <img src="qrcode.png" alt="QR">
+      <div class="qr-box">
+        <img src="qrcode.png" alt="QR Code">
         <div class="qr-text">
           <strong>扫码访问</strong><br>
           http://8.138.124.111<br>
-          <span style="color:var(--text3)">动态网站 · 需服务器运行</span>
+          <span style="font-size:9px;color:#8b8fa3">动态网站 · 需服务器运行</span>
         </div>
       </div>
     </div>
@@ -469,7 +375,7 @@
   <!-- ===== Footer ===== -->
   <div class="footer">
     <span>Vue 3 + FastAPI + MySQL · Alibaba Cloud ECS + Nginx + Supervisor</span>
-    <span>Virtual Teaching Research Community &copy; 2026</span>
+    <span>虚拟教研社区 &copy; 2026</span>
   </div>
 
 </div>
