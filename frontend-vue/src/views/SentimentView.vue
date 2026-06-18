@@ -188,7 +188,7 @@ watch(result, () => nextTick(() => setTimeout(drawWave, 100)))
       <div class="header-text">
         <h1>教学评价情感分析</h1>
         <p>基于自研 Attention-GRU 模型，洞察学生反馈中的情感倾向与关注重点</p>
-        <p class="header-note">4350 条人工标注教学评价 · 重点关注实训授课、课堂互动、学困生关怀、课件质量与课后资源五个维度</p>
+        <p class="header-note">4350 条人工标注训练数据，重点关注实训授课、课堂互动、学困生关怀、课件质量与课后资源五个维度——学的不只是词和标签，是我对教育行业的理解</p>
       </div>
     </div>
 
