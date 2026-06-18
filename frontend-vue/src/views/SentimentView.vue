@@ -47,16 +47,16 @@ function clear() {
   error.value = ''
 }
 
-// 根据权重计算背景色强度（基于原始 softmax 值，不做归一化）
+// 根据权重计算背景色强度 — 基于原始 softmax 值，增大对比度
 function heatColor(weight, maxWeight) {
   const ratio = maxWeight > 0 ? weight / maxWeight : 0
-  const alpha = 0.15 + ratio * 0.55
+  const alpha = 0.28 + ratio * 0.60
   return `rgba(79, 70, 229, ${alpha})`
 }
 
 function heatTextColor(weight, maxWeight) {
   const ratio = maxWeight > 0 ? weight / maxWeight : 0
-  return ratio > 0.7 ? '#fff' : 'var(--text-primary)'
+  return ratio > 0.5 ? '#fff' : 'var(--text-primary)'
 }
 
 function maxAttention(weights) {
@@ -175,6 +175,7 @@ function maxAttention(weights) {
                 }"
                 :title="`权重: ${(result.attn_weights[i] * 100).toFixed(2)}%`"
               >
+                <span class="heat-pct">{{ (result.attn_weights[i] * 100).toFixed(1) }}%</span>
                 {{ word }}
               </span>
             </div>
@@ -511,6 +512,16 @@ function maxAttention(weights) {
   font-weight: var(--font-medium);
   transition: transform var(--duration-fast) var(--ease-out);
   cursor: default;
+  display: inline-flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  line-height: 1.3;
+}
+.heat-pct {
+  font-size: 8px;
+  opacity: 0.7;
+  font-weight: var(--font-normal);
+  line-height: 1;
 }
 
 .heat-word:hover {
