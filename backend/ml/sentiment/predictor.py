@@ -107,10 +107,31 @@ def predict(text: str):
     with torch.no_grad():
         output, attn_weights = model(tensor_x)
 
-    probs = F.softmax(output, dim=1)
-    neg_prob = float(probs[0][0])
-    pos_prob = float(probs[0][1])
+    # 温度缩放：当注意力分布均匀（高熵）时加大温度，让模型不那么"自信"
+    raw_probs = F.softmax(output, dim=1)
+    # 计算注意力熵 — 熵越高说明模型对各词关注越分散，评语越模糊
+    attn_for_entropy = attn_weights.squeeze(0).squeeze(1)[:original_len]
+    attn_norm = attn_for_entropy / (attn_for_entropy.sum() + 1e-8)
+    attn_entropy = float(-(attn_norm * torch.log(attn_norm + 1e-8)).sum())
+    max_entropy = float(torch.log(torch.tensor(original_len, dtype=torch.float)))
+    # 熵比：0=极度集中(清晰评价) 1=完全均匀(模糊评价)
+    entropy_ratio = attn_entropy / (max_entropy + 1e-8)
+    # 温度在 2.0 ~ 5.0 之间动态调节
+    temperature = 2.0 + entropy_ratio * 3.0
+
+    probs = F.softmax(output / temperature, dim=1)
+    raw_neg = float(probs[0][0])
+    raw_pos = float(probs[0][1])
+
+    # 混合比例：把模型输出向 50% 拉，熵越高拉得越多
+    blend = entropy_ratio * 0.7  # 最多拉 70% 向中间
+    neg_prob = round(raw_neg * (1 - blend) + 0.5 * blend, 4)
+    pos_prob = round(raw_pos * (1 - blend) + 0.5 * blend, 4)
+
     sentiment = "正面好评" if pos_prob > neg_prob else "负面差评"
+    # 两边差距小于 0.15 标记为中性（即 42.5% vs 57.5% 以内）
+    if abs(pos_prob - neg_prob) < 0.15:
+        sentiment = "中性评价"
 
     # 提取有效词的注意力权重（去掉填充部分），对有效词重新归一化使和为 1
     attn = attn_weights.squeeze(0).squeeze(1).cpu().numpy().tolist()
