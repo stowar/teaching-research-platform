@@ -160,14 +160,16 @@ def predict(text: str):
     probs_raw = F.softmax(output, dim=1)
     prey_raw_pos = float(probs_raw[0][1])
 
+    # 转折词：出现时模型前半句正面+后半句负面的情况会被前半句带偏，强制高温高混
+    contrast_kw = {'但','但是','只是','不过','然而','可惜','遗憾的是','问题是','缺点是','不足的是'}
     # 中性信号词：出现时不盲信模型的极端判断
     neutral_kw = {'还行','一般','吧','普通','差不多','就那样','还行吧','不好不坏',
                   '勉强','凑合','马马虎虎','说得过去','过得去','中规中矩','平平'}
     has_neutral_kw = any(kw in text for kw in neutral_kw)
+    has_contrast = any(kw in text for kw in contrast_kw)
 
-    # 温度选择：模型确定(>80%或<20%)降温，但中性/模糊评语不降温
-    # 有中性词 → 强制高温高混，趋向 50%
-    if has_neutral_kw:
+    # 温度选择：模型确定(>80%或<20%)降温，但中性/模糊/转折评语不降温
+    if has_neutral_kw or has_contrast:
         temperature = 3.0 + entropy_ratio * 2.5
         max_blend = 0.8
     elif (prey_raw_pos > 0.80 or prey_raw_pos < 0.20):
