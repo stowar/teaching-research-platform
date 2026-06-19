@@ -195,7 +195,7 @@ watch(result, () => nextTick(() => setTimeout(drawWave, 100)))
       <div class="header-text">
         <h1>教学评价情感分析</h1>
         <p>基于自研 Attention-GRU 模型，洞察学生反馈中的情感倾向与关注重点</p>
-        <p class="header-note">4714 条人工标注 · 五维度 + 十类情绪 · 六层温度缩放体系（熵检测/置信度门控/中性词保护/转折词触发/极端词降混/短文本兜底）——学的不只是词和标签，是我对教育行业的理解</p>
+        <p class="header-note">自研六层温度缩放体系 + 4714 条人工标注训练数据，覆盖五维度十类情绪——学的不只是词和标签，是我对教育行业的理解</p>
       </div>
     </div>
 
