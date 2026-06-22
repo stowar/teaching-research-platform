@@ -1,5 +1,5 @@
 from backend.db.connection import execute_query, execute_one, execute_update
-from backend.model.community import PostDO, CommentDO, NotificationDO, CategoryDO
+from backend.schema.do.community import PostDO, CommentDO, NotificationDO, CategoryDO
 from datetime import datetime
 
 

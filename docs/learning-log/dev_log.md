@@ -658,3 +658,102 @@ Bug 发现：温度在 softmax 之后才被第二次赋值，第一次高温已�
 3. **转折是硬骨头**：BiGRU 读序列从前到后，前件正面词权重天然高于后件负面词。30+ 转折词规则是实用妥协，不是架构解法。
 4. **短文本是盲区**：50 位 padding 让单字输入几乎无信号，规则兜底是最经济的选择。
 5. **分层处理是正确的**：不是一套参数打天下，而是根据文本特征（极端/中性/转折/短文本）分层路由。
+
+---
+
+# Dev Log 2026-06-22
+
+## 架构重构：Domain 层 + Schema 重组
+
+### 背景
+
+当前架构是 `API → Service → DB`，API 直接 import Service 模块，没有接口隔离。这在规模小的时候没问题，但从架构设计角度看有两个隐患：
+
+1. **业务穿透**：API 层理论上可以直接 import DB 层，绕过 Service 的业务逻辑
+2. **数据定义散落**：DO 在 `model/`，VO 在 `core/vo/`，Request 也在 `model/`——新接手的人很难一眼看明白数据流向
+
+### 重构一：添加 Domain 接口层
+
+在 API 层和 Service 层之间插入 Domain 接口层：
+
+```
+旧：API → Service → DB
+新：API → Domain(接口) ← Service → DB
+```
+
+核心改动：
+- 新建 `backend/domain/community.py`，定义 `ICommunityService(ABC)`，声明 15 个抽象方法
+- `CommunityService` 从平铺函数改为类，实现 `ICommunityService` 接口
+- `deps.py` 新增 `get_community_service()` 工厂函数，返回类型标注为接口而非实现
+- API 层通过 `Depends(get_community_service)` 注入，不再 import 具体实现
+
+效果：
+- API 层只依赖接口，不知道 Service 类的存在
+- 测试时可以写 `MockCommunityService(ICommunityService)` 替换真实服务
+- 符合依赖倒置原则（DIP）：高层模块和低层模块都依赖抽象
+
+### 重构二：Schema 重组——数据定义大一统
+
+把散落在两处的数据定义统一到 `schema/` 下：
+
+```
+旧结构：                      新结构：
+model/                        schema/
+  auth.py          →            do/
+  user.py          →              user.py      (UserDO)
+  community.py     →              community.py (PostDO, CommentDO...)
+                   →            vo/
+core/vo/                         common.py    (ApiResponse)
+  common.py        →              user.py      (UserVO, LoginVO...)
+  user.py          →              community.py (PostVO, CommentVO...)
+  community.py     →              sentiment.py (SentimentResultVO...)
+  sentiment.py     →            request/
+                                  auth.py      (UserLogin)
+                                  user.py      (UserCreate, UserUpdate...)
+                                  community.py (PostCreate, PostUpdate...)
+```
+
+设计逻辑：
+- **DO**：Data Object，数据库行完整映射，仅供 DB/Service 层内部流转
+- **VO**：View Object，API 输出，不含敏感字段（如 password）
+- **Request**：API 输入，前端 → 后端的数据验证模型
+
+一条数据在系统中的三种形态：`进来的(Request) → 中间态(DO) → 出去的(VO)`，全部在 `schema/` 下一个目录里看得到。
+
+### 技术细节
+
+- 共移动 8 个文件，新建 12 个文件，更新 13 个文件中的 import 路径
+- Python 3.7 兼容：`int | None` 改为 `Optional[int]`
+- `from __future__ import annotations` 保证 TYPE_CHECKING 下的前向引用
+- 旧 `model/` 和 `core/vo/` 目录删除，历史包袱清零
+
+### 项目当前架构全景
+
+```
+backend/
+  schema/          ← 数据定义（三种形态）
+    do/            ← 数据库行 DO
+    vo/            ← API 输出 VO
+    request/       ← API 输入 Request
+  domain/          ← 服务接口声明（合同）
+  services/        ← 业务逻辑实现
+  db/              ← 数据访问（裸 SQL）
+  api/v1/          ← HTTP 路由入口
+  core/            ← 配置、异常、依赖注入、安全
+  ml/sentiment/    ← 情感分析模型 + 六层温度体系
+
+数据流：
+  HTTP → API → Domain(接口) ← Service → DB → Connection → MySQL
+                    ↑
+               Depends 注入
+```
+
+### 为什么做这个
+
+这次重构不是因为代码出了问题——Service 和 DB 的职责已经分得很清楚了。做这件事是三个原因：
+
+1. **架构完整性**：一个正经的后端项目，数据定义应该有自己的归属，接口应该有显式的合同
+2. **可测试性**：Domain 接口的最大价值在于 mock，虽然目前还没有测试，但架构已经为测试准备好了
+3. **评委视角**：Schema 三层分类（DO/VO/Request）+ Domain 接口抽象，在答辩时比"model 里啥都有"更能说明架构意识
+
+架构不是在功能完成之后才去"加"的东西——它就是功能的一部分。每一层为什么存在、数据在每一层长什么样、依赖箭头往哪指，这些问题的答案本身就是项目的技术文档。

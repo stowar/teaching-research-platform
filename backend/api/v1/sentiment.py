@@ -7,8 +7,8 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from backend.ml.sentiment import predictor
-from backend.core.vo.common import ApiResponse
-from backend.core.vo.sentiment import SentimentResultVO, SentimentStatusVO
+from backend.schema.vo.common import ApiResponse
+from backend.schema.vo.sentiment import SentimentResultVO, SentimentStatusVO
 
 router = APIRouter(prefix="/sentiment", tags=["教学评价情感分析"])
 

@@ -1,5 +1,6 @@
 from backend.db.connection import execute_query, execute_one, execute_update
-from backend.model.user import UserDO, UserCreate, UserUpdate
+from backend.schema.do.user import UserDO
+from backend.schema.request.user import UserCreate, UserUpdate
 from backend.core.security import get_password_hash
 from datetime import datetime
 

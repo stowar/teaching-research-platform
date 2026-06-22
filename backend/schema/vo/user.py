@@ -5,7 +5,7 @@ from typing import Optional, TYPE_CHECKING
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
-    from backend.model.user import UserDO
+    from backend.schema.do.user import UserDO
 
 
 class UserVO(BaseModel):

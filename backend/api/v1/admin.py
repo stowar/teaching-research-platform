@@ -5,13 +5,13 @@ from typing import List
 from fastapi import APIRouter, Depends
 
 from backend.core.deps import require_admin
-from backend.core.vo.common import ApiResponse
-from backend.core.vo.user import UserVO
+from backend.schema.vo.common import ApiResponse
+from backend.schema.vo.user import UserVO
 from backend.services.admin import (
     get_all_user_list_service, admin_get_user_info_service,
     admin_update_user_info_service, delete_user_service, enable_user_service,
 )
-from backend.model.user import UserUpdate
+from backend.schema.request.user import UserUpdate
 
 router_admin = APIRouter(prefix="/admin", tags=["管理员"])
 

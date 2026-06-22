@@ -6,10 +6,10 @@
 from fastapi import APIRouter, Depends
 
 from backend.core.deps import get_current_user
-from backend.core.vo.common import ApiResponse
-from backend.core.vo.user import UserVO, to_user_vo
+from backend.schema.vo.common import ApiResponse
+from backend.schema.vo.user import UserVO, to_user_vo
 from backend.services.users import update_current_user_info_service, update_password_service
-from backend.model.user import UserUpdate, UserUpdatePassword
+from backend.schema.request.user import UserUpdate, UserUpdatePassword
 
 
 router_user = APIRouter(prefix="/users", tags=["用户管理"])

@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from backend.core.exceptions import BusinessException
-from backend.core.vo.common import ApiResponse
-from backend.core.vo.user import UserVO, to_user_vo
+from backend.schema.vo.common import ApiResponse
+from backend.schema.vo.user import UserVO, to_user_vo
 from backend.db import user_db
-from backend.model.user import UserUpdate
+from backend.schema.request.user import UserUpdate
 
 
 def get_all_user_list_service() -> ApiResponse[list[UserVO]]:

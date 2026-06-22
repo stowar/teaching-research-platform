@@ -5,11 +5,11 @@
 
 from fastapi import APIRouter
 
-from backend.model.user import UserCreate
-from backend.model.auth import UserLogin
+from backend.schema.request.user import UserCreate
+from backend.schema.request.auth import UserLogin
 from backend.services.auth import login_service, register_service
-from backend.core.vo.common import ApiResponse
-from backend.core.vo.user import LoginVO, UserVO
+from backend.schema.vo.common import ApiResponse
+from backend.schema.vo.user import LoginVO, UserVO
 
 router = APIRouter(prefix="/auth", tags=["认证授权"])
 

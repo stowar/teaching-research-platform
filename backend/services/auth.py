@@ -3,8 +3,8 @@
 
 from backend.core.exceptions import BusinessException
 from backend.core.security import verify_password, get_password_hash
-from backend.core.vo.common import ApiResponse
-from backend.core.vo.user import UserVO, LoginVO, to_user_vo
+from backend.schema.vo.common import ApiResponse
+from backend.schema.vo.user import UserVO, LoginVO, to_user_vo
 from backend.db import user_db
 from backend.utils.jwt import create_access_token
 

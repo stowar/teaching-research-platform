@@ -5,7 +5,7 @@ from typing import List, Optional, TYPE_CHECKING
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
-    from backend.model.community import PostDO, CommentDO, NotificationDO, CategoryDO
+    from backend.schema.do.community import PostDO, CommentDO, NotificationDO, CategoryDO
 
 
 def _fmt(dt):
@@ -60,9 +60,6 @@ class CategoryVO(BaseModel):
     id: int
     name: str
     sort_order: int
-
-
-# ===================== 转换函数 =====================
 
 
 class LikedVO(BaseModel):
