@@ -86,17 +86,15 @@ class Personality:
         self.attention = max(30, self.attention - 5)
         self.engagement = min(100, self.engagement + 1)
 
-        # 根据关键词自动调语气
+        # 根据关键词自动调语气（规则定义在 Agent/rules.py）
+        from backend.Agent.rules import TONE_RULES
+
         lowered = content.lower()
-        if any(kw in lowered for kw in ['谢谢', '太棒', '帮了大忙', '厉害', '优秀']):
-            self.tone = Tone.ENCOURAGING
-        elif any(kw in lowered for kw in ['怎么办', '头疼', '难', '焦虑', '救救']):
-            self.tone = Tone.ENCOURAGING
-        elif any(kw in lowered for kw in ['分析', '为什么', '原因', '数据', '对比']):
-            self.tone = Tone.ANALYTICAL
-        elif any(kw in lowered for kw in ['论文', '课题', '规范', '标准', '政策']):
-            self.tone = Tone.PROFESSIONAL
-        # 否则保持当前语气
+        for tone_name, rule in TONE_RULES.items():
+            if any(kw in lowered for kw in rule["keywords"]):
+                self.tone = Tone(tone_name)
+                return
+        # 未命中任何规则 → 保持当前语气
 
     # ── 持久化 ────────────────────────────────────
 

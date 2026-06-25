@@ -14,6 +14,7 @@ from backend.schema.vo.ai_chat import (
 from backend.Agent.provider import get_ai_provider
 from backend.Agent.personality import Personality
 from backend.Agent.tools import TOOLS, MemoryStore, execute_tool
+from backend.Agent.rules import build_system_prompt, MAX_CONTEXT_MESSAGES, MAX_TOOL_ROUNDS
 from backend.core.config import settings
 
 # 记忆文件存储目录
@@ -81,21 +82,19 @@ class AIChatService(IAIChatService):
         personality.on_user_message(message)
         memory = MemoryStore(user_id, AI_DATA_DIR)
 
-        # ── 4. 构建 system prompt ──
-        system_prompt = _build_system_prompt(personality, memory)
+        # ── 4. 构建 system prompt（规则来自 Agent/rules.py） ──
+        system_prompt = build_system_prompt(personality, memory)
 
         # ── 5. 构建消息上下文 ──
         messages = [{"role": "system", "content": system_prompt}]
         history = ai_chat_db.get_messages_by_conversation(conversation_id)
-        # 只取最近 30 条作为上下文窗口
-        for m in history[-30:]:
+        for m in history[-MAX_CONTEXT_MESSAGES:]:
             messages.append({"role": m.role, "content": m.content})
 
         # ── 6. 调 AI（带 function calling 循环） ──
         provider = get_ai_provider(model)
-        max_tool_rounds = 3
 
-        for _ in range(max_tool_rounds):
+        for _ in range(MAX_TOOL_ROUNDS):
             response = provider.chat(messages, TOOLS, "auto")
             tool_calls = response.get("tool_calls", [])
 
@@ -136,36 +135,3 @@ class AIChatService(IAIChatService):
             conversation_id=conversation_id,
             message=to_message_vo(ai_message),
         ))
-
-
-def _build_system_prompt(personality: Personality, memory: MemoryStore) -> str:
-    """构建 AI 教研助手的 system prompt"""
-    tone_desc = personality.get_tone_prompt()
-    memories = memory.get_recent_context(10)
-    status = personality.get_status()
-
-    prompt = f"""你是 AI 教研助手，专为职业院校英语教师打造。
-
-## 你的职责
-- 协助英语教学设计、课堂活动策划、课程思政融合
-- 分析教学评价、推荐教研资源、解答教学困惑
-- 为教师提供专业、温暖、有针对性的建议
-
-## 当前状态
-{status}
-
-## 语气指导
-{tone_desc}
-
-## 记忆
-{memories if memories else "还不了解这位教师，多问多记。"}
-
-## 交互规则
-1. 结合用户的学校类型（职业院校）、学生特点（英语基础偏弱）给实际建议，不空谈理论
-2. 如果用户提到之前的经历或偏好，用 remember 工具记下来
-3. 如果问题涉及用户之前说过的事，先用 recall 查询
-4. 根据对话氛围用 set_tone 调整语气——教师沮丧时多鼓励，深入研讨时变专业
-5. 用 markdown 格式化长回答，分点、加粗重点
-6. 不要编造你没记住的信息
-7. 回复用中文"""
-    return prompt

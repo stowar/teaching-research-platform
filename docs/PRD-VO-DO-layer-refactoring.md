@@ -285,3 +285,5 @@ def login(login_data: UserLogin):
 | `services/users.py:13` | `update_current_user_info_service` | `"data": r_updated_user` — DB dict，含 `password` |
 | `services/admin.py` | 多个函数 | 返回 raw DB user dict，含 `password` |
 | `core/deps.py:31` | `get_current_user` | 返回的 dict 含 `password`，`GET /users/me` 通过 `response_model=UserResponse` 过滤了，但其他不声明 response_model 的接口如果拿到 current_user 直接返回就泄露 |
+
+todo: 模型对情景评价识别能力不强,对"老师向我下跪",等语句有强烈的误判.模型对体罚等一些做法的评论也没有纳入识别范围
