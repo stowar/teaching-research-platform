@@ -226,11 +226,8 @@ loadSessions()
               <div class="message-meta">
                 <span class="meta-name">AI 助手</span>
               </div>
-              <div class="message-bubble typing">
+              <div class="message-bubble thinking-bubble">
                 <span class="typing-label">Thinking...</span>
-                <span class="typing-dot" />
-                <span class="typing-dot" />
-                <span class="typing-dot" />
               </div>
             </div>
           </div>
@@ -561,12 +558,8 @@ loadSessions()
   color: #fff;
 }
 
-.typing {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+.thinking-bubble {
   padding: var(--space-2) var(--space-3);
-  min-width: 48px;
 }
 
 .typing-label {
@@ -579,22 +572,6 @@ loadSessions()
 @keyframes thinking-pulse {
   0%, 100% { opacity: 0.5; }
   50% { opacity: 1; }
-}
-
-.typing-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: var(--radius-full);
-  background: var(--text-tertiary);
-  animation: typing-bounce 1.4s infinite ease-in-out both;
-}
-
-.typing-dot:nth-child(2) { animation-delay: -0.32s; }
-.typing-dot:nth-child(3) { animation-delay: -0.16s; }
-
-@keyframes typing-bounce {
-  0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
-  40% { transform: scale(1); opacity: 1; }
 }
 
 /* 快捷提问 */
