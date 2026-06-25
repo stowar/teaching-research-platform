@@ -1,8 +1,7 @@
 <script setup>
 /**
- * AI 教研助手 AiChatView.vue（三栏固定布局版）
- * 参考原 Streamlit 页面结构：左侧会话栏 | 中间聊天区 | 右侧说明栏
- * 后续扩展：将 sendMessage 中的 mock 替换为真实 LLM API
+ * AI 教研助手 AiChatView.vue
+ * 对接真实 AI 后端：多人格系统 + 记忆系统 + Function Calling
  */
 import { ref, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
@@ -12,39 +11,79 @@ import {
   Sun, Moon
 } from 'lucide-vue-next'
 import { useTheme } from '@/composables/useTheme.js'
+import api from '@/api/client'
 
 const router = useRouter()
 const { isDark, toggle } = useTheme()
 
-// 会话数据
-const sessions = ref([
-  { id: 's1', name: 'session_1', active: true },
-  { id: 's2', name: 'session_2', active: false }
-])
-const sessionCount = ref(2)
+// ===================== 会话 =====================
+const sessions = ref([])
+const currentConversationId = ref(null)
+
+async function loadSessions() {
+  try {
+    const res = await api.get('/ai-chat/conversations')
+    sessions.value = res.data || []
+  } catch { /* 静默失败 */ }
+}
 
 function createSession() {
-  sessionCount.value += 1
-  const name = `session_${sessionCount.value}`
   sessions.value.forEach(s => (s.active = false))
-  sessions.value.unshift({ id: Date.now().toString(), name, active: true })
+  currentConversationId.value = null
   clearChat()
 }
 
-function switchSession(session) {
+async function switchSession(conv) {
   sessions.value.forEach(s => (s.active = false))
-  session.active = true
-  // 实际项目中这里应加载对应会话的历史消息
+  conv.active = true
+  currentConversationId.value = conv.id
+
+  try {
+    const res = await api.get(`/ai-chat/conversations/${conv.id}`)
+    const detail = res.data
+    if (detail && detail.messages) {
+      messages.value = detail.messages.map(m => ({
+        role: m.role,
+        content: m.content,
+        timestamp: m.timestamp,
+      }))
+    }
+  } catch {
+    messages.value = [welcomeMsg()]
+  }
 }
 
-// 消息
-const messages = ref([
-  {
+async function renameConversation(conv) {
+  const title = prompt('新名称：', conv.title)
+  if (!title || !title.trim()) return
+  try {
+    await api.put(`/ai-chat/conversations/${conv.id}/rename`, { title: title.trim() })
+    conv.title = title.trim()
+  } catch { /* 静默 */ }
+}
+
+async function deleteConversation(conv) {
+  if (!confirm(`删除会话「${conv.title}」？`)) return
+  try {
+    await api.delete(`/ai-chat/conversations/${conv.id}`)
+    if (currentConversationId.value === conv.id) {
+      currentConversationId.value = null
+      clearChat()
+    }
+    loadSessions()
+  } catch { /* 静默 */ }
+}
+
+// ===================== 消息 =====================
+function welcomeMsg() {
+  return {
     role: 'assistant',
     content: '你好！我是 AI 教研助手。我可以帮您解答英语教学、课程设计、教研资源等方面的问题。',
-    timestamp: Date.now()
+    timestamp: Date.now(),
   }
-])
+}
+
+const messages = ref([welcomeMsg()])
 const input = ref('')
 const loading = ref(false)
 const messagesContainer = ref(null)
@@ -54,13 +93,6 @@ const quickPrompts = [
   '请推荐几个适合职校学生的英语教学活动',
   '英语课程思政有哪些切入点？',
   '如何提升学生的职场英语应用能力？'
-]
-
-const mockReplies = [
-  '根据您的需求，我建议从以下几个方面入手：\n\n**1. 情境创设**\n结合学生未来职业场景，设计真实的语言使用情境，比如酒店接待、商务谈判、机场登机等。\n\n**2. 任务驱动**\n采用项目式学习（PBL），让学生以小组为单位完成一份英语岗位实训方案。\n\n**3. 分层教学**\n针对不同英语基础的学生，设置基础版、进阶版和挑战版三套任务卡。\n\n需要我为您展开其中某个环节吗？',
-  '这是一个很好的教研方向！目前职校英语教学中，比较有效的策略包括：\n\n- **产教融合**：邀请企业导师进课堂，分享真实工作场景的英语表达\n- **数字化工具**：利用 AI 语音评测、VR 情境模拟等技术增强互动性\n- **课证融通**：将教学内容与职业技能等级证书考试对接\n\n您可以结合本校的专业特色，选择 1-2 个点做深度突破。',
-  '针对高职学生的特点，课堂活动设计建议遵循 "实用、有趣、可达成" 原则：\n\n**推荐活动：**\n1. **Role Play（角色扮演）**：模拟面试、客户接待等真实场景\n2. **English News Digest**：每周选取 1 条行业英语新闻做速读训练\n3. **Vlog Script Writing**：让学生为校园/实训场景撰写英文短视频脚本\n4. **Peer Teaching（同伴教学）**：优生带动后进生，讲解重点词汇\n\n这些活动投入成本低，但学生参与度高。',
-  '课程思政与英语教学的融合，关键在于 "润物细无声"。以下是几个有效的切入点：\n\n**文化自信**：对比中西方节日、礼仪，引导学生讲好中国故事\n**职业精神**：通过商务英语案例，传递诚信、敬业、协作等价值观\n**家国情怀**：选取 "一带一路" 相关的英文素材，拓展国际视野\n**工匠精神**：介绍中国技能大师的国际交流故事，激发职业自豪感\n\n建议每次课融入 1 个思政元素，避免生硬说教。'
 ]
 
 async function scrollToBottom() {
@@ -73,6 +105,7 @@ async function scrollToBottom() {
 async function sendMessage(text = input.value.trim()) {
   if (!text || loading.value) return
 
+  // 显示用户消息
   messages.value.push({ role: 'user', content: text, timestamp: Date.now() })
   input.value = ''
   await scrollToBottom()
@@ -80,43 +113,56 @@ async function sendMessage(text = input.value.trim()) {
   loading.value = true
   await scrollToBottom()
 
-  const delay = 600 + Math.random() * 600
-  await new Promise(r => setTimeout(r, delay))
+  try {
+    const res = await api.post('/ai-chat/chat', {
+      message: text,
+      conversation_id: currentConversationId.value,
+      model: 'deepseek-chat',
+    })
 
-  let replyText = mockReplies[Math.floor(Math.random() * mockReplies.length)]
-  const lowered = text.toLowerCase()
-  if (lowered.includes('听说') || lowered.includes('课堂') || lowered.includes('课')) replyText = mockReplies[0]
-  else if (lowered.includes('活动') || lowered.includes('游戏')) replyText = mockReplies[2]
-  else if (lowered.includes('思政') || lowered.includes('德育')) replyText = mockReplies[3]
-  else if (lowered.includes('策略') || lowered.includes('方法') || lowered.includes('能力')) replyText = mockReplies[1]
+    const reply = res.data
+    // 首次对话 → 后端返回新 conversation_id
+    if (reply.conversation_id && !currentConversationId.value) {
+      currentConversationId.value = reply.conversation_id
+      loadSessions()
+    }
 
-  const aiMessage = { role: 'assistant', content: '', timestamp: Date.now(), streaming: true }
-  messages.value.push(aiMessage)
-  await scrollToBottom()
+    // 打字机效果
+    const fullText = reply.message.content
+    const aiMessage = { role: 'assistant', content: '', timestamp: reply.message.timestamp, streaming: true }
+    messages.value.push(aiMessage)
+    await scrollToBottom()
 
-  const chars = replyText.split('')
-  for (let i = 0; i < chars.length; i++) {
-    aiMessage.content += chars[i]
-    if (i % 3 === 0 || i === chars.length - 1) await scrollToBottom()
-    await new Promise(r => setTimeout(r, 15 + Math.random() * 10))
+    const chars = fullText.split('')
+    for (let i = 0; i < chars.length; i++) {
+      aiMessage.content += chars[i]
+      if (i % 3 === 0 || i === chars.length - 1) await scrollToBottom()
+      await new Promise(r => setTimeout(r, 15 + Math.random() * 10))
+    }
+    aiMessage.streaming = false
+  } catch (e) {
+    messages.value.push({
+      role: 'assistant',
+      content: '抱歉，出了点问题，请稍后重试。',
+      timestamp: Date.now(),
+    })
+  } finally {
+    loading.value = false
+    await scrollToBottom()
   }
-  aiMessage.streaming = false
-  loading.value = false
-  await scrollToBottom()
 }
 
 function clearChat() {
-  messages.value = [{
-    role: 'assistant',
-    content: '你好！我是 AI 教研助手。我可以帮您解答英语教学、课程设计、教研资源等方面的问题。',
-    timestamp: Date.now()
-  }]
+  messages.value = [welcomeMsg()]
 }
 
 function formatTime(ts) {
   const d = new Date(ts)
   return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`
 }
+
+// 页面加载时拉会话列表
+loadSessions()
 </script>
 
 <template>
@@ -134,11 +180,13 @@ function formatTime(ts) {
         <button
           v-for="session in sessions"
           :key="session.id"
-          :class="['session-item', session.active ? 'active' : '']"
+          :class="['session-item', session.id === currentConversationId ? 'active' : '']"
           @click="switchSession(session)"
+          @contextmenu.prevent="deleteConversation(session)"
         >
           <MessageSquare :size="14" />
-          <span class="session-name">{{ session.name }}</span>
+          <span class="session-name">{{ session.title }}</span>
+          <span class="session-count">{{ session.message_count || 0 }}</span>
         </button>
       </div>
 
@@ -250,27 +298,20 @@ function formatTime(ts) {
       </div>
       <div class="info-body">
         <div class="info-section">
-          <h4>🎯 功能介绍</h4>
-          <p>AI 教研助手基于大语言模型，专为职业院校英语教师打造。可协助您完成教案设计、教学策略分析、课程思政融合等教研任务。</p>
+          <h4>功能介绍</h4>
+          <p>AI 教研助手搭载人格系统和长期记忆，能记住你的研究方向、教学习惯和偏好。越聊越懂你。</p>
         </div>
         <div class="info-section">
-          <h4>💡 提问技巧</h4>
+          <h4>使用技巧</h4>
           <ul>
             <li>尽量描述具体场景，例如学生年级、专业方向</li>
-            <li>可要求按特定格式输出，如表格、清单、流程图</li>
+            <li>可要求按特定格式输出，如表格、清单</li>
             <li>对不满意的回答可追问细化</li>
+            <li>右击会话可删除</li>
           </ul>
         </div>
         <div class="info-section">
-          <h4>⚠️ 注意事项</h4>
-          <ul>
-            <li>AI 生成内容仅供参考，请结合校情学情判断</li>
-            <li>涉及敏感政策或隐私数据请谨慎输入</li>
-            <li>当前为演示版本，后续将接入 RAG 知识库</li>
-          </ul>
-        </div>
-        <div class="info-section">
-          <h4>🚀 快捷指令</h4>
+          <h4>快捷指令</h4>
           <div class="info-tags">
             <span class="info-tag">教案设计</span>
             <span class="info-tag">活动推荐</span>
@@ -383,9 +424,18 @@ function formatTime(ts) {
 }
 
 .session-name {
+  flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.session-count {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  background: var(--bg-page);
+  padding: 0 6px;
+  border-radius: var(--radius-full);
 }
 
 .sidebar-footer {
@@ -778,30 +828,16 @@ function formatTime(ts) {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* 响应式：平板以下隐藏右侧说明栏 */
+/* 响应式 */
 @media (max-width: 1024px) {
-  .info-sidebar {
-    display: none;
-  }
+  .info-sidebar { display: none; }
 }
 
-/* 响应式：手机隐藏左侧会话栏，做成下拉切换 */
 @media (max-width: 768px) {
-  .session-sidebar {
-    display: none;
-  }
-
-  .messages-scroll {
-    padding: var(--space-3);
-  }
-
-  .message-body {
-    max-width: 90%;
-  }
-
-  .input-area {
-    padding: var(--space-3);
-  }
+  .session-sidebar { display: none; }
+  .messages-scroll { padding: var(--space-3); }
+  .message-body { max-width: 90%; }
+  .input-area { padding: var(--space-3); }
 }
 
 .info-footer {
@@ -859,5 +895,9 @@ function formatTime(ts) {
 [data-theme="dark"] .info-tag {
   background: rgba(79, 70, 229, 0.15);
   color: var(--color-brand-300);
+}
+
+[data-theme="dark"] .session-count {
+  background: rgba(255, 255, 255, 0.06);
 }
 </style>
