@@ -801,3 +801,136 @@ db/ → services/ → api/   ← 逐层填实现
 ### 一句话
 
 **先定义形状，再写实现；先定合同，再写代码。** DO 和 VO 不是"数据类"——它们是需求的代码化。所有代码围着数据走，不是代码围着框架走。
+
+---
+
+# Dev Log 2026-06-26
+
+## AI 聊天室：XiaoBai 技术迁移到教研场景
+
+### 背景
+
+AI 聊天室此前是空壳——前端 4 条 hardcoded mock 回复随机抽取，400ms 假延迟模拟思考。没有后端，没有记忆，没有人格。
+
+同期有另一个独立项目 XiaoBai（AI 虚拟伴侣），已跑通核心对话引擎：人格状态机、记忆系统、Function Calling 工具调用、主动消息调度。XiaoBai 的技术方案本质上是一个"有性格、有记忆、有主动性"的 AI 对话框架——放在教研场景就是"懂你研究方向、记得你说过的话、会在合适时机鼓励你"的智能助手。
+
+这次不是"复制粘贴"，是把 XiaoBai 的核心能力按教学科研平台的架构标准重新实现。
+
+### 开发流程（按数据驱动顺序）
+
+#### 1. Schema 三层定义
+```
+schema/do/ai_chat.py      ← ConversationDO, MessageDO（数据库行）
+schema/vo/ai_chat.py      ← ConversationVO, MessageVO, ChatReplyVO（API输出）
+schema/request/ai_chat.py ← ChatRequest, RenameConversation（API输入）
+```
+
+**经验**：`msg_count` 来自 JOIN 子查询，在 DO 里加了 `= 0` 默认值让 Pydantic 认它。之前漏了这个字段导致 service 里动态赋值失败。
+
+#### 2. 建表
+conversations + messages 两张表，InnoDB + FOREIGN KEY ON DELETE CASCADE。SQL 写好后在本地 MySQL 踩了坑——DATETIME 不支持 DEFAULT CURRENT_TIMESTAMP（低版本 MySQL），改为插入时手动 NOW()。
+
+#### 3. Domain 接口
+`IAIChatService(ABC)` —— 5 个抽象方法：会话列表、详情、重命名、删除、对话。API 层只依赖这个接口，不感知具体实现。
+
+#### 4. AI 核心引擎（Agent/）
+
+从 XiaoBai 迁移了四个模块：
+
+| XiaoBai（女友） | 教研平台（助手） | 改动 |
+|---|---|---|
+| Personality（亲密度/情绪/活跃度） | Personality（投入度/关注度/四态语气） | 人设从"撒娇女友"改为"专业+亲切+鼓励+分析" |
+| 6 个 function tools | 5 个工具（记忆/查询/语气/投入度/时间） | 保留核心，去掉亲密度/情绪切换 |
+| MemoryStore（JSON 文件存储） | 完全复用 | 按 user_id 分文件存储 |
+| 无 | rules.py（系统提示/语气规则/约束参数） | 新增：规则与代码分离 |
+| 对话循环（调 AI → 工具 → 保存） | 完全复用 | function calling 最多 3 轮循环 |
+
+**关键设计决策**：把 rules 从 service 代码里拆出来放到 `Agent/rules.py`——改 AI 行为只改一个文件。系统提示模板、语气切换关键词、30 条上下文窗口、3 轮工具循环上限——调参不追代码。
+
+**语气自动切换规则**：
+- 用户说"谢谢/太棒/帮了大忙" → encouraging（温暖鼓励）
+- 说"分析/为什么/数据" → analytical（深入分析）
+- 说"论文/课题/规范" → professional（专业严谨）
+- 说"怎么办/头疼/焦虑" → encouraging（温暖鼓励）
+- 否则保持当前语气
+
+#### 5. AI Provider 抽象
+`IAIProvider(ABC)` + `OpenAICompatibleProvider`——DeepSeek、豆包、OpenAI 全部走同一套 OpenAI SDK。config 里 `DOUBAO_API_KEY` 读 `.env` 的 `API_KEY`，`AI_BASE_URL` 默认 `https://api.deepseek.com`。
+
+**坑**：config.py 原来只有 `DAPI_KEY`，provider 用的是 `DOUBAO_API_KEY`，两边没对上导致 API 调用报 AttributeError。统一到 `DOUBAO_API_KEY`。
+
+#### 6. 后端链路
+```
+db/ai_chat_db.py      ← 会话 CRUD + 消息存取（裸 SQL）
+services/ai_chat.py   ← 对话引擎（构建上下文→调AI→工具循环→保存）
+api/v1/ai_chat.py     ← 5 个 REST 端点
+deps.py               ← get_ai_chat_service() 工厂注入
+main.py               ← include_router
+```
+
+**对话引擎流程**：
+1. 会话管理（新建或复用）
+2. 保存用户消息
+3. 加载 Personality + MemoryStore
+4. 构建 system prompt（rules.py）
+5. 构建消息上下文（最近 30 条历史）
+6. 调 AI（最多 3 轮 function calling 循环）
+7. 保存 AI 回复
+8. 持久化人格状态
+
+#### 7. 前端接入（AiChatView.vue）
+
+从 mock 替换为真实 API：
+- `POST /ai-chat/chat` → 发送消息，首次自动创建会话
+- `GET /ai-chat/conversations` → 会话列表
+- `GET /ai-chat/conversations/{id}` → 加载历史消息
+- `PUT /ai-chat/conversations/{id}/rename` → 重命名
+- `DELETE /ai-chat/conversations/{id}` → 删除（右键菜单）
+
+**前端迭代过程**：
+1. 接真实 API（替换 mock）
+2. 打字机逐字输出（`split('')` → emoji 乱码卡死 → 改 `[...str]`）
+3. Thinking... 加载态（跳动点 + 呼吸动画）
+4. 打字机改为固定 20ms/字节奏
+5. 最终决定：**一次性完整输出**（打字机体验虽好但不可靠）
+6. Thinking... 去掉跳动点，只保留呼吸文字
+7. Markdown 渲染（markdown-it：标题/列表/代码/表格/引用）
+
+**坑**：打字机结束后 `streaming=false` 但 `loading` 仍为 `true`，模板条件 `loading && !streaming` 瞬间为真，Thinking... 闪现了一下。改为 `streaming` 和 `loading` 同时置 false。
+
+**emoji 坑**：`'😊'.split('')` 产生 `['\uD83D', '\uDE0A']`（surrogate pair），浏览器渲染第一个无效字节时卡死。`[...str]` 按 Unicode code point 拆才正确。
+
+### 测试结果（16/16 全部通过）
+
+```
+Personality   2/2  ✓   语气切换（专业/鼓励/分析/默认）
+Memory        2/2  ✓   存储搜索 + 上下文加载
+Tools         4/4  ✓   4 个 function calling 工具
+Rules         3/3  ✓   system prompt + 约束参数 + 3 组语气规则
+API 认证      1/1  ✓   无 token 返回 401
+API 参数校验   1/1  ✓   空消息返回 422
+API 会话 CRUD  3/3  ✓   列表/详情/重命名/删除
+API 聊天       1/1  ✓   DeepSeek API 真实回复
+─────────────────────
+              16/16 全部通过
+```
+
+### 架构收束
+
+AI 核心模块统一到 `Agent/`，与 `ml/sentiment/` 同级聚合：
+```
+Agent/          — AI 教研助手（人格 + provider + 工具 + 规则）
+ml/sentiment/   — 情感分析（模型 + 推理 + 训练 + 后处理）
+```
+
+两者特征相同：零项目依赖、可独立运行、是"工具"而非"调度者"。
+
+### 核心认知
+
+1. **两个项目的正确关系**：XiaoBai 是 spike/prototype（技术探索），教研平台是 production（成果落地）。不是"把虚拟女友搬过来"，是"先建辅助项目验证技术方案再迁移主项目"——这是大厂的 spike 做法。
+
+2. **规则与代码分离**：`Agent/rules.py` 独立于 service 代码——改 AI 人设、调语气触发词、改上下文窗口大小，都只改一个文件。这是从情感分析的温度体系学来的：predictor.py 把 L1-L6 六层规则全写在一起，改参数不用追代码。
+
+3. **依赖方向决定目录归属**：Agent 和 ml 不 import 项目内的 schema/db/service，所以不该放进 services。services 是"调度工具的人"，Agent 和 ml 是"被调度的工具"。
+
+4. **流输出是一次好的尝试但不适合当前场景**：打字机效果在纯文本场景很美，但遇到 emoji 就崩（UTF-16 surrogate pair）。在不需要流式传输的场景，一次性输出更可靠。
