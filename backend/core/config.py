@@ -6,8 +6,9 @@ from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
 import os
 
-# 加载.env文件
-load_dotenv()
+# 加载.env文件（用绝对路径，防止 supervisor 启动时 CWD 不是项目根目录）
+_ENV_PATH = Path(__file__).resolve().parent.parent.parent / '.env'
+load_dotenv(_ENV_PATH)
 
 class Settings(BaseSettings):
     # 项目配置
