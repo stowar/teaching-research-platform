@@ -934,3 +934,39 @@ ml/sentiment/   — 情感分析（模型 + 推理 + 训练 + 后处理）
 3. **依赖方向决定目录归属**：Agent 和 ml 不 import 项目内的 schema/db/service，所以不该放进 services。services 是"调度工具的人"，Agent 和 ml 是"被调度的工具"。
 
 4. **流输出是一次好的尝试但不适合当前场景**：打字机效果在纯文本场景很美，但遇到 emoji 就崩（UTF-16 surrogate pair）。在不需要流式传输的场景，一次性输出更可靠。
+
+## 补充认知：依赖倒置的真正威力
+
+### 从"听过"到"懂了"
+
+在加入 Domain 层时，我只模糊地知道"依赖倒置原则"这个名字。传统三层架构的依赖方向是 `API → Service → DB`——高层永远依赖低层，即使加个接口把依赖面缩小（从 50 个方法到 15 个），箭头方向没变。
+
+依赖倒置做了一件反直觉的事：**把箭头反向了。**
+
+```
+API → Domain ← Service → DB
+```
+
+API 只认识 Domain（接口定义），Service 也只认识 Domain（实现接口）。两边的箭头都指向中间，谁也不认识谁。API 文件里没有一行 `from backend.services import`——它只 import 了一个 ABC，至于谁实现、怎么实现——运行时 Depends 注入才决定。
+
+### 真正的威力不是"架构更漂亮"
+
+是**测试不需要底层了。**
+
+```python
+class MockChatService(IAIChatService):
+    def chat(self, ...):
+        return ApiResponse(msg="ok", data=...)
+
+app.dependency_overrides[get_ai_chat_service] = MockChatService
+```
+
+不需要数据库。不需要 AI API key。不需要网络。10 行假实现，API 层全链路可测。
+
+传统的分层——即使有接口——测试还是需要启动数据库。因为 Service 依赖 DB，这个依赖是写死的。只有依赖倒置——Service 的 DB 依赖也通过接口注入——才能从最底层到最上层全链路 mock。
+
+### 核心认知
+
+**从"听过一个设计模式的名字"到"懂了它为什么对"，中间隔着的不是时间——是亲手把它写成 15 个端点、写完之后突然发现"我可以不启动数据库就能测整个 API 层"的那一刻。**
+
+依赖倒置不是"高层的依赖变小了"，是"高层的依赖消失了"。不是减少依赖，是反转依赖方向。这才是 SOLID 里 D 的真正含义。
