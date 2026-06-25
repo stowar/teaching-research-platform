@@ -133,11 +133,12 @@ async function sendMessage(text = input.value.trim()) {
     messages.value.push(aiMessage)
     await scrollToBottom()
 
-    const chars = fullText.split('')
+    // [...str] 正确处理 Unicode（emoji/surrogate pairs 不会被拆成乱码）
+    const chars = [...fullText]
     for (let i = 0; i < chars.length; i++) {
       aiMessage.content += chars[i]
-      if (i % 3 === 0 || i === chars.length - 1) await scrollToBottom()
-      await new Promise(r => setTimeout(r, 15 + Math.random() * 10))
+      if (i % 2 === 0 || i === chars.length - 1) await scrollToBottom()
+      await new Promise(r => setTimeout(r, 12 + Math.random() * 8))
     }
     aiMessage.streaming = false
     loading.value = false
