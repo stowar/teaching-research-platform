@@ -233,6 +233,7 @@ loadSessions()
                 <span class="meta-name">AI 助手</span>
               </div>
               <div class="message-bubble typing">
+                <span class="typing-label">Thinking...</span>
                 <span class="typing-dot" />
                 <span class="typing-dot" />
                 <span class="typing-dot" />
@@ -593,6 +594,18 @@ loadSessions()
   min-width: 48px;
 }
 
+.typing-label {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  font-style: italic;
+  animation: thinking-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes thinking-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
 .typing-dot {
   width: 5px;
   height: 5px;
@@ -601,8 +614,8 @@ loadSessions()
   animation: typing-bounce 1.4s infinite ease-in-out both;
 }
 
-.typing-dot:nth-child(1) { animation-delay: -0.32s; }
-.typing-dot:nth-child(2) { animation-delay: -0.16s; }
+.typing-dot:nth-child(2) { animation-delay: -0.32s; }
+.typing-dot:nth-child(3) { animation-delay: -0.16s; }
 
 @keyframes typing-bounce {
   0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
