@@ -11,7 +11,7 @@ from backend.schema.do.ai_chat import ConversationDO, MessageDO
 def create_conversation(user_id: int, title: str = "新对话", model: str = "deepseek-chat") -> int:
     """创建新会话，返回 ID"""
     return execute_insert(
-        "INSERT INTO conversations (user_id, title, model) VALUES (%s, %s, %s)",
+        "INSERT INTO conversations (user_id, title, model, create_time, update_time) VALUES (%s, %s, %s, NOW(), NOW())",
         (user_id, title, model)
     )
 
@@ -64,7 +64,7 @@ def touch_conversation(conversation_id: int):
 def create_message(conversation_id: int, role: str, content: str) -> int:
     """新增消息，返回 ID"""
     return execute_insert(
-        "INSERT INTO messages (conversation_id, role, content) VALUES (%s, %s, %s)",
+        "INSERT INTO messages (conversation_id, role, content, create_time) VALUES (%s, %s, %s, NOW())",
         (conversation_id, role, content)
     )
 
