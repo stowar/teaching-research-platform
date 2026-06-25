@@ -127,18 +127,23 @@ async function sendMessage(text = input.value.trim()) {
       loadSessions()
     }
 
-    // 打字机效果
+    // 打字机效果 — 固定节奏逐字蹦出
     const fullText = reply.message.content
     const aiMessage = { role: 'assistant', content: '', timestamp: reply.message.timestamp, streaming: true }
     messages.value.push(aiMessage)
     await scrollToBottom()
 
-    // [...str] 正确处理 Unicode（emoji/surrogate pairs 不会被拆成乱码）
+    const CHARS_PER_TICK = 1        // 每次吐几个字
+    const TICK_MS = 20              // 固定间隔（毫秒）
+    const SCROLL_EVERY = 5          // 每 N 个字滚一次
+
     const chars = [...fullText]
-    for (let i = 0; i < chars.length; i++) {
-      aiMessage.content += chars[i]
-      if (i % 2 === 0 || i === chars.length - 1) await scrollToBottom()
-      await new Promise(r => setTimeout(r, 12 + Math.random() * 8))
+    for (let i = 0; i < chars.length; i += CHARS_PER_TICK) {
+      aiMessage.content += chars.slice(i, i + CHARS_PER_TICK).join('')
+      if (i === 0 || i % SCROLL_EVERY === 0 || i + CHARS_PER_TICK >= chars.length) {
+        await scrollToBottom()
+      }
+      await new Promise(r => setTimeout(r, TICK_MS))
     }
     aiMessage.streaming = false
     loading.value = false
