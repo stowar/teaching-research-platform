@@ -233,3 +233,4 @@ logs/
 
 # Docker
 .dockerignore*.zip
+backend/data/

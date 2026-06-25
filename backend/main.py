@@ -12,6 +12,7 @@ from backend.api.v1.users import router_user as users_router
 from backend.api.v1.admin import router_admin as admin_router
 from backend.api.v1.sentiment import router as sentiment_router
 from backend.api.v1.community import router as community_router
+from backend.api.v1.ai_chat import router as ai_chat_router
 
 
 app = FastAPI(title=settings.PROJECT_NAME)
@@ -22,6 +23,7 @@ app.include_router(users_router, prefix=settings.API_V1_STR)
 app.include_router(admin_router, prefix=settings.API_V1_STR)
 app.include_router(sentiment_router, prefix=settings.API_V1_STR)
 app.include_router(community_router, prefix=settings.API_V1_STR)
+app.include_router(ai_chat_router, prefix=settings.API_V1_STR)
 
 
 @app.exception_handler(BusinessException)
@@ -42,10 +44,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # 健康检查接口
 @app.get(f"{settings.API_V1_STR}/health", tags=["系统"])
 def health_check():
     return {"status": "ok", "message": "系统运行正常"}
+
 
 @app.get("/")
 def root():

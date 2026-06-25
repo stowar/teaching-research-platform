@@ -7,6 +7,7 @@ from backend.utils.jwt import get_user_id_from_token
 from backend.db.user_db import get_user_by_id
 from backend.core.exceptions import BusinessException
 from backend.domain.community import ICommunityService
+from backend.domain.ai_chat import IAIChatService
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
@@ -39,7 +40,14 @@ async def require_admin(current_user=Depends(get_current_user)):
         raise BusinessException("无权访问", code=status.HTTP_403_FORBIDDEN)
     return current_user
 
+
 def get_community_service() -> ICommunityService:
     """注入教研社区服务 — 返回接口类型，API 层不感知具体实现"""
     from backend.services.community import CommunityService
     return CommunityService()
+
+
+def get_ai_chat_service() -> IAIChatService:
+    """注入 AI 聊天室服务"""
+    from backend.services.ai_chat import AIChatService
+    return AIChatService()

@@ -65,3 +65,18 @@ def execute_update(sql,params=None):
         conn.close()
 
 
+def execute_insert(sql,params=None):
+    """执行插入语句,返回自增ID"""
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(sql, params)
+            conn.commit()
+            return cursor.lastrowid
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        conn.close()
+
+

@@ -110,6 +110,37 @@ INSERT IGNORE INTO categories (name, description, sort_order, create_time) VALUE
 ('职业英语', '职场英语教学内容交流', 5, NOW()),
 ('AI工具', 'AI辅助教学工具与经验', 6, NOW());
 
+-- ============================================================
+-- AI 聊天室
+-- ============================================================
+
+DROP TABLE IF EXISTS messages;
+DROP TABLE IF EXISTS conversations;
+
+CREATE TABLE conversations (
+    id INT(11) NOT NULL AUTO_INCREMENT COMMENT '会话ID',
+    user_id INT(11) NOT NULL COMMENT '用户ID',
+    title VARCHAR(100) NOT NULL DEFAULT '新对话' COMMENT '会话标题',
+    model VARCHAR(50) NOT NULL DEFAULT 'deepseek-chat' COMMENT '模型名称',
+    status TINYINT(1) NOT NULL DEFAULT 1 COMMENT '状态：1正常 0已删除',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (id),
+    KEY idx_user_id (user_id),
+    KEY idx_update_time (update_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI聊天会话表';
+
+CREATE TABLE messages (
+    id INT(11) NOT NULL AUTO_INCREMENT COMMENT '消息ID',
+    conversation_id INT(11) NOT NULL COMMENT '会话ID',
+    role VARCHAR(20) NOT NULL COMMENT '角色：user/assistant',
+    content TEXT NOT NULL COMMENT '消息内容',
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    PRIMARY KEY (id),
+    KEY idx_conversation_id (conversation_id),
+    FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI聊天消息表';
+
 
 
 
