@@ -140,14 +140,15 @@ async function sendMessage(text = input.value.trim()) {
       await new Promise(r => setTimeout(r, 15 + Math.random() * 10))
     }
     aiMessage.streaming = false
+    loading.value = false
   } catch (e) {
+    loading.value = false
     messages.value.push({
       role: 'assistant',
       content: '抱歉，出了点问题，请稍后重试。',
       timestamp: Date.now(),
     })
   } finally {
-    loading.value = false
     await scrollToBottom()
   }
 }
