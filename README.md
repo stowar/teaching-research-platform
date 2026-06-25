@@ -1,72 +1,79 @@
-# teaching-research-platform
-虚拟教研社区系统 | FastAPI + 原生 SQL+Streamlit+RAG
+# 虚拟教研社区
 
-# 虚拟教研社区 - 运行说明
-> 前后端分离项目：FastAPI 后端 + Streamlit 前端，以下是一键运行的完整步骤。
+专为职业院校英语教师打造的教研协作平台。发帖沉淀讨论、资料分类检索、AI 辅助教研、学生评价情感分析——让教研从碎片化聊天里走出来。
 
-## 一、环境准备
-1.  确保已安装 Python 3.10+（推荐使用 Anaconda 管理虚拟环境）
-2.  创建并激活虚拟环境（终端执行）：
-    ```bash
-    # 创建虚拟环境
-    conda create -n teaching-research python=3.10 -y
-    # 激活虚拟环境
-    conda activate teaching-research
-    ```
+## 技术栈
 
----
+| 层 | 技术 |
+|----|------|
+| 前端 | Vue 3 + Vite + Pinia + Vue Router + markdown-it |
+| 后端 | FastAPI + Pydantic + JWT + bcrypt |
+| 数据库 | MySQL + pymysql + PooledDB 连接池 |
+| AI 对话 | DeepSeek API + 自研人格状态机 + Function Calling 工具链 |
+| 情感分析 | PyTorch BiGRU + Self-Attention + 六层温度缩放后处理 |
+| 部署 | 阿里云 ECS + Nginx + Supervisor |
 
-## 二、安装依赖（前后端分离）
-项目根目录结构：
+## 功能模块
+
+- **教研社区** — 帖子 CRUD、Markdown 编辑、分类筛选、搜索分页、点赞、嵌套评论、通知系统
+- **AI 聊天室** — 多会话管理、人格系统（四态语气 + 投入度）、长期记忆、Function Calling 工具链
+- **情感分析** — BiGRU + Self-Attention 推理、六层温度校准、注意力可视化（共振图 + 热力词）
+- **个人中心** — 消息通知、我的帖子、资料编辑
+- **管理后台** — 用户管理、角色权限、启用/禁用
+
+## 架构
+
 ```
-teaching-research-platform/
-├── backend/          # FastAPI 后端服务
-└── frontend/         # Streamlit 前端页面
+backend/
+  schema/          ← 数据定义（DO / VO / Request 三层）
+  domain/          ← 服务接口（Domain 层，API 只依赖此层）
+  services/        ← 业务逻辑
+  db/              ← 数据访问（裸 SQL）
+  api/v1/          ← RESTful 端点
+  Agent/           ← AI 教研助手引擎（人格 + Provider + 工具 + 规则）
+  ml/sentiment/    ← 情感分析引擎（模型 + 推理 + 训练 + 温度体系）
 ```
 
-### 1. 安装后端依赖
+**开发理念**：先定义形状再写代码（DO → VO → Domain → DB → Service → API）。所有代码围着数据走，不是围着框架走。详见 [设计哲学](docs/exhibition/设计哲学.md)。
+
+## 快速开始
+
 ```bash
-# 进入后端目录
+# 1. 后端
 cd backend
-# 安装依赖（清华源加速）
-pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+pip install -r requirements.txt
+uvicorn backend.main:app --reload --host localhost --port 8000
+
+# 2. 前端
+cd frontend-vue
+npm install
+npm run dev
 ```
 
-### 2. 安装前端依赖
+## 环境变量
+
+复制 `backend/.env.example` 为 `backend/.env`：
+```env
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=your_password
+DB_NAME=teaching_research
+SECRET_KEY=your_secret_key
+API_KEY=your_deepseek_api_key    # AI 聊天室所需
+AI_BASE_URL=https://api.deepseek.com
+```
+
+## 数据库
+
 ```bash
-# 进入前端目录
-cd ../frontend
-# 安装依赖（清华源加速）
-pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+mysql -u root -p teaching_research < docs/database/create_tables.sql
 ```
 
----
+## 相关项目
 
-## 三、启动项目（需同时打开 2 个终端）
-### 终端 1：启动后端服务
-```bash
-# 进入后端目录
-cd ../backend
-# 启动 FastAPI 服务
-uvicorn main:app --reload --host localhost --port 8000
-```
-- 后端启动成功提示：`Uvicorn running on http://localhost:8000`
-- 后端 API 文档地址：`http://localhost:8000/docs`
+[XiaoBai](https://github.com/stowar/XiaoBai) — AI 虚拟伴侣，人格系统 + 记忆系统 + 主动消息调度。教研平台 AI 聊天室的前身。
 
-### 终端 2：启动前端页面
-```bash
-# 进入前端目录
-cd ../frontend
-# 启动 Streamlit 应用
-streamlit run app.py
-```
-- 前端启动成功后，会自动打开浏览器访问 `http://localhost:8501`
+## License
 
----
-
-## 四、常见问题
-1.  **依赖安装失败**：执行命令时加上 `-i https://pypi.tuna.tsinghua.edu.cn/simple` 换源加速
-2.  **端口被占用**：启动命令中添加 `--port 自定义端口号` 更换端口（如 `uvicorn main:app --port 8001`）
-3.  **模块导入错误**：确保已激活正确的虚拟环境，且在项目根目录下执行启动命令
-
----
+MIT
