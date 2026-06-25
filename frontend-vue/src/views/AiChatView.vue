@@ -11,7 +11,10 @@ import {
   Sun, Moon
 } from 'lucide-vue-next'
 import { useTheme } from '@/composables/useTheme.js'
+import MarkdownIt from 'markdown-it'
 import api from '@/api/client'
+
+const md = new MarkdownIt({ breaks: true, linkify: true })
 
 const router = useRouter()
 const { isDark, toggle } = useTheme()
@@ -211,8 +214,9 @@ loadSessions()
                 <span class="meta-name">{{ msg.role === 'assistant' ? 'AI 助手' : '我' }}</span>
                 <span class="meta-time">{{ formatTime(msg.timestamp) }}</span>
               </div>
-              <div class="message-bubble">
-                <pre class="message-text">{{ msg.content }}</pre>
+              <div class="message-bubble" :class="{ 'markdown-body': msg.role === 'assistant' }">
+                <div v-if="msg.role === 'assistant'" class="message-text" v-html="md.render(msg.content)" />
+                <pre v-else class="message-text">{{ msg.content }}</pre>
               </div>
             </div>
           </div>
@@ -556,6 +560,85 @@ loadSessions()
 
 .message-row.user .message-text {
   color: #fff;
+}
+
+/* Markdown 渲染样式 */
+.markdown-body .message-text :deep(h1),
+.markdown-body .message-text :deep(h2),
+.markdown-body .message-text :deep(h3) {
+  margin: var(--space-3) 0 var(--space-2) 0;
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+}
+.markdown-body .message-text :deep(h1) { font-size: var(--text-xl); }
+.markdown-body .message-text :deep(h2) { font-size: var(--text-lg); }
+.markdown-body .message-text :deep(h3) { font-size: var(--text-base); }
+
+.markdown-body .message-text :deep(ul),
+.markdown-body .message-text :deep(ol) {
+  padding-left: var(--space-5);
+  margin: var(--space-2) 0;
+}
+
+.markdown-body .message-text :deep(li) {
+  margin-bottom: var(--space-1);
+}
+
+.markdown-body .message-text :deep(code) {
+  background: var(--bg-hover);
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  font-size: 0.9em;
+  font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.markdown-body .message-text :deep(pre) {
+  background: var(--bg-hover);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  overflow-x: auto;
+  margin: var(--space-2) 0;
+}
+
+.markdown-body .message-text :deep(pre code) {
+  background: none;
+  padding: 0;
+}
+
+.markdown-body .message-text :deep(strong) {
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+}
+
+.markdown-body .message-text :deep(blockquote) {
+  border-left: 3px solid var(--color-brand-400);
+  padding-left: var(--space-3);
+  margin: var(--space-2) 0;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.markdown-body .message-text :deep(a) {
+  color: var(--color-brand-600);
+  text-decoration: underline;
+}
+
+.markdown-body .message-text :deep(p) {
+  margin: var(--space-1) 0;
+}
+
+.markdown-body .message-text :deep(table) {
+  border-collapse: collapse;
+  width: 100%;
+  margin: var(--space-2) 0;
+}
+
+.markdown-body .message-text :deep(th),
+.markdown-body .message-text :deep(td) {
+  border: 1px solid var(--border-light);
+  padding: var(--space-1) var(--space-2);
+  text-align: left;
+  font-size: var(--text-xs);
 }
 
 .thinking-bubble {
