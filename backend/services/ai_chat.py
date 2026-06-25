@@ -11,9 +11,9 @@ from backend.schema.vo.ai_chat import (
     ConversationVO, ConversationDetailVO, MessageVO, ChatReplyVO,
     to_conversation_vo, to_message_vo,
 )
-from backend.core.ai.provider import get_ai_provider
-from backend.core.ai.personality import Personality
-from backend.core.ai.tools import TOOLS, MemoryStore, execute_tool
+from backend.Agent.provider import get_ai_provider
+from backend.Agent.personality import Personality
+from backend.Agent.tools import TOOLS, MemoryStore, execute_tool
 from backend.core.config import settings
 
 # 记忆文件存储目录
