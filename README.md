@@ -72,7 +72,8 @@ mysql -u root -p teaching_research < docs/database/create_tables.sql
 
 ## 相关项目
 
-[XiaoBai](https://github.com/stowar/XiaoBai) — AI 虚拟伴侣，人格系统 + 记忆系统 + 主动消息调度。教研平台 AI 聊天室的前身。
+- [XiaoBai](https://github.com/stowar/XiaoBai) — AI 虚拟伴侣，人格系统 + 记忆系统 + 主动消息调度。教研平台 AI 聊天室的前身。
+- [Hotel_Emotion_Predict](https://github.com/stowar/Hotel_Emotion_Predict) — 第一个全栈 AI 项目，酒店评论情感分析。教研平台情感分析模型的起点。
 
 ## License
 
