@@ -85,3 +85,15 @@ def get_message_count(conversation_id: int) -> int:
         (conversation_id,)
     )
     return row["cnt"] if row else 0
+
+
+def count_user_messages_today(user_id: int) -> int:
+    """统计用户今日发送的消息数"""
+    row = execute_one(
+        """SELECT COUNT(*) AS cnt FROM messages m
+           JOIN conversations c ON m.conversation_id = c.id
+           WHERE c.user_id = %s AND m.role = 'user'
+           AND DATE(m.create_time) = CURDATE()""",
+        (user_id,)
+    )
+    return row["cnt"] if row else 0

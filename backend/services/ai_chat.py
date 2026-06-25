@@ -14,7 +14,7 @@ from backend.schema.vo.ai_chat import (
 from backend.Agent.provider import get_ai_provider
 from backend.Agent.personality import Personality
 from backend.Agent.tools import TOOLS, MemoryStore, execute_tool
-from backend.Agent.rules import build_system_prompt, MAX_CONTEXT_MESSAGES, MAX_TOOL_ROUNDS
+from backend.Agent.rules import build_system_prompt, MAX_CONTEXT_MESSAGES, MAX_TOOL_ROUNDS, MAX_MESSAGES_PER_DAY
 from backend.core.config import settings
 
 # 记忆文件存储目录
@@ -62,6 +62,11 @@ class AIChatService(IAIChatService):
     # ===================== 对话核心逻辑 =====================
 
     def chat(self, user_id, message, conversation_id=None, model="deepseek-chat"):
+        # ── 0. 每日配额 ──
+        today_count = ai_chat_db.count_user_messages_today(user_id)
+        if today_count >= MAX_MESSAGES_PER_DAY:
+            raise BusinessException(f"今日消息已达上限（{MAX_MESSAGES_PER_DAY}条），请明天再来")
+
         # ── 1. 会话管理 ──
         if conversation_id:
             conv = ai_chat_db.get_conversation_by_id(conversation_id)
