@@ -127,26 +127,13 @@ async function sendMessage(text = input.value.trim()) {
       loadSessions()
     }
 
-    // 打字机效果 — 固定节奏逐字蹦出
-    const fullText = reply.message.content
-    const aiMessage = { role: 'assistant', content: '', timestamp: reply.message.timestamp, streaming: true }
-    messages.value.push(aiMessage)
-    await scrollToBottom()
-
-    const CHARS_PER_TICK = 1        // 每次吐几个字
-    const TICK_MS = 20              // 固定间隔（毫秒）
-    const SCROLL_EVERY = 5          // 每 N 个字滚一次
-
-    const chars = [...fullText]
-    for (let i = 0; i < chars.length; i += CHARS_PER_TICK) {
-      aiMessage.content += chars.slice(i, i + CHARS_PER_TICK).join('')
-      if (i === 0 || i % SCROLL_EVERY === 0 || i + CHARS_PER_TICK >= chars.length) {
-        await scrollToBottom()
-      }
-      await new Promise(r => setTimeout(r, TICK_MS))
-    }
-    aiMessage.streaming = false
+    messages.value.push({
+      role: 'assistant',
+      content: reply.message.content,
+      timestamp: reply.message.timestamp,
+    })
     loading.value = false
+    await scrollToBottom()
   } catch (e) {
     loading.value = false
     messages.value.push({
@@ -225,13 +212,13 @@ loadSessions()
                 <span class="meta-time">{{ formatTime(msg.timestamp) }}</span>
               </div>
               <div class="message-bubble">
-                <pre class="message-text">{{ msg.content }}<span v-if="msg.streaming" class="cursor">|</span></pre>
+                <pre class="message-text">{{ msg.content }}</pre>
               </div>
             </div>
           </div>
 
           <!-- 加载态 -->
-          <div v-if="loading && !messages[messages.length - 1]?.streaming" class="message-row assistant">
+          <div v-if="loading" class="message-row assistant">
             <div class="message-avatar">
               <Bot :size="16" />
             </div>
@@ -572,25 +559,6 @@ loadSessions()
 
 .message-row.user .message-text {
   color: #fff;
-}
-
-.cursor {
-  display: inline-block;
-  width: 2px;
-  height: 1em;
-  background: var(--color-brand-600);
-  margin-left: 2px;
-  animation: blink 1s step-end infinite;
-  vertical-align: text-bottom;
-}
-
-.message-row.user .cursor {
-  background: rgba(255, 255, 255, 0.8);
-}
-
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
 }
 
 .typing {
