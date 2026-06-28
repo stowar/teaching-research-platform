@@ -93,8 +93,11 @@ class AIChatService(IAIChatService):
         # ── 5. 构建消息上下文 ──
         messages = [{"role": "system", "content": system_prompt}]
         history = ai_chat_db.get_messages_by_conversation(conversation_id)
+        # 只加载 user/assistant 消息，跳过 tool 和带 tool_calls 的消息
         for m in history[-MAX_CONTEXT_MESSAGES:]:
-            messages.append({"role": m.role, "content": m.content})
+            if m.role in ("user", "assistant") and m.content:
+                msg = {"role": m.role, "content": m.content}
+                messages.append(msg)
 
         # ── 6. 调 AI（带 function calling 循环） ──
         provider = get_ai_provider(model)
@@ -128,7 +131,8 @@ class AIChatService(IAIChatService):
             ai_content = final.get("content", "抱歉，我暂时无法回答这个问题。")
 
         # ── 7. 保存 AI 回复 ──
-        ai_chat_db.create_message(conversation_id, "assistant", ai_content)
+        if ai_content:
+            ai_chat_db.create_message(conversation_id, "assistant", ai_content)
         ai_chat_db.touch_conversation(conversation_id)
 
         # ── 8. 持久化人格状态 ──

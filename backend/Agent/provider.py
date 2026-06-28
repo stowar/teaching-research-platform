@@ -36,7 +36,7 @@ class OpenAICompatibleProvider(IAIProvider):
         result = {"role": msg.role, "content": msg.content}
         if msg.tool_calls:
             result["tool_calls"] = [
-                {"id": tc.id, "function": {"name": tc.function.name, "arguments": tc.function.arguments}}
+                {"id": tc.id, "type": "function", "function": {"name": tc.function.name, "arguments": tc.function.arguments}}
                 for tc in msg.tool_calls
             ]
         return result
