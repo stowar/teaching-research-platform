@@ -338,7 +338,7 @@ async function loadState(convId = null) {
         <!-- 人格状态 -->
         <div class="state-section">
           <div class="section-label">人格状态</div>
-          <div class="ai-state-panel" :class="{ 'state-locked': !stateActivated }">
+          <div class="ai-state-panel" :class="{ 'state-locked': !stateActivated }" :key="'panel-' + stateVersion">
             <div v-if="aiState && stateActivated" class="state-grid" :key="'state-' + stateVersion">
               <div class="state-item">
                 <span class="state-icon">&#x1F3AD;</span>
@@ -374,7 +374,7 @@ async function loadState(convId = null) {
         <!-- 运行数据 -->
         <div class="state-section">
           <div class="section-label">运行数据</div>
-          <div class="ai-state-panel" :class="{ 'state-locked': !stateActivated }">
+          <div class="ai-state-panel" :class="{ 'state-locked': !stateActivated }" :key="'panel-' + stateVersion">
             <div v-if="aiState && stateActivated" class="stats-inline" :key="'stats-' + stateVersion">
               <div class="stat-mini">
                 <span class="stat-num">{{ aiState.silence_hours }}h</span>
@@ -1030,6 +1030,13 @@ async function loadState(convId = null) {
   border-radius: var(--radius-lg);
   background: var(--bg-page);
   border: 1px solid var(--border-light);
+  animation: panel-reveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: top center;
+}
+
+@keyframes panel-reveal {
+  from { opacity: 0; transform: scaleY(0.85) translateY(-4px); }
+  to { opacity: 1; transform: scaleY(1) translateY(0); }
 }
 
 .state-locked {
@@ -1049,11 +1056,9 @@ async function loadState(convId = null) {
 }
 
 .state-grid {
-  animation: msg-slide-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .stats-inline {
-  animation: msg-slide-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes fade-in-up {
