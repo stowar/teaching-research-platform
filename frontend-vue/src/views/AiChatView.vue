@@ -263,6 +263,12 @@ async function loadState(convId = null) {
         </button>
       </div>
 
+      <div class="session-tips">
+        <span class="tip-chip"><kbd>单击</kbd> 切换</span>
+        <span class="tip-chip"><kbd>双击</kbd> 重命名</span>
+        <span class="tip-chip"><kbd>右键</kbd> 删除</span>
+      </div>
+
       <div class="sidebar-footer">
         <button class="btn-back" @click="router.push('/')">
           <ChevronLeft :size="14" />
@@ -449,16 +455,6 @@ async function loadState(convId = null) {
           </div>
         </div>
 
-        <!-- 会话操作 -->
-        <div class="state-section">
-          <div class="section-label">会话操作</div>
-          <div class="feature-list">
-            <div class="feature-item"><span class="feature-dot" /><span>单击 — 切换会话</span></div>
-            <div class="feature-item"><span class="feature-dot" /><span>双击 — 重命名</span></div>
-            <div class="feature-item"><span class="feature-dot" /><span>右键 — 删除会话</span></div>
-          </div>
-        </div>
-
         <!-- 快捷提问 -->
         <div class="state-section">
           <div class="section-label">试试这样问</div>
@@ -586,6 +582,33 @@ async function loadState(convId = null) {
   background: var(--bg-page);
   padding: 0 6px;
   border-radius: var(--radius-full);
+}
+
+.session-tips {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-3);
+  border-top: 1px solid var(--border-light);
+  flex-wrap: wrap;
+}
+
+.tip-chip {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.tip-chip kbd {
+  font-family: inherit;
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border-light);
+  color: var(--text-secondary);
 }
 
 .sidebar-footer {
