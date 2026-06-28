@@ -191,6 +191,18 @@ function formatTime(ts) {
   return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`
 }
 
+function focusEmoji(v) {
+  if (v <= 30) return '🌀'  // 🌀
+  if (v <= 70) return '🎯'  // 🎯
+  return '🔒'               // 🔒
+}
+
+function focusLabel(v) {
+  if (v <= 30) return '发散态'
+  if (v <= 70) return '聚焦态'
+  return '锁定态'
+}
+
 // 数字从 0 计数到目标值
 function animateCounts(target) {
   const start = performance.now()
@@ -394,12 +406,13 @@ async function loadState(convId = null) {
               </div>
               <div class="state-sep" />
               <div class="state-item">
-                <span class="state-icon">&#x1F441;</span>
-                <span class="state-desc">注意力</span>
+                <span class="state-icon">{{ focusEmoji(aiState.attention) }}</span>
+                <span class="state-desc">关注度</span>
                 <div class="state-bar-wrap">
                   <div class="state-bar"><div class="state-fill attention" :style="{width: aiState.attention + '%'}" /></div>
                   <span class="state-num">{{ aiState.attention }}</span>
                 </div>
+                <span class="focus-label">{{ focusLabel(aiState.attention) }}</span>
               </div>
             </div>
             <div v-else class="state-locked-overlay">
@@ -1209,6 +1222,12 @@ async function loadState(convId = null) {
   font-weight: var(--font-bold);
   min-width: 22px;
   text-align: right;
+}
+
+.focus-label {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  margin-left: var(--space-1);
 }
 
 /* 运行数据 */
