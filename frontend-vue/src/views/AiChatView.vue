@@ -45,27 +45,41 @@ function saveLastConversation(id) {
 }
 
 async function switchSession(conv) {
+  if (conv.id === currentConversationId.value) return
+
   sessions.value.forEach(s => (s.active = false))
   conv.active = true
   currentConversationId.value = conv.id
   saveLastConversation(conv.id)
   loadState(conv.id)
 
+  switching.value = true
+  messages.value = [{ role: 'assistant', content: '...', timestamp: Date.now() }]
+
   try {
     const res = await api.get(`/ai-chat/conversations/${conv.id}`)
     const detail = res.data
-    if (detail && detail.messages) {
+    if (detail && detail.messages && detail.messages.length > 0) {
       const msgs = detail.messages.map(m => ({
         role: m.role,
         content: m.content,
         timestamp: m.timestamp,
       }))
-      messages.value = msgs.length > 0 ? msgs : [welcomeMsg()]
-      stateActivated.value = msgs.length > 0
+      // 小延迟让过渡更自然
+      await new Promise(r => setTimeout(r, 180))
+      messages.value = msgs
+      stateActivated.value = true
+    } else {
+      await new Promise(r => setTimeout(r, 120))
+      messages.value = [welcomeMsg()]
+      stateActivated.value = false
     }
+    await scrollToBottom()
   } catch {
     messages.value = [welcomeMsg()]
     stateActivated.value = false
+  } finally {
+    switching.value = false
   }
 }
 
@@ -102,6 +116,7 @@ function welcomeMsg() {
 const messages = ref([welcomeMsg()])
 const input = ref('')
 const loading = ref(false)
+const switching = ref(false)
 const messagesContainer = ref(null)
 const aiState = ref(null)
 const stateActivated = ref(false)  // 新会话锁，首条消息后解锁
@@ -234,7 +249,7 @@ async function loadState(convId = null) {
     <main class="chat-main">
       <!-- 消息列表 -->
       <div ref="messagesContainer" class="messages-scroll">
-        <div class="messages-list">
+        <div class="messages-list" :class="{ switching: switching }">
           <div
             v-for="(msg, idx) in messages"
             :key="idx"
@@ -584,6 +599,11 @@ async function loadState(convId = null) {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  transition: opacity 0.2s var(--ease-out);
+}
+
+.messages-list.switching {
+  opacity: 0.4;
 }
 
 .message-row {
