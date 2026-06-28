@@ -430,7 +430,6 @@ async function loadState(convId = null) {
                 <div class="help-row"><span>🔒 锁定态</span><span>71-100</span></div>
                 <div class="help-row"><span>固执深挖，换话题会拉回来</span></div>
               </div>
-              </div>
             </div>
             <div v-else class="state-locked-overlay">
               <p>发送第一条消息<br/>唤醒 AI 人格</p>
