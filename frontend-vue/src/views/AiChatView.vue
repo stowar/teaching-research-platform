@@ -109,6 +109,7 @@ const input = ref('')
 const loading = ref(false)
 const messagesContainer = ref(null)
 const aiState = ref(null)
+const showFocusHelp = ref(false)
 const stateVersion = ref(0)
 const stateActivated = ref(false)
 
@@ -414,7 +415,7 @@ async function loadState(convId = null) {
               <div class="state-item">
                 <span class="state-icon">{{ focusEmoji(aiState.attention) }}</span>
                 <span class="state-desc">关注度</span>
-                <span class="focus-badge" :class="'focus-' + focusLevel(aiState.attention)">{{ focusLabel(aiState.attention) }}</span>
+                <button class="help-btn" @click.stop="showFocusHelp = !showFocusHelp">?</button>
                 <div class="state-bar-wrap">
                   <div class="state-bar"><div class="state-fill attention" :style="{width: aiState.attention + '%'}" /></div>
                   <span class="state-num">{{ aiState.attention }}</span>
@@ -424,6 +425,14 @@ async function loadState(convId = null) {
             <div v-else class="state-locked-overlay">
               <p>发送第一条消息<br/>唤醒 AI 人格</p>
             </div>
+          </div>
+          <div v-if="showFocusHelp" class="help-popover">
+            <div class="help-row"><span>🌀 发散态</span><span>0-30</span></div>
+            <div class="help-desc">话题灵活，可接各种方向</div>
+            <div class="help-row"><span>🎯 聚焦态</span><span>31-70</span></div>
+            <div class="help-desc">咬住话题深入追问</div>
+            <div class="help-row"><span>🔒 锁定态</span><span>71-100</span></div>
+            <div class="help-desc">固执深挖，换话题会拉回来</div>
           </div>
           <p class="state-hint">人格数据仅保存在当前会话</p>
         </div>
@@ -1230,20 +1239,56 @@ async function loadState(convId = null) {
   text-align: right;
 }
 
-.focus-badge {
-  font-size: 10px;
-  padding: 1px 6px;
+.help-btn {
+  width: 15px;
+  height: 15px;
   border-radius: var(--radius-full);
+  border: 1px solid var(--border-light);
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: 10px;
+  font-weight: var(--font-bold);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
+  transition: all var(--duration-fast);
+}
+
+.help-btn:hover {
+  background: var(--color-brand-50);
+  color: var(--color-brand-600);
+  border-color: var(--color-brand-300);
+}
+
+.help-popover {
+  margin: var(--space-2) 0;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--bg-page);
+  border: 1px solid var(--border-light);
+  font-size: 11px;
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  animation: fade-in-up 0.2s var(--ease-out) both;
+}
+
+.help-row {
+  display: flex;
+  justify-content: space-between;
   font-weight: var(--font-semibold);
 }
 
-.focus-open  { background: var(--color-info-50);    color: var(--color-info-700); }
-.focus-focus { background: var(--color-warning-50);  color: var(--color-warning-700); }
-.focus-lock  { background: var(--color-danger-50);   color: var(--color-danger-700); }
-
-[data-theme="dark"] .focus-open  { background: rgba(59,130,246,0.15);  color: var(--color-info-300); }
-[data-theme="dark"] .focus-focus { background: rgba(234,179,8,0.15);   color: var(--color-warning-300); }
-[data-theme="dark"] .focus-lock  { background: rgba(239,68,68,0.15);   color: var(--color-danger-300); }
+.help-desc {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  margin-bottom: var(--space-1);
+  padding-left: 2px;
+}
 
 /* 运行数据 */
 .stats-inline {
