@@ -254,6 +254,7 @@ async function loadState(convId = null) {
           :key="session.id"
           :class="['session-item', session.id === currentConversationId ? 'active' : '']"
           @click="switchSession(session)"
+          @dblclick="renameConversation(session)"
           @contextmenu.prevent="deleteConversation(session)"
         >
           <MessageSquare :size="14" />
