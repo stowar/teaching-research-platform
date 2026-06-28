@@ -90,6 +90,7 @@ const messages = ref([welcomeMsg()])
 const input = ref('')
 const loading = ref(false)
 const messagesContainer = ref(null)
+const aiState = ref(null)
 
 const quickPrompts = [
   '如何设计一堂高职英语听说课？',
@@ -124,6 +125,8 @@ async function sendMessage(text = input.value.trim()) {
     })
 
     const reply = res.data
+    // 更新 AI 状态面板
+    if (reply.state) aiState.value = reply.state
     // 首次对话 → 后端返回新 conversation_id
     if (reply.conversation_id && !currentConversationId.value) {
       currentConversationId.value = reply.conversation_id
@@ -290,22 +293,42 @@ loadSessions()
     <!-- 右侧：说明栏 -->
     <aside class="info-sidebar">
       <div class="info-header">
-        <span class="info-title">使用说明</span>
+        <span class="info-title">AI 状态</span>
       </div>
       <div class="info-body">
-        <div class="info-section">
-          <h4>功能介绍</h4>
-          <p>AI 教研助手搭载人格系统和长期记忆，能记住你的研究方向、教学习惯和偏好。越聊越懂你。</p>
+        <!-- AI 实时状态 -->
+        <div v-if="aiState" class="ai-state-panel">
+          <div class="state-row">
+            <span class="state-label">语气</span>
+            <span class="state-value tone-badge" :class="'tone-' + aiState.tone">{{ aiState.tone_label }}</span>
+          </div>
+          <div class="state-row">
+            <span class="state-label">投入度</span>
+            <div class="state-bar"><div class="state-fill" :style="{width: aiState.engagement + '%'}" /></div>
+            <span class="state-num">{{ aiState.engagement }}</span>
+          </div>
+          <div class="state-row">
+            <span class="state-label">关注度</span>
+            <div class="state-bar"><div class="state-fill attention" :style="{width: aiState.attention + '%'}" /></div>
+            <span class="state-num">{{ aiState.attention }}</span>
+          </div>
+          <div class="state-row">
+            <span class="state-label">静默</span>
+            <span class="state-value">{{ aiState.silence_hours }}h</span>
+          </div>
+          <div class="state-row">
+            <span class="state-label">记忆</span>
+            <span class="state-value">{{ aiState.memory_count }} 条</span>
+          </div>
+          <div class="state-row">
+            <span class="state-label">今日</span>
+            <span class="state-value">{{ aiState.messages_today }}/{{ aiState.messages_limit }}</span>
+          </div>
         </div>
-        <div class="info-section">
-          <h4>使用技巧</h4>
-          <ul>
-            <li>尽量描述具体场景，例如学生年级、专业方向</li>
-            <li>可要求按特定格式输出，如表格、清单</li>
-            <li>对不满意的回答可追问细化</li>
-            <li>右击会话可删除</li>
-          </ul>
+        <div v-else class="ai-state-panel state-empty">
+          <p>发送第一条消息后，这里将展示 AI 的实时状态。</p>
         </div>
+
         <div class="info-section">
           <h4>快捷指令</h4>
           <div class="info-tags">
@@ -314,6 +337,9 @@ loadSessions()
             <span class="info-tag">思政融合</span>
             <span class="info-tag">评价量表</span>
           </div>
+        </div>
+        <div class="info-section info-tips">
+          <p>右击会话可删除</p>
         </div>
       </div>
 
@@ -887,6 +913,98 @@ loadSessions()
   .message-body { max-width: 90%; }
   .input-area { padding: var(--space-3); }
 }
+
+/* AI 状态面板 */
+.ai-state-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--bg-page);
+  border: 1px solid var(--border-light);
+}
+
+.state-empty {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  text-align: center;
+  font-style: italic;
+}
+
+.state-empty p { margin: 0; }
+
+.state-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.state-label {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  min-width: 40px;
+}
+
+.state-value {
+  font-size: var(--text-xs);
+  color: var(--text-primary);
+  font-weight: var(--font-semibold);
+}
+
+.tone-badge {
+  padding: 1px 8px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+}
+
+.tone-professional { background: var(--color-brand-50); color: var(--color-brand-700); }
+.tone-casual { background: var(--color-success-50); color: var(--color-success-700); }
+.tone-encouraging { background: var(--color-warning-50); color: var(--color-warning-700); }
+.tone-analytical { background: var(--color-info-50); color: var(--color-info-700); }
+
+.state-bar {
+  flex: 1;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--border-light);
+  overflow: hidden;
+}
+
+.state-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: linear-gradient(90deg, var(--color-brand-400), var(--color-brand-600));
+  transition: width 0.5s var(--ease-out);
+}
+
+.state-fill.attention {
+  background: linear-gradient(90deg, var(--color-success-400), var(--color-success-600));
+}
+
+.state-num {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  font-weight: var(--font-semibold);
+  min-width: 22px;
+  text-align: right;
+}
+
+.info-tips {
+  text-align: center;
+}
+
+.info-tips p {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  margin: 0;
+}
+
+[data-theme="dark"] .tone-professional { background: rgba(79,70,229,0.15); color: var(--color-brand-300); }
+[data-theme="dark"] .tone-casual { background: rgba(34,197,94,0.15); color: var(--color-success-300); }
+[data-theme="dark"] .tone-encouraging { background: rgba(234,179,8,0.15); color: var(--color-warning-300); }
+[data-theme="dark"] .tone-analytical { background: rgba(59,130,246,0.15); color: var(--color-info-300); }
 
 .info-footer {
   padding: var(--space-3) var(--space-4);

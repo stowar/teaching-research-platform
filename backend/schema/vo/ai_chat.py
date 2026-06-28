@@ -36,10 +36,23 @@ class ConversationDetailVO(BaseModel):
     messages: List["MessageVO"]
 
 
+class AIStateVO(BaseModel):
+    """AI 助手当前状态 VO"""
+    tone: str
+    tone_label: str
+    engagement: int
+    attention: int
+    silence_hours: float
+    memory_count: int
+    messages_today: int
+    messages_limit: int
+
+
 class ChatReplyVO(BaseModel):
     """AI 回复 VO（非流式）"""
     conversation_id: int
     message: "MessageVO"
+    state: Optional["AIStateVO"] = None
 
 
 # ===================== 转换函数 =====================

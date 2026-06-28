@@ -8,7 +8,7 @@ from backend.db import ai_chat_db
 from backend.core.exceptions import BusinessException
 from backend.schema.vo.common import ApiResponse
 from backend.schema.vo.ai_chat import (
-    ConversationVO, ConversationDetailVO, MessageVO, ChatReplyVO,
+    ConversationVO, ConversationDetailVO, MessageVO, ChatReplyVO, AIStateVO,
     to_conversation_vo, to_message_vo,
 )
 from backend.Agent.provider import get_ai_provider
@@ -19,6 +19,17 @@ from backend.core.config import settings
 
 # 记忆文件存储目录
 AI_DATA_DIR = os.path.join(settings.BASE_DIR, "backend", "data", "ai")
+
+TONE_LABELS = {
+    "professional": "专业模式",
+    "casual": "轻松模式",
+    "encouraging": "鼓励模式",
+    "analytical": "分析模式",
+}
+
+
+def _tone_label(tone):
+    return TONE_LABELS.get(tone.value if hasattr(tone, 'value') else tone, "未知")
 
 
 class AIChatService(IAIChatService):
@@ -141,7 +152,19 @@ class AIChatService(IAIChatService):
 
         # ── 9. 返回 ──
         ai_message = ai_chat_db.get_messages_by_conversation(conversation_id)[-1]
+        today_count = ai_chat_db.count_user_messages_today(user_id)
+        state = AIStateVO(
+            tone=personality.tone.value,
+            tone_label=_tone_label(personality.tone),
+            engagement=personality.engagement,
+            attention=personality.attention,
+            silence_hours=round(personality.silence_hours, 1),
+            memory_count=len(memory._load()),
+            messages_today=today_count,
+            messages_limit=MAX_MESSAGES_PER_DAY,
+        )
         return ApiResponse(msg="回复成功", data=ChatReplyVO(
             conversation_id=conversation_id,
             message=to_message_vo(ai_message),
+            state=state,
         ))
