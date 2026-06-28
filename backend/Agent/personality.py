@@ -87,21 +87,19 @@ class Personality:
     # ── 时间驱动 ──────────────────────────────────
 
     def passive_decay(self):
-        """只在闲置时衰减：投入度微降、关注度恢复"""
-        if self.silence_hours < 0.5:
-            return  # 活跃对话不衰减
-        self.engagement = max(0, int(self.engagement - 2))
-        self.attention = min(100, int(self.attention + 5))
+        """每轮循环自然衰减：投入度微降、关注度恢复"""
+        self.engagement = max(0, int(self.engagement - 0.3))
+        self.attention = min(100, int(self.attention + 2))
 
         # 沉默超 2 小时 → 降为专业模式
         if self.silence_hours > 2 and self.tone != Tone.PROFESSIONAL:
             self.tone = Tone.PROFESSIONAL
 
     def on_user_message(self, content: str):
-        """收到用户消息：更新时间戳、消耗关注度、增长投入、自动调语气"""
+        """收到用户消息：更新时间戳、消耗关注度、微增投入、自动调语气"""
         self._last_user_time = time.time()
         self.attention = max(30, self.attention - 5)
-        self.engagement = min(100, self.engagement + 3)
+        self.engagement = min(100, self.engagement + 1)
 
         # 根据关键词自动调语气（规则定义在 Agent/rules.py）
         from backend.Agent.rules import TONE_RULES

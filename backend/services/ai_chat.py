@@ -210,7 +210,7 @@ class AIChatService(IAIChatService):
             ai_chat_db.create_message(conversation_id, "assistant", ai_content)
         ai_chat_db.touch_conversation(conversation_id)
 
-        # ── 8. 持久化人格状态（活跃对话不衰减） ──
+        # ── 8. 持久化人格状态 ──
         personality.passive_decay()
         personality.save(os.path.join(AI_DATA_DIR, f"conv_{conversation_id}_personality.json"))
 
