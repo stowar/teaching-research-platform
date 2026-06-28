@@ -146,7 +146,14 @@ async function sendMessage(text = input.value.trim()) {
 
     const reply = res.data
     // 更新 AI 状态面板
-    if (reply.state) { aiState.value = reply.state; stateVersion.value++ }
+    if (reply.state) {
+      // 先 0 后目标，触发进度条动画
+      const s = reply.state
+      aiState.value = { ...s, engagement: 0, attention: 0 }
+      await nextTick()
+      aiState.value = s
+      stateVersion.value++
+    }
     stateActivated.value = true
     // 首次对话 → 后端返回新 conversation_id
     if (reply.conversation_id && !currentConversationId.value) {
@@ -198,7 +205,12 @@ async function loadState(convId = null) {
   try {
     const params = convId ? { conversation_id: convId } : {}
     const res = await api.get('/ai-chat/state', { params })
-    aiState.value = res.data
+    // 先设 0 再设目标值，触发进度条从零开始的动画
+    const data = res.data
+    const zeroed = { ...data, engagement: 0, attention: 0 }
+    aiState.value = zeroed
+    await nextTick()
+    aiState.value = data
     stateVersion.value++
   } catch { /* 静默 */ }
 }
@@ -1153,7 +1165,8 @@ async function loadState(convId = null) {
   height: 100%;
   border-radius: var(--radius-full);
   background: linear-gradient(90deg, var(--color-brand-400), var(--color-brand-600));
-  transition: width 0.6s var(--ease-out);
+  transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: 0.15s;
 }
 
 .state-fill.attention {
