@@ -152,6 +152,7 @@ async function sendMessage(text = input.value.trim()) {
       await nextTick()
       await new Promise(r => requestAnimationFrame(r))
       aiState.value = s
+      animateCounts(s)
       stateVersion.value++
     }
     stateActivated.value = true
@@ -190,6 +191,25 @@ function formatTime(ts) {
   return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`
 }
 
+// 数字从 0 计数到目标值
+function animateCounts(target) {
+  const start = performance.now()
+  const DURATION = 800
+  function tick() {
+    const t = Math.min((performance.now() - start) / DURATION, 1)
+    const e = 1 - Math.pow(1 - t, 3) // easeOutCubic
+    aiState.value = {
+      ...aiState.value,
+      silence_hours: +(target.silence_hours * e).toFixed(1),
+      memory_count: Math.round(target.memory_count * e),
+      messages_today: Math.round(target.messages_today * e),
+    }
+    if (t < 1) requestAnimationFrame(tick)
+    else aiState.value = { ...target, engagement: aiState.value?.engagement ?? target.engagement, attention: aiState.value?.attention ?? target.attention }
+  }
+  requestAnimationFrame(tick)
+}
+
 // 页面加载时拉会话列表 + AI 状态 + 恢复上次会话
 (async () => {
   await loadSessions()
@@ -211,6 +231,7 @@ async function loadState(convId = null) {
     await nextTick()
     await new Promise(r => requestAnimationFrame(r))
     aiState.value = data
+    animateCounts(data)
     stateVersion.value++
   } catch { /* 静默 */ }
 }
