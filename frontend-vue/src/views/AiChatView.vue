@@ -53,14 +53,17 @@ async function switchSession(conv) {
     const res = await api.get(`/ai-chat/conversations/${conv.id}`)
     const detail = res.data
     if (detail && detail.messages) {
-      messages.value = detail.messages.map(m => ({
+      const msgs = detail.messages.map(m => ({
         role: m.role,
         content: m.content,
         timestamp: m.timestamp,
       }))
+      messages.value = msgs.length > 0 ? msgs : [welcomeMsg()]
+      stateActivated.value = msgs.length > 0
     }
   } catch {
     messages.value = [welcomeMsg()]
+    stateActivated.value = false
   }
 }
 
@@ -99,6 +102,7 @@ const input = ref('')
 const loading = ref(false)
 const messagesContainer = ref(null)
 const aiState = ref(null)
+const stateActivated = ref(false)  // 新会话锁，首条消息后解锁
 
 const quickPrompts = [
   '如何设计一堂高职英语听说课？',
@@ -135,6 +139,7 @@ async function sendMessage(text = input.value.trim()) {
     const reply = res.data
     // 更新 AI 状态面板
     if (reply.state) aiState.value = reply.state
+    stateActivated.value = true
     // 首次对话 → 后端返回新 conversation_id
     if (reply.conversation_id && !currentConversationId.value) {
       currentConversationId.value = reply.conversation_id
@@ -321,11 +326,11 @@ async function loadState(convId = null) {
         <span class="info-title">AI 教研助手</span>
       </div>
       <div class="info-body">
-        <!-- 人格维度 -->
+        <!-- 人格状态 -->
         <div class="state-section">
           <div class="section-label">人格状态</div>
-          <div class="ai-state-panel">
-            <div v-if="aiState" class="state-grid">
+          <div class="ai-state-panel" :class="{ 'state-locked': !stateActivated }">
+            <div v-if="aiState && stateActivated" class="state-grid">
               <div class="state-item">
                 <span class="state-icon">&#x1F3AD;</span>
                 <span class="state-desc">语气</span>
@@ -350,8 +355,9 @@ async function loadState(convId = null) {
                 </div>
               </div>
             </div>
-            <div v-else class="state-empty">
-              <p>发送第一条消息后<br/>AI 人格将被唤醒</p>
+            <div v-else class="state-locked-overlay">
+              <span class="lock-icon">&#x1F512;</span>
+              <p>发送第一条消息<br/>唤醒 AI 人格</p>
             </div>
           </div>
         </div>
@@ -359,8 +365,8 @@ async function loadState(convId = null) {
         <!-- 运行数据 -->
         <div class="state-section">
           <div class="section-label">运行数据</div>
-          <div class="ai-state-panel">
-            <div v-if="aiState" class="stats-inline">
+          <div class="ai-state-panel" :class="{ 'state-locked': !stateActivated }">
+            <div v-if="aiState && stateActivated" class="stats-inline">
               <div class="stat-mini">
                 <span class="stat-num">{{ aiState.silence_hours }}h</span>
                 <span class="stat-label">静默</span>
@@ -374,7 +380,10 @@ async function loadState(convId = null) {
                 <span class="stat-label">今日</span>
               </div>
             </div>
-            <div v-else class="state-empty"><p>—</p></div>
+            <div v-else class="state-locked-overlay">
+              <span class="lock-icon">&#x1F512;</span>
+              <p>发送第一条消息<br/>解锁运行数据</p>
+            </div>
           </div>
         </div>
 
@@ -1000,6 +1009,33 @@ async function loadState(convId = null) {
   border-radius: var(--radius-lg);
   background: var(--bg-page);
   border: 1px solid var(--border-light);
+}
+
+.state-locked {
+  position: relative;
+  overflow: hidden;
+}
+
+.state-locked-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-5) var(--space-3);
+  text-align: center;
+}
+
+.lock-icon {
+  font-size: 22px;
+  opacity: 0.5;
+}
+
+.state-locked-overlay p {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  line-height: 1.6;
 }
 
 .state-empty {
