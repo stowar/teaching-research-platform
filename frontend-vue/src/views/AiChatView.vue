@@ -407,10 +407,10 @@ async function loadState(convId = null) {
                 <span class="state-icon">&#x2764;</span>
                 <span class="state-desc">投入度</span>
                 <div class="state-bar-wrap">
-                  <div class="state-bar" :class="{ 'bar-overdrive': aiState.engagement > 100 }">
-                    <div class="state-fill" :class="{ 'fill-overdrive': aiState.engagement > 100 }" :style="{width: Math.min(aiState.engagement, 100) + '%'}" />
+                  <div class="state-bar" :class="{ 'bar-overdrive': aiState.engagement > 80 }">
+                    <div class="state-fill" :class="{ 'fill-overdrive': aiState.engagement > 80 }" :style="{width: Math.min(aiState.engagement, 100) + '%'}" />
                   </div>
-                  <span class="state-num" :class="{ 'num-overdrive': aiState.engagement > 100 }">{{ aiState.engagement }}</span>
+                  <span class="state-num" :class="{ 'num-overdrive': aiState.engagement > 80 }">{{ aiState.engagement }}</span>
                 </div>
               </div>
               <div class="state-sep" />
