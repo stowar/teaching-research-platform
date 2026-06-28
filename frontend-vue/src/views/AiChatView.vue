@@ -421,6 +421,7 @@ async function loadState(convId = null) {
 
       <!-- 主题切换 -->
       <div class="info-footer">
+        <span class="state-hint">人格数据仅保存在当前会话</span>
         <span class="footer-label">外观</span>
         <button class="theme-toggle" @click="toggle">
           <Moon v-if="isDark" :size="14" />
@@ -1187,6 +1188,14 @@ async function loadState(convId = null) {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.state-hint {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  font-style: italic;
 }
 
 .footer-label {
