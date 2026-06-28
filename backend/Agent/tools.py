@@ -2,11 +2,9 @@
 """AI 教研助手 Function Calling 工具定义 + 执行器"""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-from backend.Agent.memory import MemoryStore  # noqa: F401 — 向后兼容
 
-if TYPE_CHECKING:
-    from backend.Agent.personality import Personality
+from backend.Agent.memory import MemoryStore
+from backend.Agent.personality import Personality
 
 
 # ============================================================

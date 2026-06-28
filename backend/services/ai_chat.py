@@ -175,7 +175,10 @@ class AIChatService(IAIChatService):
         # ── 0. 每日配额（按用户，不按会话） ──
         today_count = ai_chat_db.count_user_messages_today(user_id)
         if today_count >= MAX_MESSAGES_PER_DAY:
-            raise BusinessException(f"今日消息已达上限（{MAX_MESSAGES_PER_DAY}条），请明天再来")
+            return ApiResponse(msg="额度已用完", data=ChatReplyVO(
+                conversation_id=conversation_id or 0,
+                message=MessageVO(role="assistant", content="今日消息已达上限，请明天再来。", timestamp=0),
+            ))
 
         # ── 1. 会话管理 ──
         if conversation_id:
