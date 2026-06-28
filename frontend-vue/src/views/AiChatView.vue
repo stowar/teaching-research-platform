@@ -407,8 +407,10 @@ async function loadState(convId = null) {
                 <span class="state-icon">&#x2764;</span>
                 <span class="state-desc">投入度</span>
                 <div class="state-bar-wrap">
-                  <div class="state-bar"><div class="state-fill" :style="{width: aiState.engagement + '%'}" /></div>
-                  <span class="state-num">{{ aiState.engagement }}</span>
+                  <div class="state-bar" :class="{ 'bar-overdrive': aiState.engagement > 100 }">
+                    <div class="state-fill" :class="{ 'fill-overdrive': aiState.engagement > 100 }" :style="{width: Math.min(aiState.engagement, 100) + '%'}" />
+                  </div>
+                  <span class="state-num" :class="{ 'num-overdrive': aiState.engagement > 100 }">{{ aiState.engagement }}</span>
                 </div>
               </div>
               <div class="state-sep" />
@@ -1243,6 +1245,25 @@ async function loadState(convId = null) {
 
 .state-fill.attention {
   background: linear-gradient(90deg, var(--color-success-400), var(--color-success-600));
+}
+
+/* Overdrive: 投入度突破 100 */
+.bar-overdrive {
+  box-shadow: 0 0 6px rgba(239,68,68,0.4), 0 0 12px rgba(239,68,68,0.2);
+  animation: overdrive-glow 1.5s ease-in-out infinite alternate;
+}
+
+.fill-overdrive {
+  background: linear-gradient(90deg, var(--color-danger-400), #ef4444, #dc2626) !important;
+}
+
+.num-overdrive {
+  color: var(--color-danger-500) !important;
+}
+
+@keyframes overdrive-glow {
+  0% { box-shadow: 0 0 4px rgba(239,68,68,0.3), 0 0 8px rgba(239,68,68,0.1); }
+  100% { box-shadow: 0 0 8px rgba(239,68,68,0.5), 0 0 16px rgba(239,68,68,0.3); }
 }
 
 .state-num {
