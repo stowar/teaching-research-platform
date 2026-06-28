@@ -113,11 +113,15 @@ class AIChatService(IAIChatService):
 
     # ===================== AI 状态 =====================
 
-    def get_state(self, user_id):
-        personality = Personality.load(
-            os.path.join(AI_DATA_DIR, f"user_{user_id}_personality.json")
-        )
-        memory = MemoryStore(user_id, AI_DATA_DIR)
+    def get_state(self, user_id, conversation_id: int = None):
+        if conversation_id:
+            personality = Personality.load(
+                os.path.join(AI_DATA_DIR, f"conv_{conversation_id}_personality.json")
+            )
+            memory = MemoryStore(conversation_id, AI_DATA_DIR)
+        else:
+            personality = Personality()
+            memory = MemoryStore(0, AI_DATA_DIR)
         today_count = ai_chat_db.count_user_messages_today(user_id)
         return ApiResponse(msg="查询成功", data=AIStateVO(
             tone=personality.tone.value,
@@ -133,7 +137,7 @@ class AIChatService(IAIChatService):
     # ===================== 对话核心逻辑 =====================
 
     def chat(self, user_id, message, conversation_id=None, model="deepseek-chat"):
-        # ── 0. 每日配额 ──
+        # ── 0. 每日配额（按用户，不按会话） ──
         today_count = ai_chat_db.count_user_messages_today(user_id)
         if today_count >= MAX_MESSAGES_PER_DAY:
             raise BusinessException(f"今日消息已达上限（{MAX_MESSAGES_PER_DAY}条），请明天再来")
@@ -144,19 +148,18 @@ class AIChatService(IAIChatService):
             if not conv or conv.user_id != user_id:
                 raise BusinessException("会话不存在", code=404)
         else:
-            # 自动创建新会话，用消息前 20 字做标题
             title = message[:20] + ("..." if len(message) > 20 else "")
             conversation_id = ai_chat_db.create_conversation(user_id, title, model)
 
         # ── 2. 保存用户消息 ──
         ai_chat_db.create_message(conversation_id, "user", message)
 
-        # ── 3. 加载人格和记忆 ──
+        # ── 3. 加载人格和记忆（按 conversation_id 隔离） ──
         personality = Personality.load(
-            os.path.join(AI_DATA_DIR, f"user_{user_id}_personality.json")
+            os.path.join(AI_DATA_DIR, f"conv_{conversation_id}_personality.json")
         )
         personality.on_user_message(message)
-        memory = MemoryStore(user_id, AI_DATA_DIR)
+        memory = MemoryStore(conversation_id, AI_DATA_DIR)
 
         # ── 4. 构建消息上下文 ──
         system_prompt = build_system_prompt(personality, memory)
@@ -209,7 +212,7 @@ class AIChatService(IAIChatService):
 
         # ── 8. 持久化人格状态 ──
         personality.passive_decay()
-        personality.save(os.path.join(AI_DATA_DIR, f"user_{user_id}_personality.json"))
+        personality.save(os.path.join(AI_DATA_DIR, f"conv_{conversation_id}_personality.json"))
 
         # ── 9. 返回 ──
         ai_message = ai_chat_db.get_messages_by_conversation(conversation_id)[-1]

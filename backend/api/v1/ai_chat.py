@@ -2,7 +2,7 @@
 """AI 聊天室 API — RESTful 端点"""
 from typing import List
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from backend.core.deps import get_ai_chat_service, get_current_user
 from backend.schema.vo.common import ApiResponse
@@ -64,7 +64,8 @@ def chat(
 
 @router.get("/state", summary="AI 状态", response_model=ApiResponse[AIStateVO])
 def get_state(
+    conversation_id: int = Query(None),
     current_user=Depends(get_current_user),
     svc: IAIChatService = Depends(get_ai_chat_service),
 ):
-    return svc.get_state(current_user.id)
+    return svc.get_state(current_user.id, conversation_id)

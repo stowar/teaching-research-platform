@@ -47,6 +47,7 @@ async function switchSession(conv) {
   conv.active = true
   currentConversationId.value = conv.id
   saveLastConversation(conv.id)
+  loadState(conv.id)
 
   try {
     const res = await api.get(`/ai-chat/conversations/${conv.id}`)
@@ -170,21 +171,22 @@ function formatTime(ts) {
 }
 
 // 页面加载时拉会话列表 + AI 状态 + 恢复上次会话
-loadState();
 (async () => {
   await loadSessions()
   const lastConv = localStorage.getItem('ai_last_conv')
   if (lastConv) {
     const conv = sessions.value.find(s => s.id === Number(lastConv))
-    if (conv) switchSession(conv)
+    if (conv) { switchSession(conv); return }
   }
+  loadState()
 })()
 
-async function loadState() {
+async function loadState(convId = null) {
   try {
-    const res = await api.get('/ai-chat/state')
+    const params = convId ? { conversation_id: convId } : {}
+    const res = await api.get('/ai-chat/state', { params })
     aiState.value = res.data
-  } catch { /* 未登录时静默 */ }
+  } catch { /* 静默 */ }
 }
 </script>
 

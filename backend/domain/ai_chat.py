@@ -42,6 +42,6 @@ class IAIChatService(ABC):
         ...
 
     @abstractmethod
-    def get_state(self, user_id: int) -> ApiResponse[AIStateVO]:
-        """获取 AI 当前状态"""
+    def get_state(self, user_id: int, conversation_id: int = None) -> ApiResponse[AIStateVO]:
+        """获取 AI 当前状态（指定会话则返回该会话人格）"""
         ...
