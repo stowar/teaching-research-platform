@@ -262,7 +262,8 @@ class AIChatService(IAIChatService):
 
         # ── 6.5 强制投入度调整：AI 不调就代码调 ──
         _enforce_engagement(messages, personality, message)
-        _enforce_attention(messages, personality, engagement_before)
+        if personality.engagement < 100:
+            _enforce_attention(messages, personality, engagement_before)
 
         # ── 7. 保存 AI 回复 ──
         if ai_content:
