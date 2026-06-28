@@ -2,14 +2,15 @@
 """AI 教研助手人格状态机 — 从 XiaoBai 迁移适配"""
 import json
 import os
+import time
 from enum import Enum
 
 
 class Tone(str, Enum):
-    PROFESSIONAL = "professional"    # 专业严谨
-    CASUAL = "casual"                # 轻松亲切
-    ENCOURAGING = "encouraging"      # 鼓励支持
-    ANALYTICAL = "analytical"        # 深入分析
+    PROFESSIONAL = "professional"
+    CASUAL = "casual"
+    ENCOURAGING = "encouraging"
+    ANALYTICAL = "analytical"
 
     def description(self):
         return TONE_DESCRIPTIONS[self]
@@ -35,24 +36,41 @@ class Personality:
 
     def __init__(self, name="教研助手"):
         self.name = name
-        self.engagement = 50       # 初始中等投入
-        self.attention = 80        # 初始较高专注
-        self.tone = Tone.CASUAL    # 初始亲切
-        self._idle_rounds = 0      # 用户未互动的轮数
+        self.engagement = 50
+        self.attention = 80
+        self.tone = Tone.CASUAL
+        self._last_user_time = time.time()
+
+    # ── 时间感知 ──────────────────────────────────
+
+    @property
+    def silence_hours(self):
+        """从最后消息时间戳计算静默时长（小时）"""
+        return (time.time() - self._last_user_time) / 3600.0
+
+    def get_current_time(self) -> str:
+        """AI 调用：返回当前时间和星期几"""
+        now = time.localtime()
+        weekdays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+        return f"{now.tm_year}年{now.tm_mon}月{now.tm_mday}日 {now.tm_hour:02d}:{now.tm_min:02d} {weekdays[now.tm_wday]}"
+
+    def get_silence_hours(self) -> str:
+        """AI 调用：返回用户静默时长"""
+        h = self.silence_hours
+        return f"用户已 {h:.1f} 小时未互动"
 
     # ── AI 工具接口 ──────────────────────────────
 
     def get_status(self) -> str:
-        """返回当前状态摘要，注入 system prompt"""
         return (
             f"【{self.name} 状态】"
             f"语气：{self.tone.value}，"
             f"投入度：{self.engagement}，"
-            f"关注度：{self.attention}"
+            f"关注度：{self.attention}，"
+            f"静默：{self.silence_hours:.1f}h"
         )
 
     def set_tone(self, tone_str: str) -> str:
-        """切换语气"""
         try:
             self.tone = Tone(tone_str)
             return f"语气切换为：{self.tone.value}"
@@ -60,29 +78,26 @@ class Personality:
             return f"未知语气：{tone_str}"
 
     def adjust_engagement(self, delta: int) -> str:
-        """调整投入度：深度交流 +5，敷衍 -3"""
         self.engagement = max(0, min(100, self.engagement + delta))
         return f"投入度{'上升' if delta > 0 else '下降'}，当前：{self.engagement}"
 
     def get_tone_prompt(self) -> str:
-        """获取当前语气对应的对话风格，注入 system prompt"""
         return self.tone.description()
 
     # ── 时间驱动 ──────────────────────────────────
 
     def passive_decay(self):
-        """每次对话轮次自然衰减：投入度微降、关注度恢复"""
+        """每轮循环自然衰减"""
         self.engagement = max(0, self.engagement - 0.3)
         self.attention = min(100, self.attention + 2)
-        self._idle_rounds += 1
 
-        # 长时间不互动，降为专业模式
-        if self._idle_rounds > 20 and self.tone != Tone.PROFESSIONAL:
+        # 沉默超 2 小时 → 降为专业模式
+        if self.silence_hours > 2 and self.tone != Tone.PROFESSIONAL:
             self.tone = Tone.PROFESSIONAL
 
     def on_user_message(self, content: str):
-        """收到用户消息时：重置空闲、消耗关注度、微增投入、自动调语气"""
-        self._idle_rounds = 0
+        """收到用户消息：更新时间戳、消耗关注度、微增投入、自动调语气"""
+        self._last_user_time = time.time()
         self.attention = max(30, self.attention - 5)
         self.engagement = min(100, self.engagement + 1)
 
@@ -94,7 +109,6 @@ class Personality:
             if any(kw in lowered for kw in rule["keywords"]):
                 self.tone = Tone(tone_name)
                 return
-        # 未命中任何规则 → 保持当前语气
 
     # ── 持久化 ────────────────────────────────────
 
@@ -104,7 +118,7 @@ class Personality:
             "engagement": self.engagement,
             "attention": self.attention,
             "tone": self.tone.value,
-            "idle_rounds": self._idle_rounds,
+            "last_user_time": self._last_user_time,
         }
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "w", encoding="utf-8") as f:
@@ -119,7 +133,7 @@ class Personality:
             p.engagement = data.get("engagement", 50)
             p.attention = data.get("attention", 80)
             p.tone = Tone(data.get("tone", "casual"))
-            p._idle_rounds = data.get("idle_rounds", 0)
+            p._last_user_time = data.get("last_user_time", time.time())
             return p
         except (FileNotFoundError, json.JSONDecodeError, KeyError):
             return cls(name)

@@ -13,7 +13,7 @@ from backend.schema.vo.ai_chat import (
 )
 from backend.Agent.provider import get_ai_provider
 from backend.Agent.personality import Personality
-from backend.Agent.tools import TOOLS, MemoryStore, execute_tool
+from backend.Agent.tools import TOOLS, MemoryStore, build_tool_map
 from backend.Agent.rules import build_system_prompt, MAX_CONTEXT_MESSAGES, MAX_TOOL_ROUNDS, MAX_MESSAGES_PER_DAY
 from backend.core.config import settings
 
@@ -99,22 +99,23 @@ class AIChatService(IAIChatService):
         # ── 6. 调 AI（带 function calling 循环） ──
         provider = get_ai_provider(model)
 
+        tool_map = build_tool_map(personality, memory)
+
         for _ in range(MAX_TOOL_ROUNDS):
             response = provider.chat(messages, TOOLS, "auto")
             tool_calls = response.get("tool_calls", [])
 
             if not tool_calls:
-                # AI 不需要调工具，直接返回文本
                 ai_content = response.get("content", "")
                 break
 
-            # AI 调用了工具
             messages.append({"role": "assistant", "content": response.get("content") or "", "tool_calls": tool_calls})
 
             for tc in tool_calls:
                 fn = tc["function"]
                 args = json.loads(fn["arguments"])
-                result = execute_tool(fn["name"], args, personality, memory)
+                handler = tool_map.get(fn["name"])
+                result = handler(**args) if handler else f"未知工具：{fn['name']}"
                 messages.append({
                     "role": "tool",
                     "tool_call_id": tc["id"],

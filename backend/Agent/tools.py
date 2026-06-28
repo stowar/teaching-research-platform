@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-"""AI 教研助手 Function Calling 工具定义 — 从 XiaoBai 迁移适配"""
+"""AI 教研助手 Function Calling 工具 + 记忆系统 — 从 XiaoBai 迁移适配"""
 import json
 import os
-import re
 from datetime import datetime
 
 
@@ -14,149 +13,161 @@ TOOLS = [
     {
         "type": "function",
         "function": {
-            "name": "remember",
-            "description": "记住用户的信息（偏好、习惯、研究方向、经历等），之后对话中自然引用",
+            "name": "record_memory",
+            "description": "记录用户说过的重要信息（研究方向、偏好、日程、经历）",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "fact": {"type": "string", "description": "需要记住的事实，尽量完整"},
                     "category": {"type": "string", "enum": ["research", "preference", "schedule", "experience"],
-                                 "description": "事实类别：research研究方向 preference个人偏好 schedule日程安排 experience经历"}
+                                 "description": "research研究方向 preference偏好 schedule日程 experience经历"},
+                    "content": {"type": "string", "description": "要记录的具体内容，一句话总结"},
                 },
-                "required": ["fact", "category"]
-            }
-        }
+                "required": ["category", "content"],
+            },
+        },
     },
     {
         "type": "function",
         "function": {
-            "name": "recall",
-            "description": "查询之前记住的关于用户的信息",
+            "name": "check_memory",
+            "description": "查询关于用户的长期记忆，搜索相关往事",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "keyword": {"type": "string", "description": "查询关键词，如'研究方向''公开课''语法教学'"},
-                    "category": {"type": "string", "enum": ["research", "preference", "schedule", "experience"],
-                                 "description": "可选，按类别筛选"}
+                    "keyword": {"type": "string", "description": "搜索关键词"},
                 },
-                "required": ["keyword"]
-            }
-        }
+                "required": ["keyword"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_state",
+            "description": "获取当前 AI 助手状态（语气、投入度、关注度、静默时长）",
+            "parameters": {"type": "object", "properties": {}, "required": []},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_current_time",
+            "description": "获取当前日期时间和星期几。需要感知时间上下文时必须调用",
+            "parameters": {"type": "object", "properties": {}, "required": []},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_silence_hours",
+            "description": "查看距离用户最后一次发消息过了多久。长时间沉默时调用",
+            "parameters": {"type": "object", "properties": {}, "required": []},
+        },
     },
     {
         "type": "function",
         "function": {
             "name": "set_tone",
-            "description": "根据对话氛围调整说话语气。自动判断是否需要切换",
+            "description": "根据对话氛围调整语气",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "tone": {"type": "string", "enum": ["professional", "casual", "encouraging", "analytical"],
-                             "description": "professional专业严谨 casual轻松亲切 encouraging鼓励支持 analytical深入分析"}
+                             "description": "目标语气"},
                 },
-                "required": ["tone"]
-            }
-        }
+                "required": ["tone"],
+            },
+        },
     },
     {
         "type": "function",
         "function": {
             "name": "adjust_engagement",
-            "description": "根据对话质量调整对用户投入度。深度教学研讨+5，敷衍回应-3",
+            "description": "根据对话质量调整投入度。深度教学研讨+5，敷衍回应-3",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "delta": {"type": "integer", "description": "投入度变化值，正数升温负数降温"}
+                    "delta": {"type": "integer", "description": "投入度变化值"},
                 },
-                "required": ["delta"]
-            }
-        }
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "get_time",
-            "description": "获取当前日期时间，用于处理跟时间相关的请求",
-            "parameters": {"type": "object", "properties": {}}
-        }
+                "required": ["delta"],
+            },
+        },
     },
 ]
 
 
 # ============================================================
-# 记忆系统（JSON 文件存储）
+# 记忆系统（JSON 文件 + 内存缓存）
 # ============================================================
 
 class MemoryStore:
-    """用户长期记忆 — JSON 文件存储 + 关键词搜索"""
+    """用户长期记忆 — JSON 文件存储 + 内存缓存"""
 
     def __init__(self, user_id: int, base_dir: str):
         self.user_id = user_id
         self.path = os.path.join(base_dir, f"user_{user_id}_memory.json")
-        self._memories: list = self._load()
+        self._cache: list = None
+        self._load()
 
     def _load(self):
+        if self._cache is not None:
+            return self._cache
         try:
             with open(self.path, "r", encoding="utf-8") as f:
-                return json.load(f)
+                data = json.load(f)
+                self._cache = data.get("memories", [])
         except (FileNotFoundError, json.JSONDecodeError):
-            return []
+            self._cache = []
+        return self._cache
 
-    def save(self):
+    def _flush(self):
         os.makedirs(os.path.dirname(self.path), exist_ok=True)
         with open(self.path, "w", encoding="utf-8") as f:
-            json.dump(self._memories, f, ensure_ascii=False, indent=2)
+            json.dump({"memories": self._cache}, f, ensure_ascii=False, indent=2)
 
-    def add(self, fact: str, category: str) -> str:
-        entry = {
-            "fact": fact,
+    def add(self, content: str, category: str) -> str:
+        self._load()
+        for m in self._cache:
+            if m["content"] == content:
+                return "已存在，不重复存储"
+        self._cache.append({
             "category": category,
-            "time": datetime.now().strftime("%Y-%m-%d %H:%M"),
-        }
-        # 去重：同一个 fact 不存两次
-        for m in self._memories:
-            if m["fact"] == fact:
-                return f"已存在相同记忆，不重复存储"
-        self._memories.append(entry)
-        self.save()
-        return f"已记住：{fact}"
+            "content": content,
+            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        })
+        self._flush()
+        return f"已记住：{content}"
 
-    def search(self, keyword: str, category: str = None) -> str:
-        results = []
-        for m in self._memories:
-            if category and m["category"] != category:
-                continue
-            if keyword.lower() in m["fact"].lower():
-                results.append(f"[{m['category']}] {m['fact']} ({m['time']})")
+    def search(self, keyword: str) -> str:
+        self._load()
+        results = [m for m in self._cache if keyword.lower() in m["content"].lower()]
         if not results:
             return f"未找到关于'{keyword}'的记忆"
-        return "\n".join(results[-5:])  # 最多返回 5 条
+        return json.dumps(results[-5:], ensure_ascii=False)
 
-    def get_recent_context(self, n: int = 10) -> str:
-        """获取最近 N 条记忆，注入 system prompt"""
-        if not self._memories:
+    def format_for_prompt(self, n: int = 10) -> str:
+        """格式化最近 N 条记忆注入 system prompt"""
+        self._load()
+        if not self._cache:
             return ""
-        recent = self._memories[-n:]
-        return "关于用户的记忆：\n" + "\n".join(
-            f"- [{m['category']}] {m['fact']}" for m in recent
+        recent = self._cache[-n:]
+        return "关于用户的重要记忆：\n" + "\n".join(
+            f"- [{m['category']}] {m['content']}" for m in recent
         )
 
 
 # ============================================================
-# 工具执行器
+# 工具执行器（build_tool_map 模式 — 从 XiaoBai 迁移）
 # ============================================================
 
-def execute_tool(tool_name: str, arguments: dict, personality, memory_store: MemoryStore) -> str:
-    """执行 function calling 工具，返回结果文本"""
-    if tool_name == "remember":
-        return memory_store.add(arguments["fact"], arguments["category"])
-    elif tool_name == "recall":
-        return memory_store.search(arguments["keyword"], arguments.get("category"))
-    elif tool_name == "set_tone":
-        return personality.set_tone(arguments["tone"])
-    elif tool_name == "adjust_engagement":
-        return personality.adjust_engagement(int(arguments["delta"]))
-    elif tool_name == "get_time":
-        now = datetime.now()
-        return f"现在是 {now.strftime('%Y年%m月%d日')}，{['周一','周二','周三','周四','周五','周六','周日'][now.weekday()]} {now.strftime('%H:%M')}"
-    return f"未知工具：{tool_name}"
+def build_tool_map(personality, memory_store: MemoryStore):
+    """构建工具名 → 执行函数的映射，替代 if/elif 链"""
+    return {
+        "record_memory": lambda **kw: memory_store.add(kw["content"], kw["category"]),
+        "check_memory": lambda **kw: memory_store.search(kw["keyword"]),
+        "get_state": lambda **kw: personality.get_status(),
+        "get_current_time": lambda **kw: personality.get_current_time(),
+        "get_silence_hours": lambda **kw: personality.get_silence_hours(),
+        "set_tone": lambda **kw: personality.set_tone(kw["tone"]),
+        "adjust_engagement": lambda **kw: personality.adjust_engagement(int(kw["delta"])),
+    }
