@@ -407,10 +407,10 @@ async function loadState(convId = null) {
                 <span class="state-icon">&#x2764;</span>
                 <span class="state-desc">投入度</span>
                 <div class="state-bar-wrap">
-                  <div class="state-bar" :class="{ 'bar-overdrive': aiState.engagement > 80 }">
-                    <div class="state-fill" :class="{ 'fill-overdrive': aiState.engagement > 80 }" :style="{width: Math.min(aiState.engagement, 100) + '%'}" />
+                  <div class="state-bar" :class="{ 'bar-overdrive': aiState.engagement > 100 }">
+                    <div class="state-fill" :class="{ 'fill-overdrive': aiState.engagement > 100 }" :style="{width: Math.min(aiState.engagement, 100) + '%'}" />
                   </div>
-                  <span class="state-num" :class="{ 'num-overdrive': aiState.engagement > 80 }">{{ aiState.engagement }}</span>
+                  <span class="state-num" :class="{ 'num-overdrive': aiState.engagement > 100 }">{{ aiState.engagement }}</span>
                 </div>
               </div>
               <div class="state-sep" />
@@ -1253,12 +1253,14 @@ async function loadState(convId = null) {
   animation: overdrive-glow 1.5s ease-in-out infinite alternate;
 }
 
-.fill-overdrive {
-  background: linear-gradient(90deg, var(--color-danger-400), #ef4444, #dc2626) !important;
+.state-bar .state-fill.fill-overdrive {
+  width: 100% !important;
+  background: linear-gradient(90deg, #ef4444, #dc2626) !important;
 }
 
 .num-overdrive {
-  color: var(--color-danger-500) !important;
+  color: #ef4444 !important;
+  text-shadow: 0 0 4px rgba(239,68,68,0.3);
 }
 
 @keyframes overdrive-glow {
