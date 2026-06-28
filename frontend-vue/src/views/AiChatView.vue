@@ -34,6 +34,8 @@ function createSession() {
   sessions.value.forEach(s => (s.active = false))
   currentConversationId.value = null
   saveLastConversation(null)
+  stateActivated.value = false
+  aiState.value = null
   clearChat()
 }
 
@@ -356,7 +358,6 @@ async function loadState(convId = null) {
               </div>
             </div>
             <div v-else class="state-locked-overlay">
-              <span class="lock-icon">&#x1F512;</span>
               <p>发送第一条消息<br/>唤醒 AI 人格</p>
             </div>
           </div>
@@ -381,7 +382,6 @@ async function loadState(convId = null) {
               </div>
             </div>
             <div v-else class="state-locked-overlay">
-              <span class="lock-icon">&#x1F512;</span>
               <p>发送第一条消息<br/>解锁运行数据</p>
             </div>
           </div>
