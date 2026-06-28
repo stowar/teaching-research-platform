@@ -70,6 +70,15 @@ def _summarize_and_trim(system_msg, history, memory, model):
     return history[-KEEP_LAST:]
 
 
+def _enforce_silence(personality):
+    """沉默超过 2 小时：投入度 -2/小时、关注度重置为发散态"""
+    h = personality.silence_hours
+    if h > 2:
+        decay = int(h * 2)
+        personality.engagement = max(0, personality.engagement - decay)
+        personality.attention = min(30, personality.attention)
+
+
 def _enforce_attention(messages, personality, engagement_before):
     """AI 没调 adjust_attention 时，联动投入度变化推断关注度"""
     for msg in messages:
@@ -212,6 +221,7 @@ class AIChatService(IAIChatService):
         personality = Personality.load(
             os.path.join(AI_DATA_DIR, f"conv_{conversation_id}_personality.json")
         )
+        _enforce_silence(personality)
         engagement_before = personality.engagement
         personality.on_user_message(message)
         memory = MemoryStore(conversation_id, AI_DATA_DIR)
