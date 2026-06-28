@@ -78,7 +78,7 @@ class Personality:
             return f"未知语气：{tone_str}"
 
     def adjust_engagement(self, delta: int) -> str:
-        self.engagement = max(0, self.engagement + delta)
+        self.engagement = max(0, min(200, self.engagement + delta))
         return f"投入度{'上升' if delta > 0 else '下降'}，当前：{self.engagement}"
 
     def adjust_attention(self, delta: int) -> str:
@@ -103,7 +103,7 @@ class Personality:
         """收到用户消息：更新时间戳、消耗关注度、微增投入、自动调语气"""
         self._last_user_time = time.time()
         self.attention = max(0, self.attention - 3)
-        self.engagement = self.engagement + 1
+        self.engagement = min(200, self.engagement + 1)
 
         # 根据关键词自动调语气（规则定义在 Agent/rules.py）
         from backend.Agent.rules import TONE_RULES
