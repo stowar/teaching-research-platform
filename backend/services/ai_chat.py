@@ -13,7 +13,8 @@ from backend.schema.vo.ai_chat import (
 )
 from backend.Agent.provider import get_ai_provider
 from backend.Agent.personality import Personality
-from backend.Agent.tools import TOOLS, MemoryStore, build_tool_map
+from backend.Agent.memory import MemoryStore
+from backend.Agent.tools import TOOLS, build_tool_map
 from backend.Agent.rules import build_system_prompt, MAX_CONTEXT_MESSAGES, MAX_TOOL_ROUNDS, MAX_MESSAGES_PER_DAY, SUMMARIZE_THRESHOLD, KEEP_LAST
 from backend.core.config import settings
 
@@ -163,7 +164,7 @@ class AIChatService(IAIChatService):
             engagement=personality.engagement,
             attention=personality.attention,
             silence_hours=round(personality.silence_hours, 1),
-            memory_count=len(memory._load()),
+            memory_count=len(memory),
             messages_today=today_count,
             messages_limit=MAX_MESSAGES_PER_DAY,
         ))
@@ -260,7 +261,7 @@ class AIChatService(IAIChatService):
             engagement=personality.engagement,
             attention=personality.attention,
             silence_hours=round(personality.silence_hours, 1),
-            memory_count=len(memory._load()),
+            memory_count=len(memory),
             messages_today=today_count,
             messages_limit=MAX_MESSAGES_PER_DAY,
         )
