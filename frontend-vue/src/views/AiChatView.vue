@@ -412,12 +412,14 @@ async function loadState(convId = null) {
               </div>
               <div class="state-sep" />
               <div class="state-item">
-                <span class="state-icon">{{ focusEmoji(aiState.attention) }}</span>
+                <span class="state-icon">&#x1F441;</span>
                 <span class="state-desc">关注度</span>
                 <div class="state-bar-wrap">
                   <div class="state-bar"><div class="state-fill attention" :style="{width: aiState.attention + '%'}" /></div>
                   <span class="state-num">{{ aiState.attention }}</span>
                 </div>
+              </div>
+              <div class="state-item state-sub">
                 <span class="focus-badge" :class="'focus-' + focusLevel(aiState.attention)">{{ focusEmoji(aiState.attention) }} {{ focusLabel(aiState.attention) }}</span>
               </div>
             </div>
@@ -1230,12 +1232,16 @@ async function loadState(convId = null) {
   text-align: right;
 }
 
+.state-sub {
+  padding-left: 18px;
+  margin-top: -6px;
+}
+
 .focus-badge {
   font-size: 10px;
   padding: 1px 6px;
   border-radius: var(--radius-full);
   font-weight: var(--font-semibold);
-  margin-top: 2px;
 }
 
 .focus-open  { background: var(--color-info-50);    color: var(--color-info-700); }
