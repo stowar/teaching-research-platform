@@ -350,8 +350,8 @@ async function loadState(convId = null) {
         <!-- 人格状态 -->
         <div class="state-section">
           <div class="section-label">人格状态</div>
-          <div class="ai-state-panel" :class="{ 'state-locked': !stateActivated }" :key="'panel-' + stateVersion">
-            <div v-if="aiState && stateActivated" class="state-grid" :key="'state-' + stateVersion">
+          <div class="ai-state-panel" :class="{ 'state-locked': !stateActivated }">
+            <div v-if="aiState && stateActivated" class="state-grid">
               <div class="state-item">
                 <span class="state-icon">&#x1F3AD;</span>
                 <span class="state-desc">语气</span>
@@ -386,8 +386,8 @@ async function loadState(convId = null) {
         <!-- 运行数据 -->
         <div class="state-section">
           <div class="section-label">运行数据</div>
-          <div class="ai-state-panel" :class="{ 'state-locked': !stateActivated }" :key="'panel-' + stateVersion">
-            <div v-if="aiState && stateActivated" class="stats-inline" :key="'stats-' + stateVersion">
+          <div class="ai-state-panel" :class="{ 'state-locked': !stateActivated }">
+            <div v-if="aiState && stateActivated" class="stats-inline">
               <div class="stat-mini">
                 <span class="stat-num">{{ aiState.silence_hours }}h</span>
                 <span class="stat-label">静默</span>
@@ -1158,8 +1158,9 @@ async function loadState(convId = null) {
   height: 100%;
   border-radius: var(--radius-full);
   background: linear-gradient(90deg, var(--color-brand-400), var(--color-brand-600));
-  transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
-  transition-delay: 0.15s;
+  width: 0;
+  transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: 0.3s;
 }
 
 .state-fill.attention {
