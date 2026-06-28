@@ -767,6 +767,8 @@ async function loadState(convId = null) {
   padding: 0 var(--space-5) var(--space-3);
   flex-shrink: 0;
   animation: slide-up-enter 0.3s var(--ease-out) both;
+  transition: opacity 0.3s var(--ease-out), max-height 0.4s var(--ease-out);
+  overflow: hidden;
 }
 
 .prompts-label {
@@ -880,18 +882,24 @@ async function loadState(convId = null) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: all var(--duration-fast) var(--ease-out);
+  transition: all 0.15s var(--ease-out);
   flex-shrink: 0;
 }
 
 .btn-send:hover:not(:disabled) {
-  transform: scale(1.05);
-  box-shadow: var(--shadow-sm);
+  transform: scale(1.08);
+  box-shadow: 0 0 12px rgba(79,70,229,0.3);
+}
+
+.btn-send:active:not(:disabled) {
+  transform: scale(0.92);
 }
 
 .btn-send:disabled {
-  opacity: 0.45;
+  opacity: 0.35;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .input-footer {
@@ -1025,6 +1033,16 @@ async function loadState(convId = null) {
   gap: var(--space-2);
   padding: var(--space-5) var(--space-3);
   text-align: center;
+  animation: fade-in-up 0.35s var(--ease-out) both;
+}
+
+.state-grid {
+  animation: fade-in-up 0.4s var(--ease-out) both;
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .lock-icon {
