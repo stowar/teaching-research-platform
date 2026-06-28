@@ -1110,7 +1110,7 @@ async function loadState(convId = null) {
   font-style: italic;
   opacity: 0.5;
   margin-top: var(--space-3) !important;
-  text-align: right;
+  text-align: left;
 }
 
 .state-empty {
