@@ -293,53 +293,95 @@ loadSessions()
     <!-- 右侧：说明栏 -->
     <aside class="info-sidebar">
       <div class="info-header">
-        <span class="info-title">AI 状态</span>
+        <span class="info-title">AI 教研助手</span>
       </div>
       <div class="info-body">
-        <!-- AI 实时状态 -->
-        <div v-if="aiState" class="ai-state-panel">
-          <div class="state-row">
-            <span class="state-label">语气</span>
-            <span class="state-value tone-badge" :class="'tone-' + aiState.tone">{{ aiState.tone_label }}</span>
+        <!-- 人格维度 -->
+        <div class="state-section">
+          <div class="section-label">人格状态</div>
+          <div class="ai-state-panel">
+            <div v-if="aiState" class="state-grid">
+              <div class="state-item">
+                <span class="state-icon">&#x1F3AD;</span>
+                <span class="state-desc">语气</span>
+                <span class="tone-badge" :class="'tone-' + aiState.tone">{{ aiState.tone_label }}</span>
+              </div>
+              <div class="state-sep" />
+              <div class="state-item">
+                <span class="state-icon">&#x2764;</span>
+                <span class="state-desc">投入度</span>
+                <div class="state-bar-wrap">
+                  <div class="state-bar"><div class="state-fill" :style="{width: aiState.engagement + '%'}" /></div>
+                  <span class="state-num">{{ aiState.engagement }}</span>
+                </div>
+              </div>
+              <div class="state-sep" />
+              <div class="state-item">
+                <span class="state-icon">&#x1F441;</span>
+                <span class="state-desc">注意力</span>
+                <div class="state-bar-wrap">
+                  <div class="state-bar"><div class="state-fill attention" :style="{width: aiState.attention + '%'}" /></div>
+                  <span class="state-num">{{ aiState.attention }}</span>
+                </div>
+              </div>
+            </div>
+            <div v-else class="state-empty">
+              <p>发送第一条消息后<br/>AI 人格将被唤醒</p>
+            </div>
           </div>
-          <div class="state-row">
-            <span class="state-label">投入度</span>
-            <div class="state-bar"><div class="state-fill" :style="{width: aiState.engagement + '%'}" /></div>
-            <span class="state-num">{{ aiState.engagement }}</span>
-          </div>
-          <div class="state-row">
-            <span class="state-label">关注度</span>
-            <div class="state-bar"><div class="state-fill attention" :style="{width: aiState.attention + '%'}" /></div>
-            <span class="state-num">{{ aiState.attention }}</span>
-          </div>
-          <div class="state-row">
-            <span class="state-label">静默</span>
-            <span class="state-value">{{ aiState.silence_hours }}h</span>
-          </div>
-          <div class="state-row">
-            <span class="state-label">记忆</span>
-            <span class="state-value">{{ aiState.memory_count }} 条</span>
-          </div>
-          <div class="state-row">
-            <span class="state-label">今日</span>
-            <span class="state-value">{{ aiState.messages_today }}/{{ aiState.messages_limit }}</span>
-          </div>
-        </div>
-        <div v-else class="ai-state-panel state-empty">
-          <p>发送第一条消息后，这里将展示 AI 的实时状态。</p>
         </div>
 
-        <div class="info-section">
-          <h4>快捷指令</h4>
+        <!-- 运行数据 -->
+        <div class="state-section">
+          <div class="section-label">运行数据</div>
+          <div class="ai-state-panel">
+            <div v-if="aiState" class="stats-inline">
+              <div class="stat-mini">
+                <span class="stat-num">{{ aiState.silence_hours }}h</span>
+                <span class="stat-label">静默</span>
+              </div>
+              <div class="stat-mini">
+                <span class="stat-num">{{ aiState.memory_count }}</span>
+                <span class="stat-label">记忆</span>
+              </div>
+              <div class="stat-mini">
+                <span class="stat-num">{{ aiState.messages_today }}/{{ aiState.messages_limit }}</span>
+                <span class="stat-label">今日</span>
+              </div>
+            </div>
+            <div v-else class="state-empty"><p>—</p></div>
+          </div>
+        </div>
+
+        <!-- 引擎特性 -->
+        <div class="feature-list">
+          <div class="feature-item">
+            <span class="feature-dot" />
+            <span>人格状态机 — 四态语气 · 投注动态</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-dot" />
+            <span>长期记忆 — 自动存档 · 自然引用</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-dot" />
+            <span>Function Calling — 7 个 AI 工具</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-dot" />
+            <span>裁切总结 — 超长对话自动压缩</span>
+          </div>
+        </div>
+
+        <!-- 快捷提问 -->
+        <div class="state-section">
+          <div class="section-label">试试这样问</div>
           <div class="info-tags">
             <span class="info-tag">教案设计</span>
             <span class="info-tag">活动推荐</span>
             <span class="info-tag">思政融合</span>
             <span class="info-tag">评价量表</span>
           </div>
-        </div>
-        <div class="info-section info-tips">
-          <p>右击会话可删除</p>
         </div>
       </div>
 
@@ -915,11 +957,21 @@ loadSessions()
 }
 
 /* AI 状态面板 */
+.section-label {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  font-weight: var(--font-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-2);
+}
+
+.state-section {
+  margin-bottom: var(--space-4);
+}
+
 .ai-state-panel {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-4);
+  padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-lg);
   background: var(--bg-page);
   border: 1px solid var(--border-light);
@@ -929,31 +981,48 @@ loadSessions()
   color: var(--text-tertiary);
   font-size: var(--text-xs);
   text-align: center;
-  font-style: italic;
+  padding: var(--space-4) 0;
 }
 
 .state-empty p { margin: 0; }
 
-.state-row {
+.state-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.state-item {
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  flex-wrap: wrap;
 }
 
-.state-label {
+.state-icon { font-size: 14px; flex-shrink: 0; }
+
+.state-desc {
   font-size: var(--text-xs);
-  color: var(--text-tertiary);
-  min-width: 40px;
+  color: var(--text-secondary);
+  min-width: 38px;
 }
 
-.state-value {
-  font-size: var(--text-xs);
-  color: var(--text-primary);
-  font-weight: var(--font-semibold);
+.state-bar-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 80px;
+}
+
+.state-sep {
+  height: 1px;
+  background: var(--border-light);
+  margin: 0 var(--space-1);
 }
 
 .tone-badge {
-  padding: 1px 8px;
+  padding: 2px 10px;
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
   font-weight: var(--font-semibold);
@@ -976,7 +1045,7 @@ loadSessions()
   height: 100%;
   border-radius: var(--radius-full);
   background: linear-gradient(90deg, var(--color-brand-400), var(--color-brand-600));
-  transition: width 0.5s var(--ease-out);
+  transition: width 0.6s var(--ease-out);
 }
 
 .state-fill.attention {
@@ -986,19 +1055,64 @@ loadSessions()
 .state-num {
   font-size: var(--text-xs);
   color: var(--text-secondary);
-  font-weight: var(--font-semibold);
+  font-weight: var(--font-bold);
   min-width: 22px;
   text-align: right;
 }
 
-.info-tips {
-  text-align: center;
+/* 运行数据 */
+.stats-inline {
+  display: flex;
+  gap: var(--space-3);
 }
 
-.info-tips p {
+.stat-mini {
+  flex: 1;
+  text-align: center;
+  padding: var(--space-2) 0;
+}
+
+.stat-mini .stat-num {
+  display: block;
+  font-size: var(--text-lg);
+  font-weight: var(--font-extrabold);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-mini .stat-label {
+  display: block;
   font-size: var(--text-xs);
   color: var(--text-tertiary);
-  margin: 0;
+  margin-top: 2px;
+}
+
+/* 引擎特性 */
+.feature-list {
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--bg-page);
+  border: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.feature-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: var(--radius-full);
+  background: var(--color-brand-400);
+  flex-shrink: 0;
 }
 
 [data-theme="dark"] .tone-professional { background: rgba(79,70,229,0.15); color: var(--color-brand-300); }
