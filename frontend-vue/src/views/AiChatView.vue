@@ -33,13 +33,20 @@ async function loadSessions() {
 function createSession() {
   sessions.value.forEach(s => (s.active = false))
   currentConversationId.value = null
+  saveLastConversation(null)
   clearChat()
+}
+
+function saveLastConversation(id) {
+  if (id) localStorage.setItem('ai_last_conv', id)
+  else localStorage.removeItem('ai_last_conv')
 }
 
 async function switchSession(conv) {
   sessions.value.forEach(s => (s.active = false))
   conv.active = true
   currentConversationId.value = conv.id
+  saveLastConversation(conv.id)
 
   try {
     const res = await api.get(`/ai-chat/conversations/${conv.id}`)
@@ -130,6 +137,7 @@ async function sendMessage(text = input.value.trim()) {
     // 首次对话 → 后端返回新 conversation_id
     if (reply.conversation_id && !currentConversationId.value) {
       currentConversationId.value = reply.conversation_id
+      saveLastConversation(reply.conversation_id)
       loadSessions()
     }
 
@@ -161,9 +169,16 @@ function formatTime(ts) {
   return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`
 }
 
-// 页面加载时拉会话列表 + AI 状态
-loadSessions()
-loadState()
+// 页面加载时拉会话列表 + AI 状态 + 恢复上次会话
+loadState();
+(async () => {
+  await loadSessions()
+  const lastConv = localStorage.getItem('ai_last_conv')
+  if (lastConv) {
+    const conv = sessions.value.find(s => s.id === Number(lastConv))
+    if (conv) switchSession(conv)
+  }
+})()
 
 async function loadState() {
   try {
