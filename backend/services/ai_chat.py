@@ -14,7 +14,7 @@ from backend.schema.vo.ai_chat import (
 from backend.Agent.provider import get_ai_provider
 from backend.Agent.personality import Personality
 from backend.Agent.tools import TOOLS, MemoryStore, build_tool_map
-from backend.Agent.rules import build_system_prompt, MAX_CONTEXT_MESSAGES, MAX_TOOL_ROUNDS, MAX_MESSAGES_PER_DAY
+from backend.Agent.rules import build_system_prompt, MAX_CONTEXT_MESSAGES, MAX_TOOL_ROUNDS, MAX_MESSAGES_PER_DAY, SUMMARIZE_THRESHOLD, KEEP_LAST
 from backend.core.config import settings
 
 # 记忆文件存储目录
@@ -26,6 +26,47 @@ TONE_LABELS = {
     "encouraging": "鼓励模式",
     "analytical": "分析模式",
 }
+
+
+def _summarize_and_trim(system_msg, history, memory, model):
+    """
+    对话过长时的分层裁切总结（从 XiaoBai 迁移）：
+    - 超过阈值的历史消息 → AI 总结为一段摘要 → 写入长期记忆
+    - 保留最近 KEEP_LAST 条在上下文窗口
+    """
+    total = len(system_msg) + len(history)
+    if total <= SUMMARIZE_THRESHOLD:
+        return history
+
+    # 取要被总结掉的部分
+    to_summarize = history[:-KEEP_LAST] if len(history) > KEEP_LAST else history
+    if len(to_summarize) < 10:
+        return history[-KEEP_LAST:]
+
+    lines = []
+    for m in to_summarize:
+        role = m.get("role", "")
+        content = m.get("content", "") or ""
+        if role in ("user", "assistant") and content:
+            tag = "教师" if role == "user" else "AI助手"
+            lines.append(f"{tag}: {content}")
+
+    if not lines:
+        return history[-KEEP_LAST:]
+
+    try:
+        provider = get_ai_provider(model)
+        summary_resp = provider.chat([{
+            "role": "user",
+            "content": "把以下对话总结为一段话（100字以内，不要换行）：\n" + "\n".join(lines)
+        }])
+        summary = summary_resp.get("content", "").strip()
+        if summary:
+            memory.add(f"[对话摘要] {summary}", "experience")
+    except Exception:
+        pass
+
+    return history[-KEEP_LAST:]
 
 
 def _tone_label(tone):
@@ -98,17 +139,18 @@ class AIChatService(IAIChatService):
         personality.on_user_message(message)
         memory = MemoryStore(user_id, AI_DATA_DIR)
 
-        # ── 4. 构建 system prompt（规则来自 Agent/rules.py） ──
+        # ── 4. 构建消息上下文 ──
         system_prompt = build_system_prompt(personality, memory)
-
-        # ── 5. 构建消息上下文 ──
         messages = [{"role": "system", "content": system_prompt}]
         history = ai_chat_db.get_messages_by_conversation(conversation_id)
-        # 只加载 user/assistant 消息，跳过 tool 和带 tool_calls 的消息
-        for m in history[-MAX_CONTEXT_MESSAGES:]:
-            if m.role in ("user", "assistant") and m.content:
-                msg = {"role": m.role, "content": m.content}
-                messages.append(msg)
+        # 只加载 user/assistant 消息，跳过 tool 和空 content
+        history = [{"role": m.role, "content": m.content}
+                   for m in history if m.role in ("user", "assistant") and m.content]
+
+        # ── 5. 裁切总结：上下文过长时 AI 总结旧消息 → 写入记忆 → 保留最近 N 条 ──
+        history = _summarize_and_trim(messages, history, memory, model)
+
+        messages += history[-MAX_CONTEXT_MESSAGES:]
 
         # ── 6. 调 AI（带 function calling 循环） ──
         provider = get_ai_provider(model)
