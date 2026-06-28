@@ -147,10 +147,10 @@ async function sendMessage(text = input.value.trim()) {
     const reply = res.data
     // 更新 AI 状态面板
     if (reply.state) {
-      // 先 0 后目标，触发进度条动画
       const s = reply.state
       aiState.value = { ...s, engagement: 0, attention: 0 }
       await nextTick()
+      await new Promise(r => requestAnimationFrame(r))
       aiState.value = s
       stateVersion.value++
     }
@@ -205,11 +205,11 @@ async function loadState(convId = null) {
   try {
     const params = convId ? { conversation_id: convId } : {}
     const res = await api.get('/ai-chat/state', { params })
-    // 先设 0 再设目标值，触发进度条从零开始的动画
     const data = res.data
-    const zeroed = { ...data, engagement: 0, attention: 0 }
-    aiState.value = zeroed
+    // 归零 → 渲染 → 目标值，触发进度条 CSS transition
+    aiState.value = { ...data, engagement: 0, attention: 0 }
     await nextTick()
+    await new Promise(r => requestAnimationFrame(r))
     aiState.value = data
     stateVersion.value++
   } catch { /* 静默 */ }
