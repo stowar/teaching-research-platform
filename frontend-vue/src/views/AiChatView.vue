@@ -1108,8 +1108,9 @@ async function loadState(convId = null) {
 .state-hint {
   font-size: 10px !important;
   font-style: italic;
-  opacity: 0.6;
-  margin-top: var(--space-1) !important;
+  opacity: 0.5;
+  margin-top: var(--space-3) !important;
+  text-align: right;
 }
 
 .state-empty {
