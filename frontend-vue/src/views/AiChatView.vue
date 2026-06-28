@@ -413,9 +413,8 @@ async function loadState(convId = null) {
               </div>
               <div class="state-sep" />
               <div class="state-item">
-                <span class="state-icon">{{ focusEmoji(aiState.attention) }}</span>
+                <span class="state-icon">&#x1F441;</span>
                 <span class="state-desc">关注度</span>
-                <button class="help-btn" @click.stop="showFocusHelp = !showFocusHelp">?</button>
                 <div class="state-bar-wrap">
                   <div class="state-bar"><div class="state-fill attention" :style="{width: aiState.attention + '%'}" /></div>
                   <span class="state-num">{{ aiState.attention }}</span>
@@ -426,15 +425,24 @@ async function loadState(convId = null) {
               <p>发送第一条消息<br/>唤醒 AI 人格</p>
             </div>
           </div>
-          <div v-if="showFocusHelp" class="help-popover">
-            <div class="help-row"><span>🌀 发散态</span><span>0-30</span></div>
-            <div class="help-desc">话题灵活，可接各种方向</div>
-            <div class="help-row"><span>🎯 聚焦态</span><span>31-70</span></div>
-            <div class="help-desc">咬住话题深入追问</div>
-            <div class="help-row"><span>🔒 锁定态</span><span>71-100</span></div>
-            <div class="help-desc">固执深挖，换话题会拉回来</div>
+          <div class="state-hint-row">
+            <p class="state-hint">人格数据仅保存在当前会话</p>
+            <button class="help-btn" @click.stop="showFocusHelp = !showFocusHelp">?</button>
           </div>
-          <p class="state-hint">人格数据仅保存在当前会话</p>
+          <div v-if="showFocusHelp" class="help-popover">
+            <div class="help-section">
+              <div class="help-row"><span>🎭 语气</span><span>四态自动切换</span></div>
+              <div class="help-desc">根据对话氛围自动调整：专业/轻松/鼓励/分析</div>
+            </div>
+            <div class="help-section">
+              <div class="help-row"><span>❤️ 投入度</span><span>0-100</span></div>
+              <div class="help-desc">对话越深入越投入，敷衍时下降。深度交流 +5，敷衍 -3</div>
+            </div>
+            <div class="help-section">
+              <div class="help-row"><span>👁 关注度</span><span>0-100</span></div>
+              <div class="help-desc">对当前话题的锁定程度。低值灵活发散，高值咬住深挖</div>
+            </div>
+          </div>
         </div>
 
         <!-- 运行数据 -->
@@ -1145,13 +1153,29 @@ async function loadState(convId = null) {
   line-height: 1.6;
 }
 
+.state-hint-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
 .state-hint {
   font-size: 10px;
   color: var(--text-tertiary);
   font-style: italic;
   opacity: 0.5;
-  margin: var(--space-2) 0 0 0;
+  margin: 0;
   text-align: left;
+}
+
+.help-popover .help-section {
+  padding: var(--space-1) 0;
+}
+
+.help-popover .help-section + .help-section {
+  border-top: 1px solid var(--border-light);
+  padding-top: var(--space-2);
 }
 
 .state-empty {
