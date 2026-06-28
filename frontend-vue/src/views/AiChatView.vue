@@ -264,9 +264,7 @@ async function loadState(convId = null) {
       </div>
 
       <div class="session-tips">
-        <span class="tip-chip"><kbd>单击</kbd> 切换</span>
-        <span class="tip-chip"><kbd>双击</kbd> 重命名</span>
-        <span class="tip-chip"><kbd>右键</kbd> 删除</span>
+        <span>单击切换 · 双击重命名 · 右键删除</span>
       </div>
 
       <div class="sidebar-footer">
@@ -585,30 +583,11 @@ async function loadState(convId = null) {
 }
 
 .session-tips {
-  display: flex;
-  justify-content: center;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-3);
+  text-align: center;
+  padding: var(--space-2) var(--space-3);
   border-top: 1px solid var(--border-light);
-  flex-wrap: wrap;
-}
-
-.tip-chip {
   font-size: 11px;
   color: var(--text-tertiary);
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-}
-
-.tip-chip kbd {
-  font-family: inherit;
-  font-size: 10px;
-  padding: 1px 5px;
-  border-radius: 3px;
-  background: var(--bg-hover);
-  border: 1px solid var(--border-light);
-  color: var(--text-secondary);
 }
 
 .sidebar-footer {
