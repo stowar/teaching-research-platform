@@ -319,6 +319,69 @@ watch(result, () => nextTick(() => setTimeout(drawWave, 100)))
           </div>
         </div>
       </div>
+
+      <!-- 右侧技术说明栏 -->
+      <aside class="tech-sidebar">
+        <div class="tech-header">
+          <span class="tech-title">模型技术说明</span>
+        </div>
+        <div class="tech-body">
+          <div class="tech-section">
+            <div class="tech-label">模型架构</div>
+            <div class="tech-value">Embedding(128) + BiGRU(256×2) + Self-Attention</div>
+          </div>
+          <div class="tech-section">
+            <div class="tech-label">词汇量</div>
+            <div class="tech-value">13,315</div>
+          </div>
+          <div class="tech-section">
+            <div class="tech-label">训练数据</div>
+            <div class="tech-value">4,714 条人工标注</div>
+          </div>
+          <div class="tech-section">
+            <div class="tech-label">训练准确率</div>
+            <div class="tech-value">97.79%</div>
+          </div>
+          <div class="tech-section">
+            <div class="tech-label">推理速度</div>
+            <div class="tech-value">~200ms (CPU)</div>
+          </div>
+          <div class="tech-sep" />
+          <div class="tech-section">
+            <div class="tech-label">六层温度体系</div>
+            <div class="tech-list">
+              <span>L1 短文本兜底</span>
+              <span>L2 注意力熵检测</span>
+              <span>L3 置信度门控</span>
+              <span>L4 中性词保护</span>
+              <span>L5 转折词触发</span>
+              <span>L6 极端词降混</span>
+            </div>
+          </div>
+          <div class="tech-sep" />
+          <div class="tech-section">
+            <div class="tech-label">覆盖维度</div>
+            <div class="tech-list">
+              <span>实训授课</span>
+              <span>课堂互动</span>
+              <span>学困生关怀</span>
+              <span>课件质量</span>
+              <span>课后资源</span>
+            </div>
+          </div>
+          <div class="tech-sep" />
+          <div class="tech-section">
+            <div class="tech-label">十类情绪</div>
+            <div class="tech-list">
+              <span>失望/烦躁/无聊/焦虑/困惑/愤怒</span>
+              <span>开心/期待/感激/感动</span>
+            </div>
+          </div>
+          <div class="tech-section tech-footer-note">
+            <p>模型学的不只是词和标签<br/>是我对教育行业的理解</p>
+          </div>
+        </div>
+      </aside>
     </div>
   </div>
 </template>
@@ -364,7 +427,7 @@ watch(result, () => nextTick(() => setTimeout(drawWave, 100)))
 /* 内容网格 */
 .content-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 260px;
   gap: var(--space-5);
 }
 
@@ -696,7 +759,98 @@ watch(result, () => nextTick(() => setTimeout(drawWave, 100)))
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* 右侧技术说明栏 */
+.tech-sidebar {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.tech-header {
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.tech-title {
+  font-size: var(--text-sm);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+}
+
+.tech-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.tech-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tech-label {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-weight: var(--font-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tech-value {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  font-weight: var(--font-medium);
+}
+
+.tech-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tech-list span {
+  padding: 1px 7px;
+  border-radius: var(--radius-full);
+  background: var(--bg-page);
+  border: 1px solid var(--border-light);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.tech-sep {
+  height: 1px;
+  background: var(--border-light);
+}
+
+.tech-footer-note {
+  margin-top: var(--space-2);
+  text-align: center;
+}
+
+.tech-footer-note p {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  font-style: italic;
+  line-height: 1.6;
+  margin: 0;
+}
+
 /* 响应式 */
+@media (max-width: 1100px) {
+  .content-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .tech-sidebar { display: none; }
+}
+
 @media (max-width: 768px) {
   .content-grid {
     grid-template-columns: 1fr;
