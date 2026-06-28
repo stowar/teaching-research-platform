@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends
 
 from backend.core.deps import get_ai_chat_service, get_current_user
 from backend.schema.vo.common import ApiResponse
-from backend.schema.vo.ai_chat import ConversationVO, ConversationDetailVO, ChatReplyVO
+from backend.schema.vo.ai_chat import ConversationVO, ConversationDetailVO, ChatReplyVO, AIStateVO
 from backend.schema.request.ai_chat import ChatRequest, RenameConversation
 from backend.domain.ai_chat import IAIChatService
 
@@ -60,3 +60,11 @@ def chat(
     svc: IAIChatService = Depends(get_ai_chat_service),
 ):
     return svc.chat(current_user.id, data.message, data.conversation_id, data.model)
+
+
+@router.get("/state", summary="AI 状态", response_model=ApiResponse[AIStateVO])
+def get_state(
+    current_user=Depends(get_current_user),
+    svc: IAIChatService = Depends(get_ai_chat_service),
+):
+    return svc.get_state(current_user.id)

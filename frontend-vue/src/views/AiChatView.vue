@@ -161,8 +161,16 @@ function formatTime(ts) {
   return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`
 }
 
-// 页面加载时拉会话列表
+// 页面加载时拉会话列表 + AI 状态
 loadSessions()
+loadState()
+
+async function loadState() {
+  try {
+    const res = await api.get('/ai-chat/state')
+    aiState.value = res.data
+  } catch { /* 未登录时静默 */ }
+}
 </script>
 
 <template>

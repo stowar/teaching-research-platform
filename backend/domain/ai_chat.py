@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from typing import List
 
 from backend.schema.vo.common import ApiResponse
-from backend.schema.vo.ai_chat import ConversationVO, ConversationDetailVO, ChatReplyVO
+from backend.schema.vo.ai_chat import ConversationVO, ConversationDetailVO, ChatReplyVO, AIStateVO
 
 
 class IAIChatService(ABC):
@@ -39,4 +39,9 @@ class IAIChatService(ABC):
     @abstractmethod
     def chat(self, user_id: int, message: str, conversation_id: int = None, model: str = "deepseek-chat") -> ApiResponse[ChatReplyVO]:
         """发送消息并获取 AI 回复"""
+        ...
+
+    @abstractmethod
+    def get_state(self, user_id: int) -> ApiResponse[AIStateVO]:
+        """获取 AI 当前状态"""
         ...

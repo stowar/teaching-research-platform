@@ -111,6 +111,25 @@ class AIChatService(IAIChatService):
         ai_chat_db.delete_conversation_db(conversation_id)
         return ApiResponse(msg="已删除")
 
+    # ===================== AI 状态 =====================
+
+    def get_state(self, user_id):
+        personality = Personality.load(
+            os.path.join(AI_DATA_DIR, f"user_{user_id}_personality.json")
+        )
+        memory = MemoryStore(user_id, AI_DATA_DIR)
+        today_count = ai_chat_db.count_user_messages_today(user_id)
+        return ApiResponse(msg="查询成功", data=AIStateVO(
+            tone=personality.tone.value,
+            tone_label=_tone_label(personality.tone),
+            engagement=personality.engagement,
+            attention=personality.attention,
+            silence_hours=round(personality.silence_hours, 1),
+            memory_count=len(memory._load()),
+            messages_today=today_count,
+            messages_limit=MAX_MESSAGES_PER_DAY,
+        ))
+
     # ===================== 对话核心逻辑 =====================
 
     def chat(self, user_id, message, conversation_id=None, model="deepseek-chat"):
