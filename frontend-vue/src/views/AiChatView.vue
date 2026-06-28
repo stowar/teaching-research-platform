@@ -203,6 +203,12 @@ function focusLabel(v) {
   return '锁定态'
 }
 
+function focusLevel(v) {
+  if (v <= 30) return 'open'
+  if (v <= 70) return 'focus'
+  return 'lock'
+}
+
 // 数字从 0 计数到目标值
 function animateCounts(target) {
   const start = performance.now()
@@ -412,7 +418,7 @@ async function loadState(convId = null) {
                   <div class="state-bar"><div class="state-fill attention" :style="{width: aiState.attention + '%'}" /></div>
                   <span class="state-num">{{ aiState.attention }}</span>
                 </div>
-                <span class="focus-label">{{ focusLabel(aiState.attention) }}</span>
+                <span class="focus-badge" :class="'focus-' + focusLevel(aiState.attention)">{{ focusEmoji(aiState.attention) }} {{ focusLabel(aiState.attention) }}</span>
               </div>
             </div>
             <div v-else class="state-locked-overlay">
@@ -1224,11 +1230,21 @@ async function loadState(convId = null) {
   text-align: right;
 }
 
-.focus-label {
+.focus-badge {
   font-size: 10px;
-  color: var(--text-tertiary);
-  margin-left: var(--space-1);
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  font-weight: var(--font-semibold);
+  margin-top: 2px;
 }
+
+.focus-open  { background: var(--color-info-50);    color: var(--color-info-700); }
+.focus-focus { background: var(--color-warning-50);  color: var(--color-warning-700); }
+.focus-lock  { background: var(--color-danger-50);   color: var(--color-danger-700); }
+
+[data-theme="dark"] .focus-open  { background: rgba(59,130,246,0.15);  color: var(--color-info-300); }
+[data-theme="dark"] .focus-focus { background: rgba(234,179,8,0.15);   color: var(--color-warning-300); }
+[data-theme="dark"] .focus-lock  { background: rgba(239,68,68,0.15);   color: var(--color-danger-300); }
 
 /* 运行数据 */
 .stats-inline {
