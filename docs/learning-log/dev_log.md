@@ -970,3 +970,85 @@ app.dependency_overrides[get_ai_chat_service] = MockChatService
 **从"听过一个设计模式的名字"到"懂了它为什么对"，中间隔着的不是时间——是亲手把它写成 15 个端点、写完之后突然发现"我可以不启动数据库就能测整个 API 层"的那一刻。**
 
 依赖倒置不是"高层的依赖变小了"，是"高层的依赖消失了"。不是减少依赖，是反转依赖方向。这才是 SOLID 里 D 的真正含义。
+
+---
+
+# Dev Log 2026-06-28
+
+## 交互体验打磨：从"能用"到"有感觉"
+
+### 背景
+
+AI 聊天室后端功能完备后，前端用了一整天做交互优化。这次优化的核心目标不是加新功能，而是让已有的功能"有感觉"——状态切换有过渡、数据展示有节奏、操作反馈有响应。
+
+### AI 聊天室右侧栏重构
+
+旧右侧栏是一堆静态使用说明，和"帮评委看懂这个 AI 在做什么"的目标无关。改为四层信息架构：
+
+```
+人格状态 — 语气标签 + 投入度/关注度进度条
+运行数据 — 静默/记忆/今日 三列数字
+引擎特性 — 状态机/记忆/Function Calling/裁切总结
+快捷指令 — 四个场景标签
+```
+
+核心设计决策：
+- 人格数据与代码分离（`Agent/rules.py`），改 AI 行为只改一个文件
+- 每个会话是独立 AI 实例（personality + memory 按 conversation_id 隔离）
+- 新会话锁定——未发消息前状态面板显示"发送第一条消息唤醒 AI 人格"
+- 页面刷新后自动恢复 AI 状态（新增 `GET /ai-chat/state` 端点）
+- 上次激活的会话通过 localStorage 恢复
+
+### 从 0 到 1 的动画体系
+
+全部使用标准工具（CSS transition + requestAnimationFrame），零依赖库：
+
+| 位置 | 动画 | 实现 |
+|------|------|------|
+| 聊天消息 | 从下往上滑出 | `translateY(24px) + scale(0.97)` → 弹性缓动 |
+| 人格面板进度条 | 从 0 涨到目标值 | JS 归零 → requestAnimationFrame → CSS transition 1.2s |
+| 运行数据数字 | 从 0 滚到目标值 | JS easeOutCubic 800ms 计数 |
+| 情感分析概率条 | 从 0 涨到目标值 | 同上 |
+| 发送按钮 | hover 放大 + 按下缩小 | `scale(1.08)` → `scale(0.92)` |
+
+**一个坑**：进度条应用 `nextTick` 不够——Vue 更新了虚拟 DOM 但浏览器还没渲染。改 `nextTick + requestAnimationFrame` 后才真正触发 CSS 过渡。这是因为 CSS transition 需要浏览器"看过"初始状态的像素，才能在下一帧检测到变化。
+
+**另一个坑**：emoji 用 `split('')` 会拆成 surrogate pair 乱码（`😊` → `['\uD83D', '\uDE0A']`），浏览器渲染第一半时卡死。`[...str]` 按 Unicode code point 切才正确。
+
+### Agent 同步 XiaoBai 最新更新
+
+XiaoBai 仓库更新后，Agent 同步了四处改进：
+
+| 更新 | 改动 |
+|------|------|
+| 静默追踪 | `_idle_rounds` 计数器 → `time.time()` 时间戳（精确到秒） |
+| 新工具 | 新增 `get_silence_hours()` / `get_current_time()` / `get_state` |
+| 记忆缓存 | 新增 `_cache` 内存缓存，避免每次读 JSON 文件 |
+| tool_map | `execute_tool` if/elif 链 → `build_tool_map()` lambda 映射 |
+| 裁切总结 | 对话超 40 条时 AI 自动总结旧消息 → 写入记忆 → 保留最近 10 条 |
+
+### 部署踩坑记录
+
+服务器部署过程踩了 5 个环境相关的问题：
+
+1. **`No module named 'openai'`** — 新依赖未安装
+2. **`Missing credentials`** — `.env` 文件在服务器上不存在（之前靠 config 默认值撑着的 DB 配置）
+3. **`load_dotenv()` 找不到 `.env`** — supervisor 启动时 CWD 不是项目目录 → 改为 `Path(__file__)` 绝对路径
+4. **MySQL root auth_socket** — 服务器 root 只能用 system socket 登录，Python 连不了 → 创建 `app` 用户
+5. **Emoji 导致 API 400** — `tool_calls` 提取时漏了 `type: "function"` 字段
+
+### 情感分析页交互动效
+
+情感分析结果增加了和 AI 聊天室一致的概率条从 0 涨满动画。技术栈已废弃原有的静态架构说明侧栏——评委看的是"这个结果是怎么出来的效果"而不是"这个模型是怎么设计的"。
+
+### 项目当前状态
+
+| 模块 | 功能完成度 | 交互完成度 |
+|------|:--:|:--:|
+| 教研社区 | 100% | 80% |
+| AI 聊天室 | 90% | 90% |
+| 情感分析 | 100% | 85% |
+| 教研资料部 | 10% | — |
+| 个人中心 | 80% | 70% |
+
+最大的伤口依然是教研资料部——四张占位卡片提醒评委"这里还没做"。哪怕上传 10 个真实教案文件效果都会完全不同。
