@@ -400,9 +400,9 @@ async function loadState(convId = null) {
             </div>
             <div v-else class="state-locked-overlay">
               <p>发送第一条消息<br/>唤醒 AI 人格</p>
-              <p class="state-hint">人格数据仅保存在当前会话</p>
             </div>
           </div>
+          <p class="state-hint">人格数据仅保存在当前会话</p>
         </div>
 
         <!-- 运行数据 -->
@@ -1106,10 +1106,11 @@ async function loadState(convId = null) {
 }
 
 .state-hint {
-  font-size: 10px !important;
+  font-size: 10px;
+  color: var(--text-tertiary);
   font-style: italic;
   opacity: 0.5;
-  margin-top: var(--space-3) !important;
+  margin: var(--space-2) 0 0 0;
   text-align: left;
 }
 
