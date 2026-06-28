@@ -242,7 +242,7 @@ async function loadState(convId = null) {
         <div class="messages-list">
           <div
             v-for="(msg, idx) in messages"
-            :key="idx"
+            :key="msg.timestamp + '-' + idx"
             :class="['message-row', msg.role]"
           >
             <div class="message-avatar">
