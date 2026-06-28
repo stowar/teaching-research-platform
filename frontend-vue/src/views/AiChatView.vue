@@ -1042,13 +1042,6 @@ async function loadState(convId = null) {
   border-radius: var(--radius-lg);
   background: var(--bg-page);
   border: 1px solid var(--border-light);
-  animation: panel-reveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
-  transform-origin: top center;
-}
-
-@keyframes panel-reveal {
-  from { opacity: 0; transform: scaleY(0.85) translateY(-4px); }
-  to { opacity: 1; transform: scaleY(1) translateY(0); }
 }
 
 .state-locked {
