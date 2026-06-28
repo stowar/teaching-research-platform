@@ -88,8 +88,8 @@ class Personality:
 
     def passive_decay(self):
         """每轮循环自然衰减"""
-        self.engagement = max(0, self.engagement - 0.3)
-        self.attention = min(100, self.attention + 2)
+        self.engagement = max(0, int(self.engagement - 0.3))
+        self.attention = min(100, int(self.attention + 2))
 
         # 沉默超 2 小时 → 降为专业模式
         if self.silence_hours > 2 and self.tone != Tone.PROFESSIONAL:
