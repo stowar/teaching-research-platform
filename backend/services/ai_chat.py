@@ -70,6 +70,20 @@ def _summarize_and_trim(system_msg, history, memory, model):
     return history[-KEEP_LAST:]
 
 
+def _enforce_attention(messages, personality, engagement_before):
+    """AI 没调 adjust_attention 时，联动投入度变化推断关注度"""
+    for msg in messages:
+        tool_calls = msg.get("tool_calls") if isinstance(msg, dict) else None
+        if tool_calls:
+            for tc in tool_calls:
+                if tc.get("function", {}).get("name") == "adjust_attention":
+                    return
+
+    # 投入度涨了 → 对话质量高 → 聚焦 +5；投入度跌了 → 敷衍 → 发散 -5
+    delta = 5 if personality.engagement > engagement_before else -5
+    personality.adjust_attention(delta)
+
+
 def _enforce_engagement(messages, personality, user_message):
     """AI 没调 adjust_engagement 时，代码强制执行。提示词靠不住，代码靠得住。"""
     called = False
@@ -198,6 +212,7 @@ class AIChatService(IAIChatService):
         personality = Personality.load(
             os.path.join(AI_DATA_DIR, f"conv_{conversation_id}_personality.json")
         )
+        engagement_before = personality.engagement
         personality.on_user_message(message)
         memory = MemoryStore(conversation_id, AI_DATA_DIR)
 
@@ -247,6 +262,7 @@ class AIChatService(IAIChatService):
 
         # ── 6.5 强制投入度调整：AI 不调就代码调 ──
         _enforce_engagement(messages, personality, message)
+        _enforce_attention(messages, personality, engagement_before)
 
         # ── 7. 保存 AI 回复 ──
         if ai_content:

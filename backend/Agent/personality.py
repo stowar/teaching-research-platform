@@ -81,6 +81,10 @@ class Personality:
         self.engagement = max(0, min(100, self.engagement + delta))
         return f"投入度{'上升' if delta > 0 else '下降'}，当前：{self.engagement}"
 
+    def adjust_attention(self, delta: int) -> str:
+        self.attention = max(0, min(100, self.attention + delta))
+        return f"关注度{'上升' if delta > 0 else '下降'}，当前：{self.attention}"
+
     def get_tone_prompt(self) -> str:
         return self.tone.description()
 
@@ -98,7 +102,7 @@ class Personality:
     def on_user_message(self, content: str):
         """收到用户消息：更新时间戳、消耗关注度、微增投入、自动调语气"""
         self._last_user_time = time.time()
-        self.attention = max(30, self.attention - 5)
+        self.attention = max(0, self.attention - 3)
         self.engagement = min(100, self.engagement + 1)
 
         # 根据关键词自动调语气（规则定义在 Agent/rules.py）

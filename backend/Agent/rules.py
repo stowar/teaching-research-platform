@@ -31,6 +31,7 @@ def build_system_prompt(personality, memory) -> str:
 - get_state / get_current_time / get_silence_hours — 感知对话状态
 - set_tone — 按对话氛围调整语气
 - adjust_engagement — 动态调整投入度
+- adjust_attention — 根据话题一致性调整关注度
 
 ## 核心硬性规则（优先级从高到低，违反视为逻辑错误）
 ### 一、投入度调整：最高优先级，每轮对话强制必调

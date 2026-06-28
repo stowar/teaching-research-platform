@@ -95,6 +95,20 @@ TOOLS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "adjust_attention",
+            "description": "根据话题一致性调整关注度。话题深入/关联+5，话题跳转/分散-5",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "delta": {"type": "integer", "description": "关注度变化值"},
+                },
+                "required": ["delta"],
+            },
+        },
+    },
 ]
 
 
@@ -112,4 +126,5 @@ def build_tool_map(personality: Personality, memory_store: MemoryStore):
         "get_silence_hours": lambda **kw: personality.get_silence_hours(),
         "set_tone": lambda **kw: personality.set_tone(kw["tone"]),
         "adjust_engagement": lambda **kw: personality.adjust_engagement(int(kw["delta"])),
+        "adjust_attention": lambda **kw: personality.adjust_attention(int(kw["delta"])),
     }
