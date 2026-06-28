@@ -109,7 +109,8 @@ const input = ref('')
 const loading = ref(false)
 const messagesContainer = ref(null)
 const aiState = ref(null)
-const stateActivated = ref(false)  // 新会话锁，首条消息后解锁
+const stateActivated = ref(false)
+const stateVersion = ref(0)
 
 const quickPrompts = [
   '如何设计一堂高职英语听说课？',
@@ -145,7 +146,7 @@ async function sendMessage(text = input.value.trim()) {
 
     const reply = res.data
     // 更新 AI 状态面板
-    if (reply.state) aiState.value = reply.state
+    if (reply.state) { aiState.value = reply.state; stateVersion.value++ }
     stateActivated.value = true
     // 首次对话 → 后端返回新 conversation_id
     if (reply.conversation_id && !currentConversationId.value) {
@@ -198,6 +199,7 @@ async function loadState(convId = null) {
     const params = convId ? { conversation_id: convId } : {}
     const res = await api.get('/ai-chat/state', { params })
     aiState.value = res.data
+    stateVersion.value++
   } catch { /* 静默 */ }
 }
 </script>
@@ -337,7 +339,7 @@ async function loadState(convId = null) {
         <div class="state-section">
           <div class="section-label">人格状态</div>
           <div class="ai-state-panel" :class="{ 'state-locked': !stateActivated }">
-            <div v-if="aiState && stateActivated" class="state-grid">
+            <div v-if="aiState && stateActivated" class="state-grid" :key="'state-' + stateVersion">
               <div class="state-item">
                 <span class="state-icon">&#x1F3AD;</span>
                 <span class="state-desc">语气</span>
@@ -373,7 +375,7 @@ async function loadState(convId = null) {
         <div class="state-section">
           <div class="section-label">运行数据</div>
           <div class="ai-state-panel" :class="{ 'state-locked': !stateActivated }">
-            <div v-if="aiState && stateActivated" class="stats-inline">
+            <div v-if="aiState && stateActivated" class="stats-inline" :key="'stats-' + stateVersion">
               <div class="stat-mini">
                 <span class="stat-num">{{ aiState.silence_hours }}h</span>
                 <span class="stat-label">静默</span>
@@ -1047,7 +1049,11 @@ async function loadState(convId = null) {
 }
 
 .state-grid {
-  animation: fade-in-up 0.4s var(--ease-out) both;
+  animation: msg-slide-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.stats-inline {
+  animation: msg-slide-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes fade-in-up {
