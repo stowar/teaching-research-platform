@@ -449,6 +449,16 @@ async function loadState(convId = null) {
           </div>
         </div>
 
+        <!-- 会话操作 -->
+        <div class="state-section">
+          <div class="section-label">会话操作</div>
+          <div class="feature-list">
+            <div class="feature-item"><span class="feature-dot" /><span>单击 — 切换会话</span></div>
+            <div class="feature-item"><span class="feature-dot" /><span>双击 — 重命名</span></div>
+            <div class="feature-item"><span class="feature-dot" /><span>右键 — 删除会话</span></div>
+          </div>
+        </div>
+
         <!-- 快捷提问 -->
         <div class="state-section">
           <div class="section-label">试试这样问</div>
