@@ -69,6 +69,40 @@ def _summarize_and_trim(system_msg, history, memory, model):
     return history[-KEEP_LAST:]
 
 
+def _enforce_engagement(messages, personality, user_message):
+    """AI 没调 adjust_engagement 时，代码强制执行。提示词靠不住，代码靠得住。"""
+    called = False
+    for msg in messages:
+        tool_calls = msg.get("tool_calls") if isinstance(msg, dict) else None
+        if tool_calls:
+            for tc in tool_calls:
+                fn = tc.get("function", {})
+                if fn.get("name") == "adjust_engagement":
+                    called = True
+                    break
+        if called:
+            break
+
+    if called:
+        return
+
+    # 根据用户消息长度和内容推断 delta
+    delta = _infer_delta(user_message)
+    personality.adjust_engagement(delta)
+
+
+def _infer_delta(message: str) -> int:
+    """根据消息内容推断投入度变化值"""
+    length = len(message)
+    if length <= 3:
+        return -3    # 单字/表情 → 敷衍
+    if length > 100:
+        return 5     # 长消息 → 高质量分享
+    if length > 20:
+        return 3     # 中等 → 追问/探讨
+    return 2         # 短消息 → 正常互动
+
+
 def _tone_label(tone):
     return TONE_LABELS.get(tone.value if hasattr(tone, 'value') else tone, "未知")
 
@@ -204,6 +238,9 @@ class AIChatService(IAIChatService):
             messages.append({"role": "user", "content": "请根据已有信息用自然语言回复用户。"})
             final = provider.chat(messages)
             ai_content = final.get("content", "抱歉，我暂时无法回答这个问题。")
+
+        # ── 6.5 强制投入度调整：AI 不调就代码调 ──
+        _enforce_engagement(messages, personality, message)
 
         # ── 7. 保存 AI 回复 ──
         if ai_content:
