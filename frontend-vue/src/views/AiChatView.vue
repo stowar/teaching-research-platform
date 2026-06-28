@@ -53,24 +53,17 @@ async function switchSession(conv) {
   saveLastConversation(conv.id)
   loadState(conv.id)
 
-  switching.value = true
-  messages.value = [{ role: 'assistant', content: '...', timestamp: Date.now() }]
-
   try {
     const res = await api.get(`/ai-chat/conversations/${conv.id}`)
     const detail = res.data
     if (detail && detail.messages && detail.messages.length > 0) {
-      const msgs = detail.messages.map(m => ({
+      messages.value = detail.messages.map(m => ({
         role: m.role,
         content: m.content,
         timestamp: m.timestamp,
       }))
-      // 小延迟让过渡更自然
-      await new Promise(r => setTimeout(r, 180))
-      messages.value = msgs
       stateActivated.value = true
     } else {
-      await new Promise(r => setTimeout(r, 120))
       messages.value = [welcomeMsg()]
       stateActivated.value = false
     }
@@ -78,8 +71,6 @@ async function switchSession(conv) {
   } catch {
     messages.value = [welcomeMsg()]
     stateActivated.value = false
-  } finally {
-    switching.value = false
   }
 }
 
@@ -116,7 +107,6 @@ function welcomeMsg() {
 const messages = ref([welcomeMsg()])
 const input = ref('')
 const loading = ref(false)
-const switching = ref(false)
 const messagesContainer = ref(null)
 const aiState = ref(null)
 const stateActivated = ref(false)  // 新会话锁，首条消息后解锁
@@ -249,7 +239,7 @@ async function loadState(convId = null) {
     <main class="chat-main">
       <!-- 消息列表 -->
       <div ref="messagesContainer" class="messages-scroll">
-        <div class="messages-list" :class="{ switching: switching }">
+        <div class="messages-list">
           <div
             v-for="(msg, idx) in messages"
             :key="idx"
@@ -599,17 +589,17 @@ async function loadState(convId = null) {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  transition: opacity 0.2s var(--ease-out);
-}
-
-.messages-list.switching {
-  opacity: 0.4;
 }
 
 .message-row {
   display: flex;
   gap: var(--space-3);
-  animation: slide-up-enter 0.25s var(--ease-out) both;
+  animation: msg-slide-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes msg-slide-up {
+  from { opacity: 0; transform: translateY(24px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .message-row.user {
