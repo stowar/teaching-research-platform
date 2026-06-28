@@ -8,7 +8,7 @@ class ChatRequest(BaseModel):
     """发送消息请求"""
     conversation_id: Optional[int] = Field(None, description="会话ID，为空则自动创建新会话")
     message: str = Field(..., min_length=1, max_length=4000, description="用户消息")
-    model: str = Field("deepseek-chat", description="模型名称")
+    model: str = Field("deepseek-v4-flash", description="模型名称")
 
 
 class RenameConversation(BaseModel):

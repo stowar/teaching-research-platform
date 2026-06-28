@@ -37,7 +37,7 @@ class IAIChatService(ABC):
     # ===================== 对话 =====================
 
     @abstractmethod
-    def chat(self, user_id: int, message: str, conversation_id: int = None, model: str = "deepseek-chat") -> ApiResponse[ChatReplyVO]:
+    def chat(self, user_id: int, message: str, conversation_id: int = None, model: str = "deepseek-v4-flash") -> ApiResponse[ChatReplyVO]:
         """发送消息并获取 AI 回复"""
         ...
 

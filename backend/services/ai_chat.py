@@ -171,7 +171,7 @@ class AIChatService(IAIChatService):
 
     # ===================== 对话核心逻辑 =====================
 
-    def chat(self, user_id, message, conversation_id=None, model="deepseek-chat"):
+    def chat(self, user_id, message, conversation_id=None, model="deepseek-v4-flash"):
         # ── 0. 每日配额（按用户，不按会话） ──
         today_count = ai_chat_db.count_user_messages_today(user_id)
         if today_count >= MAX_MESSAGES_PER_DAY:

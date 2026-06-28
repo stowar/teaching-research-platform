@@ -8,7 +8,7 @@ from backend.schema.do.ai_chat import ConversationDO, MessageDO
 
 # ===================== 会话 =====================
 
-def create_conversation(user_id: int, title: str = "新对话", model: str = "deepseek-chat") -> int:
+def create_conversation(user_id: int, title: str = "新对话", model: str = "deepseek-v4-flash") -> int:
     """创建新会话，返回 ID"""
     return execute_insert(
         "INSERT INTO conversations (user_id, title, model, create_time, update_time) VALUES (%s, %s, %s, NOW(), NOW())",

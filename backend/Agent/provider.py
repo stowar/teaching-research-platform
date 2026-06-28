@@ -20,7 +20,7 @@ class IAIProvider(ABC):
 class OpenAICompatibleProvider(IAIProvider):
     """OpenAI 兼容 API（DeepSeek / 豆包 / OpenAI 通用）"""
 
-    def __init__(self, api_key: str, base_url: str, model: str = "deepseek-chat"):
+    def __init__(self, api_key: str, base_url: str, model: str = "deepseek-v4-flash"):
         self.client = OpenAI(api_key=api_key, base_url=base_url)
         self.model = model
 
@@ -53,6 +53,6 @@ def get_ai_provider(model: str = None) -> IAIProvider:
         _provider = OpenAICompatibleProvider(
             api_key=settings.DOUBAO_API_KEY,
             base_url=getattr(settings, "AI_BASE_URL", "https://api.deepseek.com"),
-            model=model or "deepseek-chat",
+            model=model or "deepseek-v4-flash",
         )
     return _provider

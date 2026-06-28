@@ -100,7 +100,7 @@ MAX_CONTEXT_MESSAGES = 30
 MAX_TOOL_ROUNDS = 3
 
 # 默认模型
-DEFAULT_MODEL = "deepseek-chat"
+DEFAULT_MODEL = "deepseek-v4-flash"
 
 # 每日消息上限（防止 API key 被刷爆，比赛演示足够）
 MAX_MESSAGES_PER_DAY = 50
