@@ -436,11 +436,21 @@ async function loadState(convId = null) {
             </div>
             <div class="help-section">
               <div class="help-row"><span>❤️ 投入度</span><span>0-100</span></div>
-              <div class="help-desc">对话越深入越投入，敷衍时下降。深度交流 +5，敷衍 -3</div>
+              <div class="help-desc">反映对话深度。分享真实教学案例 +5，追问 +3，认可 +2，敷衍 -3</div>
             </div>
             <div class="help-section">
               <div class="help-row"><span>👁 关注度</span><span>0-100</span></div>
-              <div class="help-desc">对当前话题的锁定程度。低值灵活发散，高值咬住深挖</div>
+              <div class="help-desc">对当前话题的锁定程度</div>
+              <div class="help-desc">🌀 发散态 0-30 — 话题灵活，可接各种方向，不咬住一个点</div>
+              <div class="help-desc">🎯 聚焦态 31-70 — 开始咬住话题深入追问，不容易被带跑</div>
+              <div class="help-desc">🔒 锁定态 71-100 — 固执围绕当前话题深挖，换话题会拉回来</div>
+            </div>
+            <div class="help-section">
+              <div class="help-row"><span>⚙️ 技术实现</span></div>
+              <div class="help-desc">人格状态机 — 三维度数值实时动态变化</div>
+              <div class="help-desc">长期记忆 — 自动存档 · 对话中自然引用</div>
+              <div class="help-desc">Function Calling — 7 个 AI 工具自主决策调用</div>
+              <div class="help-desc">裁切总结 — 超长对话自动压缩摘要存入记忆</div>
             </div>
           </div>
         </div>
@@ -466,26 +476,6 @@ async function loadState(convId = null) {
             <div v-else class="state-locked-overlay">
               <p>发送第一条消息<br/>解锁运行数据</p>
             </div>
-          </div>
-        </div>
-
-        <!-- 引擎特性 -->
-        <div class="feature-list">
-          <div class="feature-item">
-            <span class="feature-dot" />
-            <span>人格状态机 — 四态语气 · 投注动态</span>
-          </div>
-          <div class="feature-item">
-            <span class="feature-dot" />
-            <span>长期记忆 — 自动存档 · 自然引用</span>
-          </div>
-          <div class="feature-item">
-            <span class="feature-dot" />
-            <span>Function Calling — 7 个 AI 工具</span>
-          </div>
-          <div class="feature-item">
-            <span class="feature-dot" />
-            <span>裁切总结 — 超长对话自动压缩</span>
           </div>
         </div>
 
@@ -1339,34 +1329,6 @@ async function loadState(convId = null) {
   font-size: var(--text-xs);
   color: var(--text-tertiary);
   margin-top: 2px;
-}
-
-/* 引擎特性 */
-.feature-list {
-  margin-bottom: var(--space-4);
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-lg);
-  background: var(--bg-page);
-  border: 1px solid var(--border-light);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.feature-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: var(--text-xs);
-  color: var(--text-secondary);
-}
-
-.feature-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: var(--radius-full);
-  background: var(--color-brand-400);
-  flex-shrink: 0;
 }
 
 [data-theme="dark"] .tone-professional { background: rgba(79,70,229,0.15); color: var(--color-brand-300); }
