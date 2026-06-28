@@ -156,8 +156,8 @@ class AIChatService(IAIChatService):
         state = AIStateVO(
             tone=personality.tone.value,
             tone_label=_tone_label(personality.tone),
-            engagement=personality.engagement,
-            attention=personality.attention,
+            engagement=int(round(personality.engagement)),
+            attention=int(round(personality.attention)),
             silence_hours=round(personality.silence_hours, 1),
             memory_count=len(memory._load()),
             messages_today=today_count,
