@@ -359,6 +359,7 @@ async function loadState(convId = null) {
             </div>
             <div v-else class="state-locked-overlay">
               <p>发送第一条消息<br/>唤醒 AI 人格</p>
+              <p class="state-hint">人格数据仅保存在当前会话</p>
             </div>
           </div>
         </div>
@@ -421,7 +422,6 @@ async function loadState(convId = null) {
 
       <!-- 主题切换 -->
       <div class="info-footer">
-        <span class="state-hint">人格数据仅保存在当前会话</span>
         <span class="footer-label">外观</span>
         <button class="theme-toggle" @click="toggle">
           <Moon v-if="isDark" :size="14" />
@@ -1039,6 +1039,13 @@ async function loadState(convId = null) {
   line-height: 1.6;
 }
 
+.state-hint {
+  font-size: 10px !important;
+  font-style: italic;
+  opacity: 0.6;
+  margin-top: var(--space-1) !important;
+}
+
 .state-empty {
   color: var(--text-tertiary);
   font-size: var(--text-xs);
@@ -1190,12 +1197,6 @@ async function loadState(convId = null) {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--space-1);
-}
-
-.state-hint {
-  font-size: 10px;
-  color: var(--text-tertiary);
-  font-style: italic;
 }
 
 .footer-label {
