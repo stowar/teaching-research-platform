@@ -1,6 +1,12 @@
 # -*- coding: utf-8 -*-
 """AI 教研助手 Function Calling 工具定义 + 执行器"""
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 from backend.Agent.memory import MemoryStore  # noqa: F401 — 向后兼容
+
+if TYPE_CHECKING:
+    from backend.Agent.personality import Personality
 
 
 # ============================================================
@@ -98,7 +104,7 @@ TOOLS = [
 # 工具执行器（build_tool_map 模式 — 从 XiaoBai 迁移）
 # ============================================================
 
-def build_tool_map(personality, memory_store: MemoryStore):
+def build_tool_map(personality: "Personality", memory_store: MemoryStore):
     """构建工具名 → 执行函数的映射，替代 if/elif 链"""
     return {
         "record_memory": lambda **kw: memory_store.add(kw["content"], kw["category"]),
