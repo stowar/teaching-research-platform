@@ -5,6 +5,7 @@ from typing import List, Dict, Any
 from openai import OpenAI
 
 from backend.core.config import settings
+from backend.Agent.rules import DEFAULT_MODEL
 
 
 class IAIProvider(ABC):
@@ -20,7 +21,7 @@ class IAIProvider(ABC):
 class OpenAICompatibleProvider(IAIProvider):
     """OpenAI 兼容 API（DeepSeek / 豆包 / OpenAI 通用）"""
 
-    def __init__(self, api_key: str, base_url: str, model: str = "deepseek-v4-flash"):
+    def __init__(self, api_key: str, base_url: str, model: str = DEFAULT_MODEL):
         self.client = OpenAI(api_key=api_key, base_url=base_url)
         self.model = model
 
@@ -53,6 +54,6 @@ def get_ai_provider(model: str = None) -> IAIProvider:
         _provider = OpenAICompatibleProvider(
             api_key=settings.DOUBAO_API_KEY,
             base_url=getattr(settings, "AI_BASE_URL", "https://api.deepseek.com"),
-            model=model or "deepseek-v4-flash",
+            model=model or DEFAULT_MODEL,
         )
     return _provider

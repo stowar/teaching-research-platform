@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from backend.db.connection import execute_query, execute_one, execute_update, execute_insert
 from backend.schema.do.ai_chat import ConversationDO, MessageDO
+from backend.Agent.rules import DEFAULT_MODEL
 
 
 # ===================== 会话 =====================
 
-def create_conversation(user_id: int, title: str = "新对话", model: str = "deepseek-v4-flash") -> int:
+def create_conversation(user_id: int, title: str = "新对话", model: str = DEFAULT_MODEL) -> int:
     """创建新会话，返回 ID"""
     return execute_insert(
         "INSERT INTO conversations (user_id, title, model, create_time, update_time) VALUES (%s, %s, %s, NOW(), NOW())",

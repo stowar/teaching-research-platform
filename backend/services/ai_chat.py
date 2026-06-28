@@ -15,7 +15,7 @@ from backend.Agent.provider import get_ai_provider
 from backend.Agent.personality import Personality
 from backend.Agent.memory import MemoryStore
 from backend.Agent.tools import TOOLS, build_tool_map
-from backend.Agent.rules import build_system_prompt, MAX_CONTEXT_MESSAGES, MAX_TOOL_ROUNDS, MAX_MESSAGES_PER_DAY, SUMMARIZE_THRESHOLD, KEEP_LAST
+from backend.Agent.rules import build_system_prompt, MAX_CONTEXT_MESSAGES, MAX_TOOL_ROUNDS, MAX_MESSAGES_PER_DAY, SUMMARIZE_THRESHOLD, KEEP_LAST, DEFAULT_MODEL
 from backend.core.config import settings
 
 # 记忆文件存储目录
@@ -171,7 +171,9 @@ class AIChatService(IAIChatService):
 
     # ===================== 对话核心逻辑 =====================
 
-    def chat(self, user_id, message, conversation_id=None, model="deepseek-v4-flash"):
+    def chat(self, user_id, message, conversation_id=None, model=None):
+        if model is None:
+            model = DEFAULT_MODEL
         # ── 0. 每日配额（按用户，不按会话） ──
         today_count = ai_chat_db.count_user_messages_today(user_id)
         if today_count >= MAX_MESSAGES_PER_DAY:

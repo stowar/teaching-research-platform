@@ -141,7 +141,7 @@ async function sendMessage(text = input.value.trim()) {
     const res = await api.post('/ai-chat/chat', {
       message: text,
       conversation_id: currentConversationId.value,
-      model: 'deepseek-v4-flash',
+      model: null,
     })
 
     const reply = res.data
