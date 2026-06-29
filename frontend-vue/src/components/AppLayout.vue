@@ -4,7 +4,7 @@
  * 提供应用通用的导航栏（Navbar）和页脚（Footer）
  * 使用 Design Tokens 和 lucide 图标库保证视觉一致性
  */
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.js'
 import { useTheme } from '@/composables/useTheme.js'
@@ -19,6 +19,15 @@ const isLoggedIn = computed(() => auth.isLoggedIn)
 const user = computed(() => auth.user)
 const isAdmin = computed(() => auth.isAdmin)
 const activeRoute = computed(() => route.name)
+const aiVisited = ref(localStorage.getItem('ai_visited') === '1')
+const showAiDot = computed(() => !aiVisited.value && auth.isLoggedIn)
+
+watch(() => route.name, (name) => {
+  if (name === 'ai-chat' && !aiVisited.value) {
+    aiVisited.value = true
+    localStorage.setItem('ai_visited', '1')
+  }
+})
 
 const navItems = computed(() => {
   const items = [
@@ -55,10 +64,11 @@ function logout() {
           v-for="item in navItems"
           :key="item.name"
           :to="item.path"
-          :class="['nav-link', { active: activeRoute === item.name }]"
+          :class="['nav-link', { active: activeRoute === item.name, 'has-dot': item.name === 'ai-chat' && showAiDot }]"
         >
           <component :is="item.icon" class="nav-link-icon" :size="16" />
           {{ item.label }}
+          <span v-if="item.name === 'ai-chat' && showAiDot" class="new-dot" />
         </router-link>
       </div>
 
@@ -174,6 +184,26 @@ function logout() {
 
 .nav-link.active .nav-link-icon {
   opacity: 1;
+}
+
+.nav-link.has-dot {
+  position: relative;
+}
+
+.new-dot {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background: var(--color-danger-500);
+  animation: dot-pulse 2s ease-in-out infinite;
+}
+
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.3); }
 }
 
 .nav-actions {
