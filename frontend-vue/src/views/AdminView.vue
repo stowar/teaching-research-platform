@@ -6,7 +6,7 @@
  */
 import { ref, onMounted } from 'vue'
 import api from '@/api/client.js'
-import { ShieldCheck, RefreshCw, Inbox } from 'lucide-vue-next'
+import { ShieldCheck, RefreshCw, Inbox, Unlock } from 'lucide-vue-next'
 
 const users = ref([])
 const loading = ref(false)
@@ -43,6 +43,16 @@ async function enableUser(id) {
     await api.put(`/admin/${id}/enable`)
     message.value = '已启用用户'
     await fetchUsers()
+  } catch (e) {
+    error.value = e.message || '操作失败'
+  }
+}
+
+async function unlockQuota(id) {
+  if (!confirm('解锁该用户本日配额？')) return
+  try {
+    await api.post(`/ai-chat/admin/unlock-user`, null, { params: { user_id: id } })
+    message.value = `已解锁用户 ${id} 的本日配额`
   } catch (e) {
     error.value = e.message || '操作失败'
   }
@@ -136,6 +146,15 @@ onMounted(fetchUsers)
                   @click="enableUser(u.id)"
                 >
                   启用
+                </button>
+                <button
+                  v-if="u.role !== 'admin'"
+                  class="btn btn-sm btn-outline press-feedback"
+                  style="margin-left: 6px"
+                  @click="unlockQuota(u.id)"
+                  title="解锁本日AI配额"
+                >
+                  <Unlock :size="12" />
                 </button>
               </td>
             </tr>
