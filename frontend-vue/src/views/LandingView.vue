@@ -9,11 +9,9 @@ import { GraduationCap, LogIn, UserPlus, Star, MessageSquare, BookOpen, Bot, Bra
 const router = useRouter()
 
 const highlights = [
-  { icon: MessageSquare, title: '教研社区', desc: '发帖讨论、互助答疑、分享教学经验', route: '/community', color: 'var(--color-brand-600)' },
-  { icon: Bot, title: 'AI 聊天室', desc: '人格系统 · 长期记忆 · 智能教研助手', route: '/ai-chat', color: '#06b6d4' },
+  { icon: MessageSquare, title: '教研交流', desc: '跨校协作、在线研讨、经验分享', route: '/community', color: 'var(--color-brand-600)' },
+  { icon: Bot, title: 'AI赋能', desc: '自研人格系统 · 长期记忆 · 智能教研助手', route: '/ai-chat', color: '#06b6d4' },
   { icon: Brain, title: '情感分析', desc: '自研模型 · 六层温度体系 · 教学评价洞察', route: '/sentiment', color: '#8b5cf6' },
-  { icon: BookOpen, title: '教研资料部', desc: '教案课件、真题题库分类下载', route: '/resources', color: 'var(--color-success-600)' },
-  { icon: Bell, title: '个人中心', desc: '消息通知、我的帖子、资料管理', route: '/account', color: 'var(--color-warning-600)' },
 ]
 </script>
 
@@ -201,8 +199,8 @@ const highlights = [
 
 .highlight-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: var(--space-4);
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-6);
 }
 
 .highlight-card {
