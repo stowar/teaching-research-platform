@@ -4,7 +4,7 @@
  * 提供应用通用的导航栏（Navbar）和页脚（Footer）
  * 使用 Design Tokens 和 lucide 图标库保证视觉一致性
  */
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.js'
 import { useTheme } from '@/composables/useTheme.js'
@@ -24,16 +24,14 @@ const isNewUser = computed(() => {
   const u = auth.user
   if (!u?.create_time) return false
   const elapsed = Date.now() - new Date(u.create_time).getTime()
-  return elapsed < 24 * 3600 * 1000  // 24 小时内注册
+  return elapsed < 24 * 3600 * 1000
 })
 const showAiDot = computed(() => !aiVisited.value && auth.isLoggedIn && isNewUser.value)
 
-watch(() => route.name, (name) => {
-  if (name === 'ai-chat' && !aiVisited.value) {
-    aiVisited.value = true
-    localStorage.setItem('ai_visited', '1')
-  }
-})
+function dismissDot() {
+  aiVisited.value = true
+  localStorage.setItem('ai_visited', '1')
+}
 
 const navItems = computed(() => {
   const items = [
@@ -71,6 +69,7 @@ function logout() {
           :key="item.name"
           :to="item.path"
           :class="['nav-link', { active: activeRoute === item.name, 'has-dot': item.name === 'ai-chat' && showAiDot }]"
+          @click="item.name === 'ai-chat' && dismissDot()"
         >
           <component :is="item.icon" class="nav-link-icon" :size="16" />
           {{ item.label }}
