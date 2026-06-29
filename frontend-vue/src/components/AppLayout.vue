@@ -4,7 +4,7 @@
  * 提供应用通用的导航栏（Navbar）和页脚（Footer）
  * 使用 Design Tokens 和 lucide 图标库保证视觉一致性
  */
-import { computed, ref } from 'vue'
+import { computed, ref, watchEffect } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.js'
 import { useTheme } from '@/composables/useTheme.js'
@@ -19,19 +19,20 @@ const isLoggedIn = computed(() => auth.isLoggedIn)
 const user = computed(() => auth.user)
 const isAdmin = computed(() => auth.isAdmin)
 const activeRoute = computed(() => route.name)
-const aiVisited = ref(localStorage.getItem('ai_visited') === '1')
-const isNewUser = computed(() => {
-  const u = auth.user
-  if (!u?.create_time) return false
-  const elapsed = Date.now() - new Date(u.create_time).getTime()
-  return elapsed < 24 * 3600 * 1000
-})
-const showAiDot = computed(() => !aiVisited.value && auth.isLoggedIn && isNewUser.value)
+const aiVisited = ref(false)
+const showAiDot = computed(() => !aiVisited.value && !auth.isLoggedIn)
 
 function dismissDot() {
   aiVisited.value = true
-  localStorage.setItem('ai_visited', '1')
 }
+
+// 未登录时红点 10s 后自动消失
+watchEffect(() => {
+  if (showAiDot.value) {
+    const timer = setTimeout(() => { aiVisited.value = true }, 10000)
+    return () => clearTimeout(timer)
+  }
+})
 
 const navItems = computed(() => {
   const items = [
