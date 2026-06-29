@@ -136,8 +136,9 @@ async function sendMessage(text = input.value.trim()) {
   if (!auth.isLoggedIn) {
     messages.value.push({
       role: 'assistant',
-      content: '请先登录后再使用 AI 聊天功能。',
+      content: '请先登录后再使用 AI 聊天功能。<br/><a href="/login" class="inline-login-btn">前往登录 →</a>',
       timestamp: Date.now(),
+      loginPrompt: true,
     })
     await scrollToBottom()
     return
@@ -327,7 +328,7 @@ async function loadState(convId = null) {
                 <span class="meta-time">{{ formatTime(msg.timestamp) }}</span>
               </div>
               <div class="message-bubble" :class="{ 'markdown-body': msg.role === 'assistant' }">
-                <div v-if="msg.role === 'assistant'" class="message-text" v-html="md.render(msg.content)" />
+                <div v-if="msg.role === 'assistant'" class="message-text" v-html="msg.loginPrompt ? msg.content : md.render(msg.content)" />
                 <pre v-else class="message-text">{{ msg.content }}</pre>
               </div>
             </div>
@@ -827,6 +828,23 @@ async function loadState(convId = null) {
 
 .markdown-body .message-text :deep(p) {
   margin: var(--space-1) 0;
+}
+
+.inline-login-btn {
+  display: inline-block;
+  margin-top: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-brand-600);
+  color: #fff !important;
+  text-decoration: none;
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  transition: background var(--duration-fast);
+}
+
+.inline-login-btn:hover {
+  background: var(--color-brand-700);
 }
 
 .markdown-body .message-text :deep(table) {
