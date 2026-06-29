@@ -71,7 +71,8 @@ class MemoryStore:
             "content": content,
             "created_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
             "tier": tier,
-            "recall_count": 0,
+            "recall_score": 0.0,
+            "last_recalled_at": None,
             "protected": tier == TIER_CORE,
         })
         self._flush()
@@ -147,14 +148,26 @@ class MemoryStore:
             else:
                 decay = 0.5
 
-            # 被召回过的记忆有加成，但上限 3 次防止单一记忆垄断
-            recall_count = min(3, m.get("recall_count", 0))
-            recall_bonus = recall_count * 0.1
+            # 长期召回加成：时间跨度越大加成越高，可无限叠加
+            # 短期反复召回 → 微涨；跨天/跨周召回 → 大幅涨
+            recall_score = m.get("recall_score", 0.0)
+            last_recalled = m.get("last_recalled_at")
+            if last_recalled:
+                try:
+                    last_dt = datetime.strptime(last_recalled, "%Y-%m-%d %H:%M")
+                    gap_days = (datetime.now() - last_dt).total_seconds() / 86400.0
+                    # 间隔越久召回越有价值：1天=+0.1, 7天=+0.3, 30天=+0.5
+                    gap_bonus = min(0.5, gap_days * 0.015)
+                except ValueError:
+                    gap_bonus = 0.05
+            else:
+                gap_bonus = 0.05  # 首次召回小加成
 
-            final = base * decay + recall_bonus
+            final = base * decay + recall_score + gap_bonus
             # 核心记忆保底分：再旧的核心也不该被边缘记忆挤掉
             if tier == TIER_CORE and final < 1.0:
                 final = 1.0
+
             # 微小随机扰动，打破同分下的固定排序（±0.02）
             final += random.uniform(-0.02, 0.02)
             scored.append((final, m))
@@ -195,12 +208,25 @@ class MemoryStore:
         return "\n".join(lines)
 
     def mark_recalled(self, keyword: str):
-        """标记已召回的记忆，增加 recall_count"""
+        """标记已召回的记忆——间隔越长加成越高，可无限叠加"""
         self._load()
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
         keyword_lower = keyword.lower()
         for m in self._cache:
             if keyword_lower in m.get("content", "").lower():
-                m["recall_count"] = m.get("recall_count", 0) + 1
+                last = m.get("last_recalled_at")
+                if last:
+                    try:
+                        last_dt = datetime.strptime(last, "%Y-%m-%d %H:%M")
+                        gap = max(0, (datetime.now() - last_dt).total_seconds() / 86400.0)
+                        # 间隔越久加成越大：1天+0.1, 7天+0.3, 30天+0.5
+                        bonus = min(0.5, gap * 0.015)
+                    except ValueError:
+                        bonus = 0.05
+                else:
+                    bonus = 0.05
+                m["recall_score"] = m.get("recall_score", 0.0) + bonus
+                m["last_recalled_at"] = now_str
         self._flush()
 
     def __len__(self):
