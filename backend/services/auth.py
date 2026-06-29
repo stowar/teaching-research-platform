@@ -34,6 +34,9 @@ def register_service(user_data) -> ApiResponse[UserVO]:
     if user_db.get_user_by_phone(user_data.phone):
         raise BusinessException("手机号已注册", code=400)
 
+    if not user_data.name:
+        user_data.name = "新用户"
+
     user_db.create_user(user_data)
     new_user = user_db.get_user_by_phone(user_data.phone)
 
