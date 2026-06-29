@@ -4,14 +4,16 @@
  * 面向访客的宣传页面，使用 stagger 入场动画
  */
 import { useRouter } from 'vue-router'
-import { GraduationCap, LogIn, UserPlus, Star, MessageSquare, BookOpen, Bot } from 'lucide-vue-next'
+import { GraduationCap, LogIn, UserPlus, Star, MessageSquare, BookOpen, Bot, Brain, Bell } from 'lucide-vue-next'
 
 const router = useRouter()
 
 const highlights = [
-  { icon: MessageSquare, title: '教研交流', desc: '跨校协作、在线研讨、经验分享', color: 'var(--color-brand-600)' },
-  { icon: BookOpen, title: '资源共享', desc: '教案课件、真题题库一键获取', color: 'var(--color-brand-600)' },
-  { icon: Bot, title: 'AI赋能', desc: '智能助手、RAG检索、教研提效', color: '#06b6d4' },
+  { icon: MessageSquare, title: '教研社区', desc: '发帖讨论、互助答疑、分享教学经验', route: '/community', color: 'var(--color-brand-600)' },
+  { icon: Bot, title: 'AI 聊天室', desc: '人格系统 · 长期记忆 · 智能教研助手', route: '/ai-chat', color: '#06b6d4' },
+  { icon: Brain, title: '情感分析', desc: '自研模型 · 六层温度体系 · 教学评价洞察', route: '/sentiment', color: '#8b5cf6' },
+  { icon: BookOpen, title: '教研资料部', desc: '教案课件、真题题库分类下载', route: '/resources', color: 'var(--color-success-600)' },
+  { icon: Bell, title: '个人中心', desc: '消息通知、我的帖子、资料管理', route: '/account', color: 'var(--color-warning-600)' },
 ]
 </script>
 
@@ -50,11 +52,13 @@ const highlights = [
           :key="h.title"
           class="highlight-card card card-hover"
           :style="{ animationDelay: `${idx * 120}ms` }"
+          @click="router.push(h.route)"
         >
           <component :is="h.icon" class="highlight-emoji" :size="48" aria-hidden="true" />
           <div class="highlight-title">{{ h.title }}</div>
           <div class="highlight-desc">{{ h.desc }}</div>
           <div class="highlight-bar" :style="{ background: h.color }"></div>
+          <div class="highlight-link">点击预览 →</div>
         </div>
       </div>
     </div>
@@ -197,14 +201,15 @@ const highlights = [
 
 .highlight-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-6);
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--space-4);
 }
 
 .highlight-card {
-  padding: var(--space-10) var(--space-6);
+  padding: var(--space-6) var(--space-4);
   text-align: center;
   animation: slide-up-enter 0.6s var(--ease-out) both;
+  cursor: pointer;
 }
 
 .highlight-emoji {
@@ -233,12 +238,24 @@ const highlights = [
 }
 
 .highlight-bar {
-  margin-top: var(--space-4);
-  height: 4px;
+  margin-top: var(--space-3);
+  height: 3px;
   border-radius: 2px;
-  width: 50%;
+  width: 40%;
   margin-left: auto;
   margin-right: auto;
+}
+
+.highlight-link {
+  margin-top: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.highlight-card:hover .highlight-link {
+  opacity: 1;
 }
 
 @keyframes slide-up-enter {
@@ -256,6 +273,10 @@ const highlights = [
   50% { transform: scale(1.05); }
   70% { transform: scale(0.9); }
   100% { opacity: 1; transform: scale(1); }
+}
+
+@media (max-width: 1024px) {
+  .highlight-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
 @media (max-width: 768px) {

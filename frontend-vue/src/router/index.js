@@ -14,7 +14,7 @@ const router = createRouter({
       path: '/',
       name: 'home',          // 路由名称，方便代码中通过名称跳转
       component: () => import('@/views/HomeView.vue'),
-      meta: { requiresAuth: true }  // 元数据：标记此页面需要登录才能访问
+      meta: {}
     },
     {
       path: '/landing',
@@ -38,19 +38,19 @@ const router = createRouter({
       path: '/community',
       name: 'community',
       component: () => import('@/views/CommunityView.vue'),
-      meta: { requiresAuth: true }
+      meta: {}
     },
     {
       path: '/community/create',
       name: 'community-create',
       component: () => import('@/views/PostCreateView.vue'),
-      meta: { requiresAuth: true }
+      meta: {}
     },
     {
       path: '/community/:postId/edit',
       name: 'community-edit',
       component: () => import('@/views/PostCreateView.vue'),
-      meta: { requiresAuth: true }
+      meta: {}
     },
     {
       path: '/community/:postId',
@@ -61,31 +61,31 @@ const router = createRouter({
       path: '/resources',
       name: 'resources',
       component: () => import('@/views/ResourcesView.vue'),
-      meta: { requiresAuth: true }
+      meta: {}
     },
     {
       path: '/ai-chat',
       name: 'ai-chat',
       component: () => import('@/views/AiChatView.vue'),
-      meta: { requiresAuth: true, hideLayout: true }
+      meta: { hideLayout: true }
     },
     {
       path: '/sentiment',
       name: 'sentiment',
       component: () => import('@/views/SentimentView.vue'),
-      meta: { requiresAuth: true }
+      meta: {}
     },
     {
       path: '/account',
       name: 'account',
       component: () => import('@/views/AccountView.vue'),
-      meta: { requiresAuth: true }
+      meta: {}
     },
     {
       path: '/profile',
       name: 'profile',
       component: () => import('@/views/ProfileView.vue'),
-      meta: { requiresAuth: true }
+      meta: {}
     },
     {
       path: '/admin/users',
