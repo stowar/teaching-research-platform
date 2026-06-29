@@ -72,9 +72,30 @@ class MemoryStore:
             "created_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
             "tier": tier,
             "recall_count": 0,
+            "protected": tier == TIER_CORE,
         })
         self._flush()
         return f"已记住：{content}"
+
+    def is_protected(self, content: str) -> bool:
+        """检查记忆是否为核心保护级别"""
+        self._load()
+        for m in self._cache:
+            if m["content"] == content:
+                return m.get("protected", False) or m.get("tier", "") == TIER_CORE
+        return False
+
+    def delete(self, content: str) -> str:
+        """删除记忆——核心记忆受保护，不可删除"""
+        self._load()
+        for i, m in enumerate(self._cache):
+            if m["content"] == content:
+                if m.get("protected", False) or m.get("tier", "") == TIER_CORE:
+                    return "核心记忆受保护，不可删除"
+                self._cache.pop(i)
+                self._flush()
+                return f"已删除：{content}"
+        return "未找到该记忆"
 
     # ── 三层检索算法 ────────────────────────────
 
@@ -132,6 +153,7 @@ class MemoryStore:
             final = base * decay + recall_bonus
             scored.append((final, m))
 
+        # 对检索到的数据进行按评分进行排序
         scored.sort(key=lambda x: x[0], reverse=True)
         return [m for _, m in scored]
 
