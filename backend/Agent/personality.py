@@ -69,7 +69,7 @@ class Personality:
             f"语气：{self.tone.value}，"
             f"投入度：{self.engagement}，"
             f"关注度：{self.attention}，"
-            f"静默：{self.silence_hours:.1f}h"
+            f"静默时间：{self.silence_hours:.1f}h"
         )
 
     def set_tone(self, tone_str: str) -> str:
