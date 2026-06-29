@@ -43,12 +43,14 @@ api.interceptors.response.use(
     const status = error.response?.status
     const data = error.response?.data
 
-    // 401 未授权：token 失效，清除本地存储的登录信息并跳转
+    // 401 未授权：只有之前登录过的人才跳转，访客浏览静默忽略
     if (status === 401) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      window.location.href = '/login'
-      return Promise.reject(new Error('登录已过期，请重新登录'))
+      if (localStorage.getItem('token')) {
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        window.location.href = '/login'
+      }
+      return Promise.reject(new Error('请先登录'))
     }
 
     // 403 禁止访问：用户无权限
