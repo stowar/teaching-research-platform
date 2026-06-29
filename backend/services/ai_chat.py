@@ -222,10 +222,10 @@ class AIChatService(IAIChatService):
         if model is None:
             model = DEFAULT_MODEL
         # ── 0. 每日配额（管理员无限 + 解锁检查） ──
-        unlocked = _is_unlocked(user_id)
-        if role != "admin":
-            today_count = ai_chat_db.count_user_messages_today(user_id)
-            if today_count >= MAX_MESSAGES_PER_DAY and not unlocked:
+        today_count = ai_chat_db.count_user_messages_today(user_id)
+        over_limit = today_count >= MAX_MESSAGES_PER_DAY
+        is_unlocked = role == "admin" or _is_unlocked(user_id)
+        if over_limit and not is_unlocked:
                 return ApiResponse(msg="额度已用完", data=ChatReplyVO(
                 conversation_id=conversation_id or 0,
                 message=MessageVO(role="assistant", content="今日消息已达上限，请明天再来。", timestamp=0),
@@ -323,7 +323,7 @@ class AIChatService(IAIChatService):
             silence_hours=round(personality.silence_hours, 1),
             memory_count=len(memory),
             messages_today=today_count,
-            messages_limit="∞" if unlocked else MAX_MESSAGES_PER_DAY,
+            messages_limit="∞" if is_unlocked else MAX_MESSAGES_PER_DAY,
         )
         return ApiResponse(msg="回复成功", data=ChatReplyVO(
             conversation_id=conversation_id,
