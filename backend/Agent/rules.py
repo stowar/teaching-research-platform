@@ -120,7 +120,7 @@ MAX_TOOL_ROUNDS = 3
 DEFAULT_MODEL = "deepseek-v4-flash"
 
 # 每日消息上限（防止 API key 被刷爆，比赛演示足够）
-MAX_MESSAGES_PER_DAY = 50
+MAX_MESSAGES_PER_DAY = 80
 
 # 裁切总结：上下文窗口上限，超过则 AI 总结旧消息写入记忆
 SUMMARIZE_THRESHOLD = 40   # 超过此数量触发总结
