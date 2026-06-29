@@ -45,7 +45,7 @@ class AIStateVO(BaseModel):
     silence_hours: float
     memory_count: int
     messages_today: int
-    messages_limit: int
+    messages_limit: str
 
 
 class ChatReplyVO(BaseModel):

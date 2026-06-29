@@ -22,6 +22,16 @@ from backend.core.config import settings
 # 记忆文件存储目录
 AI_DATA_DIR = os.path.join(settings.BASE_DIR, "backend", "data", "ai")
 
+
+def _is_unlocked(user_id: int) -> bool:
+    """检查用户本日是否已被管理员解锁"""
+    try:
+        with open(os.path.join(AI_DATA_DIR, "quota_override.json"), "r") as f:
+            overrides = json.load(f)
+        return overrides.get(str(user_id)) == time.strftime("%Y-%m-%d")
+    except (FileNotFoundError, json.JSONDecodeError):
+        return False
+
 TONE_LABELS = {
     "professional": "专业模式",
     "casual": "轻松模式",
@@ -194,6 +204,7 @@ class AIChatService(IAIChatService):
             personality = Personality()
             memory = MemoryStore(0, AI_DATA_DIR)
         today_count = ai_chat_db.count_user_messages_today(user_id)
+        limit = "∞" if _is_unlocked(user_id) else MAX_MESSAGES_PER_DAY
         return ApiResponse(msg="查询成功", data=AIStateVO(
             tone=personality.tone.value,
             tone_label=_tone_label(personality.tone),
@@ -202,7 +213,7 @@ class AIChatService(IAIChatService):
             silence_hours=round(personality.silence_hours, 1),
             memory_count=len(memory),
             messages_today=today_count,
-            messages_limit=MAX_MESSAGES_PER_DAY,
+            messages_limit=limit,
         ))
 
     # ===================== 对话核心逻辑 =====================
@@ -213,15 +224,7 @@ class AIChatService(IAIChatService):
         # ── 0. 每日配额（管理员无限 + 解锁检查） ──
         if role != "admin":
             today_count = ai_chat_db.count_user_messages_today(user_id)
-            override_path = os.path.join(AI_DATA_DIR, "quota_override.json")
-            unlocked = False
-            try:
-                with open(override_path, "r") as f:
-                    overrides = json.load(f)
-                unlocked = overrides.get(str(user_id)) == time.strftime("%Y-%m-%d")
-            except (FileNotFoundError, json.JSONDecodeError):
-                pass
-            if today_count >= MAX_MESSAGES_PER_DAY and not unlocked:
+            if today_count >= MAX_MESSAGES_PER_DAY and not _is_unlocked(user_id):
                 return ApiResponse(msg="额度已用完", data=ChatReplyVO(
                 conversation_id=conversation_id or 0,
                 message=MessageVO(role="assistant", content="今日消息已达上限，请明天再来。", timestamp=0),
@@ -319,7 +322,7 @@ class AIChatService(IAIChatService):
             silence_hours=round(personality.silence_hours, 1),
             memory_count=len(memory),
             messages_today=today_count,
-            messages_limit=MAX_MESSAGES_PER_DAY,
+            messages_limit="∞" if _is_unlocked(user_id) else MAX_MESSAGES_PER_DAY,
         )
         return ApiResponse(msg="回复成功", data=ChatReplyVO(
             conversation_id=conversation_id,
