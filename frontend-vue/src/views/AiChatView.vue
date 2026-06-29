@@ -1490,15 +1490,23 @@ async function loadState(convId = null) {
   gap: 4px;
   padding: 6px 20px;
   border-radius: var(--radius-md);
-  background: var(--color-brand-600);
+  background: linear-gradient(135deg, var(--color-brand-500), var(--color-brand-600), #6366f1);
+  background-size: 200% 200%;
+  animation: cta-shimmer 3s ease infinite;
   color: #fff !important;
   text-decoration: none;
   font-size: var(--text-sm);
   font-weight: var(--font-semibold);
-  transition: background 0.15s ease-out;
+  box-shadow: 0 2px 8px rgba(79,70,229,0.25);
+  transition: box-shadow 0.15s ease-out;
 }
 
 .login-cta-btn:hover {
-  background: var(--color-brand-700);
+  box-shadow: 0 4px 16px rgba(79,70,229,0.4);
+}
+
+@keyframes cta-shimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 </style>
