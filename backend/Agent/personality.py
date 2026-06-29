@@ -42,6 +42,7 @@ class Personality:
         self.attention = 30
         self.tone = Tone.CASUAL
         self._last_user_time = time.time()
+        self._last_silence = 0.0
 
     # ── 时间感知 ──────────────────────────────────
 
@@ -57,14 +58,14 @@ class Personality:
         return f"{now.tm_year}年{now.tm_mon}月{now.tm_mday}日 {now.tm_hour:02d}:{now.tm_min:02d} {weekdays[now.tm_wday]}"
 
     def get_silence_hours(self) -> str:
-        """AI 调用：返回用户静默时长"""
-        h = self.silence_hours
+        """AI 调用：返回本轮对话前的静默时长（快照值，不会被 on_user_message 归零）"""
+        h = self._last_silence
         return f"用户已 {h:.1f} 小时未互动"
 
     # ── AI 工具接口 ──────────────────────────────
 
     def get_status(self) -> str:
-        h = self.silence_hours
+        h = self._last_silence
         if h < 0.5:
             hint = "（用户刚在，自然承接）"
         elif h < 6:
@@ -109,7 +110,8 @@ class Personality:
             self.tone = Tone.PROFESSIONAL
 
     def on_user_message(self, content: str):
-        """收到用户消息：更新时间戳、消耗关注度、微增投入、自动调语气"""
+        """收到用户消息：快照静默时长、更新时间戳、消耗关注度、微增投入、自动调语气"""
+        self._last_silence = self.silence_hours
         self._last_user_time = time.time()
         self.attention = max(0, self.attention - 3)
         self.engagement = min(200, self.engagement + 1)
@@ -132,6 +134,7 @@ class Personality:
             "attention": self.attention,
             "tone": self.tone.value,
             "last_user_time": self._last_user_time,
+            "last_silence": self._last_silence,
         }
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "w", encoding="utf-8") as f:
@@ -147,6 +150,7 @@ class Personality:
             p.attention = data.get("attention", 80)
             p.tone = Tone(data.get("tone", "casual"))
             p._last_user_time = data.get("last_user_time", time.time())
+            p._last_silence = data.get("last_silence", 0.0)
             return p
         except (FileNotFoundError, json.JSONDecodeError, KeyError):
             return cls(name)
