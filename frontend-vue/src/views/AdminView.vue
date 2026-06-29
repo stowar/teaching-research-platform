@@ -90,15 +90,16 @@ onMounted(fetchUsers)
         <div class="toolbar-info">
           共 <strong>{{ filteredUsers.length }}</strong> 位用户
         </div>
-        <div class="toolbar-search">
-          <Search class="search-icon" :size="14" />
-          <input v-model="searchQuery" type="text" placeholder="搜索姓名/ID/手机号..." class="search-input" />
-        </div>
         <button class="btn btn-primary btn-sm press-feedback" @click="fetchUsers" :disabled="loading">
           <span v-if="loading" class="spinner spinner-sm" aria-hidden="true"></span>
           <span v-else><RefreshCw class="icon" :size="14" /></span>
           <span>{{ loading ? '加载中...' : '刷新列表' }}</span>
         </button>
+      </div>
+
+      <div class="search-bar">
+        <Search class="search-icon" :size="14" />
+        <input v-model="searchQuery" type="text" placeholder="搜索姓名/ID/手机号..." class="search-input" />
       </div>
 
       <!-- 加载骨架屏 -->
@@ -233,10 +234,13 @@ onMounted(fetchUsers)
   color: var(--text-primary);
 }
 
-.toolbar-search {
+.search-bar {
   position: relative;
   display: flex;
   align-items: center;
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border-light);
 }
 
 .search-icon {
@@ -244,11 +248,12 @@ onMounted(fetchUsers)
   left: 10px;
   color: var(--text-tertiary);
   pointer-events: none;
+  z-index: 1;
 }
 
 .search-input {
-  width: 200px;
-  padding: 6px 10px 6px 30px;
+  width: 260px;
+  padding: 8px 10px 8px 32px;
   border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
   background: var(--bg-page);
