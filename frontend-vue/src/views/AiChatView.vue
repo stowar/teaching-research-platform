@@ -1487,31 +1487,18 @@ async function loadState(convId = null) {
 .login-cta-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 28px;
-  border-radius: var(--radius-lg);
-  background: linear-gradient(135deg, var(--color-brand-500), var(--color-brand-600), #6366f1);
-  background-size: 200% 200%;
-  animation: cta-shimmer 3s ease infinite;
+  gap: 4px;
+  padding: 6px 20px;
+  border-radius: var(--radius-md);
+  background: var(--color-brand-600);
   color: #fff !important;
   text-decoration: none;
   font-size: var(--text-sm);
-  font-weight: var(--font-bold);
-  box-shadow: 0 4px 16px rgba(79,70,229,0.35);
-  transition: all 0.2s ease-out;
+  font-weight: var(--font-semibold);
+  transition: background 0.15s ease-out;
 }
 
 .login-cta-btn:hover {
-  box-shadow: 0 6px 24px rgba(79,70,229,0.5);
-  transform: translateY(-1px);
-}
-
-.login-cta-btn:active {
-  transform: translateY(0) scale(0.97);
-}
-
-@keyframes cta-shimmer {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+  background: var(--color-brand-700);
 }
 </style>
