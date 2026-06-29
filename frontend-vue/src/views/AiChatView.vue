@@ -1500,7 +1500,7 @@ async function loadState(convId = null) {
   background-size: 200% 200%;
   animation: cta-shimmer 3s ease infinite;
   color: #fff !important;
-  text-decoration: none;
+  text-decoration: none !important;
   font-size: var(--text-sm);
   font-weight: var(--font-semibold);
   box-shadow: 0 2px 8px rgba(79,70,229,0.25);
@@ -1519,7 +1519,7 @@ async function loadState(convId = null) {
   border-radius: var(--radius-md);
   border: 1px solid var(--border-light);
   color: var(--text-secondary) !important;
-  text-decoration: none;
+  text-decoration: none !important;
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
   transition: all 0.15s ease-out;
@@ -1529,6 +1529,7 @@ async function loadState(convId = null) {
   border-color: var(--color-brand-300);
   color: var(--color-brand-600) !important;
   background: var(--color-brand-50);
+  text-decoration: none !important;
 }
 
 @keyframes cta-shimmer {
