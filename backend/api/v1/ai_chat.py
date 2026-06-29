@@ -82,7 +82,7 @@ def unlock_user_quota(
 ):
     override_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-        "data", "ai", "quota_override.json"
+        "backend", "data", "ai", "quota_override.json"
     )
     os.makedirs(os.path.dirname(override_path), exist_ok=True)
     today = time.strftime("%Y-%m-%d")
