@@ -136,7 +136,7 @@ async function sendMessage(text = input.value.trim()) {
   if (!auth.isLoggedIn) {
     messages.value.push({
       role: 'assistant',
-      content: '<div class="login-cta"><div class="login-cta-icon"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-600)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v1"/><path d="M9 13v1"/></svg></div><div class="login-cta-text">登录后解锁 AI 教研助手</div><div class="login-cta-sub">人格系统 · 长期记忆 · 智能对话</div><a href="/login" class="login-cta-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg><span>登录</span></a></div>',
+      content: '<div class="login-cta"><div class="login-cta-icon"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-600)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v1"/><path d="M9 13v1"/></svg></div><div class="login-cta-text">登录后解锁 AI 教研助手</div><div class="login-cta-sub">人格系统 · 长期记忆 · 智能对话</div><div class="login-cta-actions"><a href="/login" class="login-cta-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg><span>登录</span></a><a href="/register" class="login-cta-register"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg><span>注册</span></a></div></div>',
       timestamp: Date.now(),
       loginPrompt: true,
     })
@@ -1484,6 +1484,12 @@ async function loadState(convId = null) {
   margin-bottom: var(--space-4);
 }
 
+.login-cta-actions {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
 .login-cta-btn {
   display: inline-flex;
   align-items: center;
@@ -1503,6 +1509,26 @@ async function loadState(convId = null) {
 
 .login-cta-btn:hover {
   box-shadow: 0 4px 16px rgba(79,70,229,0.4);
+}
+
+.login-cta-register {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 20px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  color: var(--text-secondary) !important;
+  text-decoration: none;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  transition: all 0.15s ease-out;
+}
+
+.login-cta-register:hover {
+  border-color: var(--color-brand-300);
+  color: var(--color-brand-600) !important;
+  background: var(--color-brand-50);
 }
 
 @keyframes cta-shimmer {
