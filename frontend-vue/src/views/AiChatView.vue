@@ -13,6 +13,9 @@ import {
 import { useTheme } from '@/composables/useTheme.js'
 import MarkdownIt from 'markdown-it'
 import api from '@/api/client'
+import { useAuthStore } from '@/stores/auth'
+
+const auth = useAuthStore()
 
 const md = new MarkdownIt({ breaks: true, linkify: true })
 
@@ -129,6 +132,16 @@ async function scrollToBottom() {
 
 async function sendMessage(text = input.value.trim()) {
   if (!text || loading.value) return
+
+  if (!auth.isLoggedIn) {
+    messages.value.push({
+      role: 'assistant',
+      content: '请先登录后再使用 AI 聊天功能。',
+      timestamp: Date.now(),
+    })
+    await scrollToBottom()
+    return
+  }
 
   // 显示用户消息
   messages.value.push({ role: 'user', content: text, timestamp: Date.now() })
