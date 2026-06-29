@@ -136,7 +136,17 @@ async function sendMessage(text = input.value.trim()) {
   if (!auth.isLoggedIn) {
     messages.value.push({
       role: 'assistant',
-      content: '请先登录后再使用 AI 聊天功能。<br/><a href="/login" class="inline-login-btn">前往登录 →</a>',
+      content: `
+        <div class="login-cta">
+          <div class="login-cta-icon">&#x1F916;</div>
+          <div class="login-cta-text">登录后解锁 AI 教研助手</div>
+          <div class="login-cta-sub">人格系统 · 长期记忆 · 智能对话</div>
+          <a href="/login" class="login-cta-btn">
+            <span>前往登录</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+        </div>
+      `,
       timestamp: Date.now(),
       loginPrompt: true,
     })
@@ -830,21 +840,70 @@ async function loadState(convId = null) {
   margin: var(--space-1) 0;
 }
 
-.inline-login-btn {
-  display: inline-block;
-  margin-top: var(--space-2);
-  padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius-md);
-  background: var(--color-brand-600);
-  color: #fff !important;
-  text-decoration: none;
-  font-size: var(--text-sm);
-  font-weight: var(--font-semibold);
-  transition: background var(--duration-fast);
+.login-cta {
+  text-align: center;
+  padding: var(--space-4) var(--space-3);
+  animation: cta-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-.inline-login-btn:hover {
-  background: var(--color-brand-700);
+@keyframes cta-enter {
+  from { opacity: 0; transform: translateY(12px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.login-cta-icon {
+  font-size: 36px;
+  margin-bottom: var(--space-2);
+  animation: cta-float 3s ease-in-out infinite;
+}
+
+@keyframes cta-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.login-cta-text {
+  font-size: var(--text-base);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.login-cta-sub {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  margin-bottom: var(--space-4);
+}
+
+.login-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-6);
+  border-radius: var(--radius-xl);
+  background: linear-gradient(135deg, var(--color-brand-500), var(--color-brand-600), #6366f1);
+  background-size: 200% 200%;
+  animation: cta-shimmer 3s ease infinite;
+  color: #fff !important;
+  text-decoration: none;
+  font-size: var(--text-base);
+  font-weight: var(--font-bold);
+  box-shadow: 0 4px 16px rgba(79,70,229,0.35), 0 0 0 0 rgba(79,70,229,0.4);
+  transition: all 0.2s ease-out;
+}
+
+.login-cta-btn:hover {
+  box-shadow: 0 6px 24px rgba(79,70,229,0.5), 0 0 0 4px rgba(79,70,229,0.1);
+  transform: translateY(-1px);
+}
+
+.login-cta-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+@keyframes cta-shimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 
 .markdown-body .message-text :deep(table) {
