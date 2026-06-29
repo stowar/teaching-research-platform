@@ -12,9 +12,9 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'home',          // 路由名称，方便代码中通过名称跳转
+      name: 'home',
       component: () => import('@/views/HomeView.vue'),
-      meta: {}
+      meta: { requiresAuth: true }
     },
     {
       path: '/landing',
