@@ -128,6 +128,17 @@ def _infer_delta(message: str) -> int:
     return 2         # 短消息 → 正常互动
 
 
+def _mark_recalled_from_response(ai_content: str, user_message: str, memory):
+    """检测 AI 回复是否引用了记忆（出现【根据你之前的信息】），标记召回"""
+    if "【根据你之前的信息】" in ai_content or "根据你之前的" in ai_content:
+        # 从用户消息中提取关键词来标记召回的记忆
+        keywords = ["研究方向", "偏好", "课程", "教学", "学生", "班级", "公开课", "教案",
+                    "写作", "听说", "阅读", "词汇", "任务驱动", "小组", "考试", "教研"]
+        for kw in keywords:
+            if kw in user_message or kw in ai_content:
+                memory.mark_recalled(kw)
+
+
 def _tone_label(tone):
     return TONE_LABELS.get(tone.value if hasattr(tone, 'value') else tone, "未知")
 
@@ -279,6 +290,8 @@ class AIChatService(IAIChatService):
         # ── 7. 保存 AI 回复 ──
         if ai_content:
             ai_chat_db.create_message(conversation_id, "assistant", ai_content)
+            # 检测 AI 是否引用了记忆，标记召回
+            _mark_recalled_from_response(ai_content, message, memory)
         ai_chat_db.touch_conversation(conversation_id)
 
         # ── 8. 持久化人格状态 ──
