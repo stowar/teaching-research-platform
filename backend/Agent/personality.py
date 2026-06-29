@@ -64,12 +64,19 @@ class Personality:
     # ── AI 工具接口 ──────────────────────────────
 
     def get_status(self) -> str:
+        h = self.silence_hours
+        if h < 0.5:
+            hint = "（用户刚在，自然承接）"
+        elif h < 6:
+            hint = "（用户离开一阵了，简短问候后拉回话题）"
+        else:
+            hint = "（用户离开很久了，轻松问候，提及时间跨度）"
         return (
             f"【{self.name} 状态】"
             f"语气：{self.tone.value}，"
             f"投入度：{self.engagement}，"
             f"关注度：{self.attention}，"
-            f"静默时间：{self.silence_hours:.1f}h"
+            f"静默：{h:.1f}h{hint}"
         )
 
     def set_tone(self, tone_str: str) -> str:
