@@ -234,31 +234,46 @@ onMounted(fetchUsers)
 
 .data-table th,
 .data-table td {
-  padding: var(--space-3) var(--space-4);
+  padding: 10px var(--space-4);
   text-align: left;
   border-bottom: 1px solid var(--border-light);
 }
 
 .data-table th {
-  font-weight: var(--font-bold);
-  color: var(--text-secondary);
-  background: var(--bg-hover);
-  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  color: var(--text-tertiary);
+  background: var(--bg-page);
+  font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.05em;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.data-table td {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
 }
 
 .data-table tbody tr {
-  transition: background var(--duration-fast) var(--ease-out);
+  transition: all 0.15s var(--ease-out);
   animation: slide-up-enter 0.4s var(--ease-out) both;
 }
 
-.data-table tbody tr:hover td {
-  background: var(--bg-hover);
+.data-table tbody tr:hover {
+  background: var(--color-brand-50);
+}
+
+[data-theme="dark"] .data-table tbody tr:hover {
+  background: rgba(79,70,229,0.06);
 }
 
 .data-table tbody tr:last-child td {
   border-bottom: none;
+}
+
+.data-table tbody td {
+  vertical-align: middle;
 }
 
 /* 角色和状态标签 */
