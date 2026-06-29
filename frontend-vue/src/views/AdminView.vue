@@ -132,7 +132,7 @@ onMounted(fetchUsers)
                   {{ u.status === 1 ? '正常' : '已禁用' }}
                 </span>
               </td>
-              <td>
+              <td class="actions-cell">
                 <button
                   v-if="u.status === 1"
                   class="btn btn-sm btn-danger press-feedback"
@@ -149,12 +149,11 @@ onMounted(fetchUsers)
                 </button>
                 <button
                   v-if="u.role !== 'admin'"
-                  class="btn btn-sm btn-outline press-feedback"
-                  style="margin-left: 6px"
+                  class="btn-icon-unlock"
                   @click="unlockQuota(u.id)"
                   title="解锁本日AI配额"
                 >
-                  <Unlock :size="12" />
+                  <Unlock :size="14" />
                 </button>
               </td>
             </tr>
@@ -290,6 +289,33 @@ onMounted(fetchUsers)
 .status-disabled {
   background: var(--color-danger-100);
   color: var(--color-danger-700);
+}
+
+.actions-cell {
+  white-space: nowrap;
+}
+
+.btn-icon-unlock {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  background: var(--bg-card);
+  color: var(--text-tertiary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 6px;
+  vertical-align: middle;
+  transition: all 0.15s ease-out;
+}
+
+.btn-icon-unlock:hover {
+  color: var(--color-brand-600);
+  border-color: var(--color-brand-300);
+  background: var(--color-brand-50);
+  box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
 }
 
 /* 骨架屏 */
