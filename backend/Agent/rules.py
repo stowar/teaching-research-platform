@@ -19,7 +19,7 @@ def build_system_prompt(personality, memory, user_name: str = "") -> str:
     ranked = memory.query("", personality.engagement)
     memories = memory.format_query_results(ranked)
     status = personality.get_status()
-    name_hint = f"当前对话的教师是 {user_name}。" if user_name else ""
+    name_hint = f"当前对话的教师:{user_name}。" if user_name else ""
 
     return f"""
     你是 AI 教研助手，面向职业院校英语教师。给实际建议，不空谈理论。
