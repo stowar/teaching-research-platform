@@ -20,7 +20,7 @@ const success = ref('')
 const loading = ref(false)
 
 function validate() {
-  if (!phone.value || !password.value) { error.value = '手机号和密码不能为空'; return false }
+  if (!phone.value || !password.value || !name.value.trim()) { error.value = '手机号、密码和姓名为必填'; return false }
   if (!/^1[3-9]\d{9}$/.test(phone.value)) { error.value = '手机号格式不正确'; return false }
   if (password.value.length < 6) { error.value = '密码至少6位'; return false }
   if (password.value !== confirmPassword.value) { error.value = '两次输入的密码不一致'; return false }
@@ -77,6 +77,11 @@ async function onSubmit() {
           <div class="form-group">
             <label for="reg-phone">手机号 <span class="required">*</span></label>
             <input id="reg-phone" v-model="phone" type="text" maxlength="11" placeholder="请输入手机号" class="form-input" autocomplete="tel" />
+          </div>
+
+          <div class="form-group">
+            <label for="reg-name">姓名 <span class="required">*</span></label>
+            <input id="reg-name" v-model="name" type="text" maxlength="20" placeholder="请输入你的姓名" class="form-input" autocomplete="name" />
           </div>
 
           <div class="form-group">
