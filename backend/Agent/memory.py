@@ -151,6 +151,9 @@ class MemoryStore:
             recall_bonus = min(0.3, m.get("recall_count", 0) * 0.1)
 
             final = base * decay + recall_bonus
+            # 核心记忆保底分：再旧的核心也不该被边缘记忆挤掉
+            if tier == TIER_CORE and final < 1.0:
+                final = 1.0
             scored.append((final, m))
 
         # 对检索到的数据进行按评分进行排序
