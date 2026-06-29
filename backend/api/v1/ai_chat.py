@@ -2,9 +2,12 @@
 """AI 聊天室 API — RESTful 端点"""
 from typing import List
 
+import json
+import os
+import time
 from fastapi import APIRouter, Depends, Query
 
-from backend.core.deps import get_ai_chat_service, get_current_user
+from backend.core.deps import get_ai_chat_service, get_current_user, require_admin
 from backend.schema.vo.common import ApiResponse
 from backend.schema.vo.ai_chat import ConversationVO, ConversationDetailVO, ChatReplyVO, AIStateVO
 from backend.schema.request.ai_chat import ChatRequest, RenameConversation
@@ -59,7 +62,7 @@ def chat(
     current_user=Depends(get_current_user),
     svc: IAIChatService = Depends(get_ai_chat_service),
 ):
-    return svc.chat(current_user.id, data.message, data.conversation_id, data.model)
+    return svc.chat(current_user.id, data.message, data.conversation_id, data.model, current_user.role)
 
 
 @router.get("/state", summary="AI 状态", response_model=ApiResponse[AIStateVO])
@@ -69,3 +72,27 @@ def get_state(
     svc: IAIChatService = Depends(get_ai_chat_service),
 ):
     return svc.get_state(current_user.id, conversation_id)
+
+
+@router.post("/admin/unlock-user", summary="解锁用户配额", response_model=ApiResponse)
+def unlock_user_quota(
+    user_id: int = Query(...),
+    current_user=Depends(require_admin),
+    svc: IAIChatService = Depends(get_ai_chat_service),
+):
+    override_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+        "data", "ai", "quota_override.json"
+    )
+    os.makedirs(os.path.dirname(override_path), exist_ok=True)
+    today = time.strftime("%Y-%m-%d")
+    overrides = {}
+    try:
+        with open(override_path, "r") as f:
+            overrides = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        pass
+    overrides[str(user_id)] = today
+    with open(override_path, "w") as f:
+        json.dump(overrides, f)
+    return ApiResponse(msg=f"已解锁用户 {user_id} 的本日配额")

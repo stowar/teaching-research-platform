@@ -2,6 +2,7 @@
 """AI 聊天室服务 — 对话逻辑 + 状态机 + 记忆系统"""
 import json
 import os
+import time
 
 from backend.domain.ai_chat import IAIChatService
 from backend.db import ai_chat_db
@@ -206,13 +207,22 @@ class AIChatService(IAIChatService):
 
     # ===================== 对话核心逻辑 =====================
 
-    def chat(self, user_id, message, conversation_id=None, model=None):
+    def chat(self, user_id, message, conversation_id=None, model=None, role="user"):
         if model is None:
             model = DEFAULT_MODEL
-        # ── 0. 每日配额（按用户，不按会话） ──
-        today_count = ai_chat_db.count_user_messages_today(user_id)
-        if today_count >= MAX_MESSAGES_PER_DAY:
-            return ApiResponse(msg="额度已用完", data=ChatReplyVO(
+        # ── 0. 每日配额（管理员无限 + 解锁检查） ──
+        if role != "admin":
+            today_count = ai_chat_db.count_user_messages_today(user_id)
+            override_path = os.path.join(AI_DATA_DIR, "quota_override.json")
+            unlocked = False
+            try:
+                with open(override_path, "r") as f:
+                    overrides = json.load(f)
+                unlocked = overrides.get(str(user_id)) == time.strftime("%Y-%m-%d")
+            except (FileNotFoundError, json.JSONDecodeError):
+                pass
+            if today_count >= MAX_MESSAGES_PER_DAY and not unlocked:
+                return ApiResponse(msg="额度已用完", data=ChatReplyVO(
                 conversation_id=conversation_id or 0,
                 message=MessageVO(role="assistant", content="今日消息已达上限，请明天再来。", timestamp=0),
             ))
