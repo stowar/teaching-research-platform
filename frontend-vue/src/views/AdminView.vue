@@ -4,14 +4,25 @@
  * 展示所有用户的列表信息，支持禁用/启用用户操作
  * 使用 Design Tokens、加载骨架屏、空状态插画，提升视觉品质
  */
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import api from '@/api/client.js'
-import { ShieldCheck, RefreshCw, Inbox, Unlock } from 'lucide-vue-next'
+import { ShieldCheck, RefreshCw, Inbox, Unlock, Search } from 'lucide-vue-next'
 
 const users = ref([])
 const loading = ref(false)
 const error = ref('')
 const message = ref('')
+const searchQuery = ref('')
+
+const filteredUsers = computed(() => {
+  if (!searchQuery.value.trim()) return users.value
+  const q = searchQuery.value.trim().toLowerCase()
+  return users.value.filter(u =>
+    String(u.id).includes(q) ||
+    (u.name && u.name.toLowerCase().includes(q)) ||
+    (u.phone && u.phone.includes(q))
+  )
+})
 
 async function fetchUsers() {
   loading.value = true
@@ -77,7 +88,11 @@ onMounted(fetchUsers)
       <!-- 工具栏 -->
       <div class="toolbar">
         <div class="toolbar-info">
-          共 <strong>{{ users.length }}</strong> 位用户
+          共 <strong>{{ filteredUsers.length }}</strong> 位用户
+        </div>
+        <div class="toolbar-search">
+          <Search class="search-icon" :size="14" />
+          <input v-model="searchQuery" type="text" placeholder="搜索姓名/ID/手机号..." class="search-input" />
         </div>
         <button class="btn btn-primary btn-sm press-feedback" @click="fetchUsers" :disabled="loading">
           <span v-if="loading" class="spinner spinner-sm" aria-hidden="true"></span>
@@ -87,7 +102,7 @@ onMounted(fetchUsers)
       </div>
 
       <!-- 加载骨架屏 -->
-      <div v-if="loading && users.length === 0" class="skeleton-table">
+      <div v-if="loading && filteredUsers.length === 0" class="skeleton-table">
         <div v-for="n in 6" :key="n" class="skeleton-row">
           <div class="skeleton-cell" style="width: 40px"></div>
           <div class="skeleton-cell" style="width: 100px"></div>
@@ -101,7 +116,7 @@ onMounted(fetchUsers)
       </div>
 
       <!-- 用户数据表格 -->
-      <div v-else-if="users.length > 0" class="table-wrapper">
+      <div v-else-if="filteredUsers.length > 0" class="table-wrapper">
         <table class="data-table">
           <thead>
             <tr>
@@ -116,7 +131,7 @@ onMounted(fetchUsers)
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(u, idx) in users" :key="u.id" :style="{ animationDelay: `${idx * 40}ms` }">
+            <tr v-for="(u, idx) in filteredUsers" :key="u.id" :style="{ animationDelay: `${idx * 40}ms` }">
               <td>{{ u.id }}</td>
               <td>{{ u.phone }}</td>
               <td>{{ u.name }}</td>
@@ -162,7 +177,7 @@ onMounted(fetchUsers)
       </div>
 
       <!-- 空状态 -->
-      <div v-else-if="!loading && users.length === 0" class="empty-state">
+      <div v-else-if="!loading && filteredUsers.length === 0" class="empty-state">
         <Inbox class="empty-icon" :size="48" aria-hidden="true" />
         <div class="empty-title">暂无用户数据</div>
         <div class="empty-desc">当前系统中还没有注册用户</div>
@@ -216,6 +231,40 @@ onMounted(fetchUsers)
 
 .toolbar-info strong {
   color: var(--text-primary);
+}
+
+.toolbar-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 10px;
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+
+.search-input {
+  width: 200px;
+  padding: 6px 10px 6px 30px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  outline: none;
+  transition: border-color 0.15s ease-out, box-shadow 0.15s ease-out;
+}
+
+.search-input:focus {
+  border-color: var(--color-brand-300);
+  box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
+}
+
+.search-input::placeholder {
+  color: var(--text-tertiary);
 }
 
 /* 表格容器：移动端横向滚动 */

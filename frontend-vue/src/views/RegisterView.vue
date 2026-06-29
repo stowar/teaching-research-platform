@@ -73,16 +73,18 @@ async function onSubmit() {
           <p>填写以下信息完成注册</p>
         </div>
 
+        <div class="form-group">
+            <label for="reg-name">用户名 <span class="required">*</span></label>
+            <input id="reg-name" v-model="name" type="text" maxlength="20" placeholder="请输入你的姓名" class="form-input" autocomplete="name" />
+          </div>
+
         <form @submit.prevent="onSubmit">
           <div class="form-group">
             <label for="reg-phone">手机号 <span class="required">*</span></label>
             <input id="reg-phone" v-model="phone" type="text" maxlength="11" placeholder="请输入手机号" class="form-input" autocomplete="tel" />
           </div>
 
-          <div class="form-group">
-            <label for="reg-name">姓名 <span class="required">*</span></label>
-            <input id="reg-name" v-model="name" type="text" maxlength="20" placeholder="请输入你的姓名" class="form-input" autocomplete="name" />
-          </div>
+
 
           <div class="form-group">
             <label for="reg-password">密码 <span class="required">*</span></label>
