@@ -136,17 +136,7 @@ async function sendMessage(text = input.value.trim()) {
   if (!auth.isLoggedIn) {
     messages.value.push({
       role: 'assistant',
-      content: `
-        <div class="login-cta">
-          <div class="login-cta-icon">&#x1F916;</div>
-          <div class="login-cta-text">登录后解锁 AI 教研助手</div>
-          <div class="login-cta-sub">人格系统 · 长期记忆 · 智能对话</div>
-          <a href="/login" class="login-cta-btn">
-            <span>前往登录</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </a>
-        </div>
-      `,
+      content: '<div class="login-cta"><div class="login-cta-icon">&#x1F916;</div><div class="login-cta-text">登录后解锁 AI 教研助手</div><div class="login-cta-sub">人格系统 · 长期记忆 · 智能对话</div><a href="/login" class="login-cta-btn"><span>前往登录</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a></div>',
       timestamp: Date.now(),
       loginPrompt: true,
     })
