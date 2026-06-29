@@ -1444,7 +1444,9 @@ async function loadState(convId = null) {
 /* 登录 CTA — 非 scoped，因为通过 v-html 注入 */
 .login-cta {
   text-align: center;
-  padding: var(--space-4) var(--space-3);
+  padding: var(--space-5) var(--space-2) var(--space-3);
+  max-width: 260px;
+  margin: 0 auto;
   animation: cta-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
@@ -1454,8 +1456,8 @@ async function loadState(convId = null) {
 }
 
 .login-cta-icon {
-  font-size: 36px;
-  margin-bottom: var(--space-2);
+  font-size: 42px;
+  margin-bottom: var(--space-3);
   animation: cta-float 3s ease-in-out infinite;
 }
 
@@ -1465,14 +1467,14 @@ async function loadState(convId = null) {
 }
 
 .login-cta-text {
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
   font-weight: var(--font-bold);
   color: var(--text-primary);
-  margin-bottom: var(--space-1);
+  margin-bottom: 4px;
 }
 
 .login-cta-sub {
-  font-size: var(--text-xs);
+  font-size: 11px;
   color: var(--text-tertiary);
   margin-bottom: var(--space-4);
 }
@@ -1480,27 +1482,27 @@ async function loadState(convId = null) {
 .login-cta-btn {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-6);
-  border-radius: var(--radius-xl);
+  gap: 6px;
+  padding: 8px 28px;
+  border-radius: var(--radius-lg);
   background: linear-gradient(135deg, var(--color-brand-500), var(--color-brand-600), #6366f1);
   background-size: 200% 200%;
   animation: cta-shimmer 3s ease infinite;
   color: #fff !important;
   text-decoration: none;
-  font-size: var(--text-base);
+  font-size: var(--text-sm);
   font-weight: var(--font-bold);
-  box-shadow: 0 4px 16px rgba(79,70,229,0.35), 0 0 0 0 rgba(79,70,229,0.4);
+  box-shadow: 0 4px 16px rgba(79,70,229,0.35);
   transition: all 0.2s ease-out;
 }
 
 .login-cta-btn:hover {
-  box-shadow: 0 6px 24px rgba(79,70,229,0.5), 0 0 0 4px rgba(79,70,229,0.1);
+  box-shadow: 0 6px 24px rgba(79,70,229,0.5);
   transform: translateY(-1px);
 }
 
 .login-cta-btn:active {
-  transform: translateY(0) scale(0.98);
+  transform: translateY(0) scale(0.97);
 }
 
 @keyframes cta-shimmer {
