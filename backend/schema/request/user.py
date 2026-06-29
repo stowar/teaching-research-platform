@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 class UserBase(BaseModel):
     """用户公共基础字段（所有用户模型的父类）"""
     phone: str = Field(..., min_length=11, max_length=11, description="手机号")
-    name: str = Field(..., max_length=20, description="用户名")
+    name: Optional[str] = Field(..., max_length=20, description="用户名")
     school: Optional[str] = Field(None, max_length=100, description="学校")
     title: Optional[str] = Field(None, max_length=100, description="职称")
 

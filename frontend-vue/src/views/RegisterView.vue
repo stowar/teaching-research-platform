@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.js'
+import api from '@/api/client.js'
 import { GraduationCap, Eye, EyeOff, Loader } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -18,9 +19,29 @@ const showConfirm = ref(false)
 const error = ref('')
 const success = ref('')
 const loading = ref(false)
+const showNameModal = ref(false)
+const modalName = ref('')
+const modalSaving = ref(false)
+
+async function saveName() {
+  const n = modalName.value.trim()
+  if (!n) return
+  modalSaving.value = true
+  try {
+    await api.put('/users/me', { name: n })
+  } catch { /* 静默 */ }
+  modalSaving.value = false
+  showNameModal.value = false
+  router.push('/login')
+}
+
+function skipName() {
+  showNameModal.value = false
+  router.push('/login')
+}
 
 function validate() {
-  if (!phone.value || !password.value || !name.value.trim()) { error.value = '手机号、密码和姓名为必填'; return false }
+  if (!phone.value || !password.value) { error.value = '手机号和密码不能为空'; return false }
   if (!/^1[3-9]\d{9}$/.test(phone.value)) { error.value = '手机号格式不正确'; return false }
   if (password.value.length < 6) { error.value = '密码至少6位'; return false }
   if (password.value !== confirmPassword.value) { error.value = '两次输入的密码不一致'; return false }
@@ -35,11 +56,10 @@ async function onSubmit() {
   try {
     const res = await auth.register({
       phone: phone.value, password: password.value,
-      name: name.value, school: school.value, title: title.value
+      name: null, school: null, title: null
     })
     if (res.code === 200) {
-      success.value = '注册成功！正在跳转登录页...'
-      setTimeout(() => router.push('/login'), 1500)
+      showNameModal.value = true
     } else {
       error.value = res.msg || '注册失败'
     }
@@ -72,11 +92,6 @@ async function onSubmit() {
           <h2>创建账号</h2>
           <p>填写以下信息完成注册</p>
         </div>
-
-        <div class="form-group">
-            <label for="reg-name">用户名 <span class="required">*</span></label>
-            <input id="reg-name" v-model="name" type="text" maxlength="20" placeholder="请输入你的姓名" class="form-input" autocomplete="name" />
-          </div>
 
         <form @submit.prevent="onSubmit">
           <div class="form-group">
@@ -124,6 +139,22 @@ async function onSubmit() {
       </div>
 
       <div class="copyright">虚拟教研社区 &copy; 2026</div>
+    </div>
+
+    <!-- 名字弹窗 -->
+    <div v-if="showNameModal" class="name-modal-overlay" @click.self="skipName">
+      <div class="name-modal">
+        <div class="name-modal-icon">&#x1F44B;</div>
+        <h3>怎么称呼你？</h3>
+        <p>请输入你的姓名，让 AI 助手更好地认识你</p>
+        <input v-model="modalName" type="text" maxlength="20" placeholder="你的姓名" class="form-input" @keydown.enter="saveName" />
+        <div class="name-modal-actions">
+          <button class="btn btn-primary" @click="saveName" :disabled="!modalName.trim() || modalSaving">
+            {{ modalSaving ? '保存中...' : '确认' }}
+          </button>
+          <button class="btn btn-ghost" @click="skipName">跳过</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -179,6 +210,54 @@ async function onSubmit() {
 @keyframes icon-float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-8px); }
+}
+
+/* 名字弹窗 */
+.name-modal-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.45); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  animation: fade-in 0.2s ease-out;
+}
+
+.name-modal {
+  background: var(--bg-card); border-radius: var(--radius-xl);
+  padding: var(--space-8) var(--space-6); max-width: 380px; width: 90%;
+  text-align: center;
+  box-shadow: var(--shadow-xl);
+  animation: modal-in 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modal-in {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; } to { opacity: 1; }
+}
+
+.name-modal-icon { font-size: 48px; margin-bottom: var(--space-3); }
+
+.name-modal h3 {
+  font-size: var(--text-xl); font-weight: var(--font-bold);
+  color: var(--text-primary); margin: 0 0 var(--space-1);
+}
+
+.name-modal p {
+  font-size: var(--text-sm); color: var(--text-tertiary);
+  margin: 0 0 var(--space-4);
+}
+
+.name-modal .form-input {
+  text-align: center;
+  font-size: var(--text-lg);
+  padding: var(--space-3);
+}
+
+.name-modal-actions {
+  display: flex; gap: var(--space-3); margin-top: var(--space-4);
+  justify-content: center;
 }
 
 .hero-title { animation: fade-up 0.8s var(--ease-out) both; }
