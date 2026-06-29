@@ -2,7 +2,7 @@
 """用户长期记忆 — JSON 文件 + 内存缓存 + 三层检索"""
 import json
 import os
-import re
+import random
 from datetime import datetime, timedelta
 
 # 记忆分级
@@ -147,13 +147,16 @@ class MemoryStore:
             else:
                 decay = 0.5
 
-            # 被召回过的记忆有加成
-            recall_bonus = min(0.3, m.get("recall_count", 0) * 0.1)
+            # 被召回过的记忆有加成，但上限 3 次防止单一记忆垄断
+            recall_count = min(3, m.get("recall_count", 0))
+            recall_bonus = recall_count * 0.1
 
             final = base * decay + recall_bonus
             # 核心记忆保底分：再旧的核心也不该被边缘记忆挤掉
             if tier == TIER_CORE and final < 1.0:
                 final = 1.0
+            # 微小随机扰动，打破同分下的固定排序（±0.02）
+            final += random.uniform(-0.02, 0.02)
             scored.append((final, m))
 
         # 对检索到的数据进行按评分进行排序
