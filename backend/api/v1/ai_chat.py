@@ -71,7 +71,7 @@ def get_state(
     current_user=Depends(get_current_user),
     svc: IAIChatService = Depends(get_ai_chat_service),
 ):
-    return svc.get_state(current_user.id, conversation_id)
+    return svc.get_state(current_user.id, conversation_id, current_user.role)
 
 
 @router.post("/admin/unlock-user", summary="解锁用户配额", response_model=ApiResponse)

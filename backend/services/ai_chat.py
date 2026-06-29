@@ -194,7 +194,7 @@ class AIChatService(IAIChatService):
 
     # ===================== AI 状态 =====================
 
-    def get_state(self, user_id, conversation_id: int = None):
+    def get_state(self, user_id, conversation_id: int = None, role: str = "user"):
         if conversation_id:
             personality = Personality.load(
                 os.path.join(AI_DATA_DIR, f"conv_{conversation_id}_personality.json")
@@ -204,7 +204,7 @@ class AIChatService(IAIChatService):
             personality = Personality()
             memory = MemoryStore(0, AI_DATA_DIR)
         today_count = ai_chat_db.count_user_messages_today(user_id)
-        limit = "∞" if _is_unlocked(user_id) else MAX_MESSAGES_PER_DAY
+        limit = "∞" if (role == "admin" or _is_unlocked(user_id)) else MAX_MESSAGES_PER_DAY
         return ApiResponse(msg="查询成功", data=AIStateVO(
             tone=personality.tone.value,
             tone_label=_tone_label(personality.tone),
