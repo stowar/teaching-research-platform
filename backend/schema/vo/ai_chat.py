@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """AI 聊天室 VO — API 输出"""
-from typing import List, Optional, TYPE_CHECKING
+from typing import List, Optional, Union, TYPE_CHECKING
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
@@ -45,7 +45,7 @@ class AIStateVO(BaseModel):
     silence_hours: float
     memory_count: int
     messages_today: int
-    messages_limit: str
+    messages_limit: Union[int, str]
 
 
 class ChatReplyVO(BaseModel):
