@@ -1,0 +1,10 @@
+{
+  "prompts": {
+    "cf95c754-9003-4447-8b49-d01bc863b9fc": {
+      "id": "cf95c754-9003-4447-8b49-d01bc863b9fc",
+      "name": "sum",
+      "content": "总结到dev_log,README,项目故事...",
+      "createdAt": 1782744959504
+    }
+  }
+}
