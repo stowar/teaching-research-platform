@@ -136,7 +136,7 @@ async function sendMessage(text = input.value.trim()) {
   if (!auth.isLoggedIn) {
     messages.value.push({
       role: 'assistant',
-      content: '<div class="login-cta"><div class="login-cta-icon">&#x1F916;</div><div class="login-cta-text">登录后解锁 AI 教研助手</div><div class="login-cta-sub">人格系统 · 长期记忆 · 智能对话</div><a href="/login" class="login-cta-btn"><span>前往登录</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a></div>',
+      content: '<div class="login-cta"><div class="login-cta-icon"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-600)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v1"/><path d="M9 13v1"/></svg></div><div class="login-cta-text">登录后解锁 AI 教研助手</div><div class="login-cta-sub">人格系统 · 长期记忆 · 智能对话</div><a href="/login" class="login-cta-btn"><span>前往登录</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a></div>',
       timestamp: Date.now(),
       loginPrompt: true,
     })
@@ -1456,9 +1456,14 @@ async function loadState(convId = null) {
 }
 
 .login-cta-icon {
-  font-size: 42px;
   margin-bottom: var(--space-3);
+  display: flex;
+  justify-content: center;
   animation: cta-float 3s ease-in-out infinite;
+}
+
+.login-cta-icon svg {
+  display: block;
 }
 
 @keyframes cta-float {
