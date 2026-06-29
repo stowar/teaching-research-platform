@@ -1225,6 +1225,7 @@ async function loadState(convId = null) {
 .tone-casual { background: var(--color-success-50); color: var(--color-success-700); }
 .tone-encouraging { background: var(--color-warning-50); color: var(--color-warning-700); }
 .tone-analytical { background: var(--color-info-50); color: var(--color-info-700); }
+.tone-safety { background: var(--color-danger-50); color: var(--color-danger-700); }
 
 .state-bar {
   flex: 1;
@@ -1358,6 +1359,7 @@ async function loadState(convId = null) {
 [data-theme="dark"] .tone-casual { background: rgba(34,197,94,0.15); color: var(--color-success-300); }
 [data-theme="dark"] .tone-encouraging { background: rgba(234,179,8,0.15); color: var(--color-warning-300); }
 [data-theme="dark"] .tone-analytical { background: rgba(59,130,246,0.15); color: var(--color-info-300); }
+[data-theme="dark"] .tone-safety { background: rgba(239,68,68,0.15); color: var(--color-danger-300); }
 
 .info-footer {
   padding: var(--space-3) var(--space-4);

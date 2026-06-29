@@ -26,6 +26,7 @@ TONE_LABELS = {
     "casual": "轻松模式",
     "encouraging": "鼓励模式",
     "analytical": "分析模式",
+    "safety": "安全模式",
 }
 
 

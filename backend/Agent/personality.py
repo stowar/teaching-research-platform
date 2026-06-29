@@ -11,6 +11,7 @@ class Tone(str, Enum):
     CASUAL = "casual"
     ENCOURAGING = "encouraging"
     ANALYTICAL = "analytical"
+    SAFETY = "safety"
 
     def description(self):
         return TONE_DESCRIPTIONS[self]
@@ -21,6 +22,7 @@ TONE_DESCRIPTIONS = {
     Tone.CASUAL: "语气轻松亲切，像同事聊天。适合日常教学小问题、快速答疑。",
     Tone.ENCOURAGING: "语气温暖鼓励，先肯定再建议。适合教师在挫败时需要支持。",
     Tone.ANALYTICAL: "语气深入透彻，追根问底，多角度分析。适合复杂的教学难题。",
+    Tone.SAFETY: "安全模式。当前话题超出回应范围。不使用 emoji、不接梗、不延伸。如有需要，引导至专业求助渠道。",
 }
 
 
@@ -37,7 +39,7 @@ class Personality:
     def __init__(self, name="教研助手"):
         self.name = name
         self.engagement = 50
-        self.attention = 80
+        self.attention = 30
         self.tone = Tone.CASUAL
         self._last_user_time = time.time()
 
