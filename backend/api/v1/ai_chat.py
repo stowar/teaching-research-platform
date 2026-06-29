@@ -62,7 +62,7 @@ def chat(
     current_user=Depends(get_current_user),
     svc: IAIChatService = Depends(get_ai_chat_service),
 ):
-    return svc.chat(current_user.id, data.message, data.conversation_id, data.model, current_user.role)
+    return svc.chat(current_user.id, data.message, data.conversation_id, data.model, current_user.role, (current_user.name or ""))
 
 
 @router.get("/state", summary="AI 状态", response_model=ApiResponse[AIStateVO])

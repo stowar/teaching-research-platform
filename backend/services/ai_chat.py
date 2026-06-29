@@ -218,7 +218,7 @@ class AIChatService(IAIChatService):
 
     # ===================== 对话核心逻辑 =====================
 
-    def chat(self, user_id, message, conversation_id=None, model=None, role="user"):
+    def chat(self, user_id, message, conversation_id=None, model=None, role="user", user_name=""):
         if model is None:
             model = DEFAULT_MODEL
         # ── 0. 每日配额（管理员无限 + 解锁检查） ──
@@ -252,7 +252,7 @@ class AIChatService(IAIChatService):
         memory = MemoryStore(conversation_id, AI_DATA_DIR)
 
         # ── 4. 构建消息上下文 ──
-        system_prompt = build_system_prompt(personality, memory)
+        system_prompt = build_system_prompt(personality, memory, user_name)
         messages = [{"role": "system", "content": system_prompt}]
         history = ai_chat_db.get_messages_by_conversation(conversation_id)
         # 只加载 user/assistant 消息，跳过 tool 和空 content

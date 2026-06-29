@@ -13,17 +13,18 @@ from backend.Agent.memory import MemoryStore
 # 系统提示模板
 # ============================================================
 
-def build_system_prompt(personality, memory) -> str:
+def build_system_prompt(personality, memory, user_name: str = "") -> str:
     """构建 AI 教研助手的完整 system prompt"""
     tone_desc = personality.get_tone_prompt()
-    # 用投入度做记忆检索排序
     ranked = memory.query("", personality.engagement)
     memories = memory.format_query_results(ranked)
     status = personality.get_status()
+    name_hint = f"当前对话的教师是 {user_name}。" if user_name else ""
 
     return f"""
     你是 AI 教研助手，面向职业院校英语教师。给实际建议，不空谈理论。
-    
+
+    {name_hint}
     {status}
     {tone_desc}
     {memories if memories else "还不了解这位教师，多问多记。"}
