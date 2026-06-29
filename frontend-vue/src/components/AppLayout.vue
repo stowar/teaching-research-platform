@@ -20,7 +20,13 @@ const user = computed(() => auth.user)
 const isAdmin = computed(() => auth.isAdmin)
 const activeRoute = computed(() => route.name)
 const aiVisited = ref(localStorage.getItem('ai_visited') === '1')
-const showAiDot = computed(() => !aiVisited.value && auth.isLoggedIn)
+const isNewUser = computed(() => {
+  const u = auth.user
+  if (!u?.create_time) return false
+  const elapsed = Date.now() - new Date(u.create_time).getTime()
+  return elapsed < 24 * 3600 * 1000  // 24 小时内注册
+})
+const showAiDot = computed(() => !aiVisited.value && auth.isLoggedIn && isNewUser.value)
 
 watch(() => route.name, (name) => {
   if (name === 'ai-chat' && !aiVisited.value) {
