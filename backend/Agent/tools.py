@@ -2,6 +2,7 @@
 """AI 教研助手 Function Calling 工具定义 + 执行器"""
 from __future__ import annotations
 
+import json
 
 from backend.Agent.memory import MemoryStore
 from backend.Agent.personality import Personality
@@ -120,7 +121,11 @@ def build_tool_map(personality: Personality, memory_store: MemoryStore):
     """构建工具名 → 执行函数的映射，替代 if/elif 链"""
     return {
         "record_memory": lambda **kw: memory_store.add(kw["content"], kw["category"]),
-        "check_memory": lambda **kw: memory_store.search(kw["keyword"]),
+        "check_memory": lambda **kw: json.dumps(
+            [{"content": m["content"], "tier": m.get("tier",""), "created": m.get("created_at","")}
+             for m in memory_store.query(kw["keyword"], personality.engagement)],
+            ensure_ascii=False
+        ),
         "get_state": lambda **kw: personality.get_status(),
         "get_current_time": lambda **kw: personality.get_current_time(),
         "get_silence_hours": lambda **kw: personality.get_silence_hours(),

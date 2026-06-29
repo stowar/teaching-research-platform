@@ -16,7 +16,9 @@ from backend.Agent.memory import MemoryStore
 def build_system_prompt(personality, memory) -> str:
     """构建 AI 教研助手的完整 system prompt"""
     tone_desc = personality.get_tone_prompt()
-    memories = memory.format_for_prompt(10)
+    # 用投入度做记忆检索排序
+    ranked = memory.query("", personality.engagement)
+    memories = memory.format_query_results(ranked)
     status = personality.get_status()
 
     return f"""
