@@ -148,20 +148,23 @@ class MemoryStore:
             else:
                 decay = 0.5
 
-            # 长期召回加成：时间跨度越大加成越高，可无限叠加
-            # 短期反复召回 → 微涨；跨天/跨周召回 → 大幅涨
+            # 长期召回加成：高 base → 低加成，低 base → 高加成（逆向激励）
+            # core 不需要频繁召回证明自己；peripheral 被记住才值得大加分
             recall_score = m.get("recall_score", 0.0)
             last_recalled = m.get("last_recalled_at")
             if last_recalled:
                 try:
                     last_dt = datetime.strptime(last_recalled, "%Y-%m-%d %H:%M")
                     gap_days = (datetime.now() - last_dt).total_seconds() / 86400.0
-                    # 间隔越久召回越有价值：1天=+0.1, 7天=+0.3, 30天=+0.5
                     gap_bonus = min(0.5, gap_days * 0.015)
                 except ValueError:
                     gap_bonus = 0.05
             else:
-                gap_bonus = 0.05  # 首次召回小加成
+                gap_bonus = 0.05
+
+            # 逆向加权：base 越高加成越低
+            tier_multiplier = {TIER_CORE: 0.5, TIER_REFERENCE: 1.0, TIER_PERIPHERAL: 1.5}
+            gap_bonus *= tier_multiplier.get(tier, 1.0)
 
             final = base * decay + recall_score + gap_bonus
             # 核心记忆保底分：再旧的核心也不该被边缘记忆挤掉
