@@ -28,16 +28,16 @@ async function saveName() {
   if (!n) return
   modalSaving.value = true
   try {
-    await api.put('/users/me', { name: n })
+    await auth.updateProfile({ name: n })
   } catch { /* 静默 */ }
   modalSaving.value = false
   showNameModal.value = false
-  router.push('/login')
+  router.push('/')
 }
 
 function skipName() {
   showNameModal.value = false
-  router.push('/login')
+  router.push('/')
 }
 
 function validate() {
@@ -59,6 +59,8 @@ async function onSubmit() {
       name: null, school: null, title: null
     })
     if (res.code === 200) {
+      // 自动登录获取 token，这样后续 updateProfile 才能调
+      await auth.login(phone.value, password.value)
       showNameModal.value = true
     } else {
       error.value = res.msg || '注册失败'
