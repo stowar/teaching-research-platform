@@ -59,8 +59,22 @@ def _process_image(data_url: str) -> str:
         ocr_text = ""
         try:
             import pytesseract
+            # 自动探测 Tesseract 路径
+            if not pytesseract.pytesseract.tesseract_cmd or pytesseract.pytesseract.tesseract_cmd == "tesseract":
+                for path in [r"D:\Tool\QCR\tesseract.exe", r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+                             "/usr/bin/tesseract", "/usr/local/bin/tesseract"]:
+                    if os.path.exists(path):
+                        pytesseract.pytesseract.tesseract_cmd = path
+                        break
             img_ocr = Image.open(io.BytesIO(img_bytes))
-            ocr_text = pytesseract.image_to_string(img_ocr, lang="chi_sim+eng").strip()
+            # 先试中英，失败回退纯英文，再失败放弃
+            for lang in ["chi_sim+eng", "eng"]:
+                try:
+                    ocr_text = pytesseract.image_to_string(img_ocr, lang=lang).strip()
+                    if ocr_text:
+                        break
+                except Exception:
+                    continue
         except Exception:
             try:
                 import easyocr
@@ -267,6 +281,7 @@ def _check_achievements(user_id: int, user_message: str, personality, memory,
         "tool_translate": store._stats.get("tool_translate", 0),
         "translate_directions": len(store._stats.get("translate_directions", [])),
         "tone_safety_triggered": store._stats.get("tone_safety_triggered", 0),
+        "ocr_used": store._stats.get("ocr_used", 0),
         "lock_streak": store._stats.get("lock_streak", 0),
     }
 
@@ -410,6 +425,7 @@ class AIChatService(IAIChatService):
                 if ocr:
                     ocr_parts.append(ocr)
             if ocr_parts:
+                AchievementStore(user_id, AI_DATA_DIR).increment_stat("ocr_used")
                 message = f"{message}\n\n" + "\n---\n".join(ocr_parts) if message.strip() else "\n---\n".join(ocr_parts)
         ai_chat_db.create_message(conversation_id, "user", message)
 

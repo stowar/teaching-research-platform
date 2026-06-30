@@ -321,6 +321,14 @@ ACHIEVEMENTS = [
         "trigger": {"key": "tone_safety_triggered", "op": ">=", "val": 1},
     },
     {
+        "id": "first_ocr",
+        "name": "我看到了",
+        "desc": "第一次上传图片让 AI 识字。从今天起，它不再只读你的文字，还读你的画面。",
+        "emoji": "👁️",
+        "tier": "silver",
+        "trigger": {"key": "ocr_used", "op": ">=", "val": 1},
+    },
+    {
         "id": "first_post",
         "name": "开坛布道",
         "desc": "发布第一篇教研帖子。微信群里刷不上去的内容，在这里永远有位置。",
