@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, Query
 
 from backend.core.deps import get_ai_chat_service, get_current_user, require_admin
 from backend.schema.vo.common import ApiResponse
-from backend.schema.vo.ai_chat import ConversationVO, ConversationDetailVO, ChatReplyVO, AIStateVO
+from backend.schema.vo.ai_chat import ConversationVO, ConversationDetailVO, ChatReplyVO, AIStateVO, AchievementVO
 from backend.schema.request.ai_chat import ChatRequest, RenameConversation
 from backend.domain.ai_chat import IAIChatService
 
@@ -62,7 +62,7 @@ def chat(
     current_user=Depends(get_current_user),
     svc: IAIChatService = Depends(get_ai_chat_service),
 ):
-    return svc.chat(current_user.id, data.message, data.conversation_id, data.model, current_user.role, (current_user.name or ""))
+    return svc.chat(current_user.id, data.message, data.conversation_id, data.model, current_user.role, (current_user.name or ""), data.images)
 
 
 @router.get("/state", summary="AI 状态", response_model=ApiResponse[AIStateVO])
@@ -72,6 +72,14 @@ def get_state(
     svc: IAIChatService = Depends(get_ai_chat_service),
 ):
     return svc.get_state(current_user.id, conversation_id, current_user.role)
+
+
+@router.get("/achievements", summary="成就列表", response_model=ApiResponse[List[AchievementVO]])
+def get_achievements(
+    current_user=Depends(get_current_user),
+    svc: IAIChatService = Depends(get_ai_chat_service),
+):
+    return svc.get_achievements(current_user.id)
 
 
 @router.post("/admin/unlock-user", summary="解锁用户配额", response_model=ApiResponse)

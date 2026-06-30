@@ -1,15 +1,18 @@
 # -*- coding: utf-8 -*-
 """AI 聊天室服务 — 对话逻辑 + 状态机 + 记忆系统"""
+import base64
+import io
 import json
 import os
 import time
+import re
 
 from backend.domain.ai_chat import IAIChatService
 from backend.db import ai_chat_db
 from backend.core.exceptions import BusinessException
 from backend.schema.vo.common import ApiResponse
 from backend.schema.vo.ai_chat import (
-    ConversationVO, ConversationDetailVO, MessageVO, ChatReplyVO, AIStateVO,
+    ConversationVO, ConversationDetailVO, MessageVO, ChatReplyVO, AIStateVO, AchievementVO,
     to_conversation_vo, to_message_vo,
 )
 from backend.Agent.provider import get_ai_provider
@@ -17,6 +20,7 @@ from backend.Agent.personality import Personality
 from backend.Agent.memory import MemoryStore
 from backend.Agent.tools import TOOLS, build_tool_map
 from backend.Agent.rules import build_system_prompt, MAX_CONTEXT_MESSAGES, MAX_TOOL_ROUNDS, MAX_MESSAGES_PER_DAY, SUMMARIZE_THRESHOLD, KEEP_LAST, DEFAULT_MODEL
+from backend.Agent.achievements import AchievementStore, ACHIEVEMENTS
 from backend.core.config import settings
 
 # 记忆文件存储目录
@@ -24,6 +28,53 @@ AI_DATA_DIR = os.path.join(settings.BASE_DIR, "backend", "data", "ai")
 
 
 def _is_unlocked(user_id: int) -> bool:
+    """检查用户本日是否已被管理员解锁"""
+    try:
+        with open(os.path.join(AI_DATA_DIR, "quota_override.json"), "r") as f:
+            overrides = json.load(f)
+        return overrides.get(str(user_id)) == time.strftime("%Y-%m-%d")
+    except (FileNotFoundError, json.JSONDecodeError):
+        return False
+
+
+def _process_image(data_url: str) -> str:
+    """解码 base64 图片，OCR 提取文字"""
+    try:
+        # 解析 data:image/png;base64,xxxx
+        match = re.match(r"data:image/\w+;base64,(.+)", data_url)
+        if not match:
+            return ""
+        img_bytes = base64.b64decode(match.group(1))
+
+        # 尝试 PIL 读尺寸
+        try:
+            from PIL import Image
+            img = Image.open(io.BytesIO(img_bytes))
+            w, h = img.size
+            meta = f"[图片: {img.format or '?'}, {w}x{h}]"
+        except Exception:
+            meta = "[图片上传成功]"
+
+        # 尝试 OCR
+        ocr_text = ""
+        try:
+            import pytesseract
+            img_ocr = Image.open(io.BytesIO(img_bytes))
+            ocr_text = pytesseract.image_to_string(img_ocr, lang="chi_sim+eng").strip()
+        except Exception:
+            try:
+                import easyocr
+                reader = easyocr.Reader(["ch_sim", "en"], gpu=False, verbose=False)
+                results = reader.readtext(img_bytes)
+                ocr_text = " ".join(r[1] for r in results)
+            except Exception:
+                pass
+
+        if ocr_text:
+            return f"{meta}\n识别文字：\n{ocr_text}"
+        return meta
+    except Exception:
+        return "[图片解析失败]"
     """检查用户本日是否已被管理员解锁"""
     try:
         with open(os.path.join(AI_DATA_DIR, "quota_override.json"), "r") as f:
@@ -154,6 +205,88 @@ def _tone_label(tone):
     return TONE_LABELS.get(tone.value if hasattr(tone, 'value') else tone, "未知")
 
 
+def _compute_streak(store: AchievementStore):
+    """计算连续活跃天数"""
+    today = time.strftime("%Y-%m-%d")
+    last = store._stats.get("last_active_date", "")
+    streak = store._stats.get("streak_days", 0)
+
+    if last == today:
+        return streak
+
+    yesterday = time.strftime("%Y-%m-%d", time.localtime(time.time() - 86400))
+    if last == yesterday:
+        streak += 1
+    else:
+        streak = 1
+
+    store._stats["last_active_date"] = today
+    store._stats["streak_days"] = streak
+    store._flush()
+    return streak
+
+
+def _check_achievements(user_id: int, user_message: str, personality, memory,
+                        conversation_id: int) -> list:
+    """检查并解锁成就，返回新解锁的成就列表"""
+    store = AchievementStore(user_id, AI_DATA_DIR)
+
+    # 更新统计
+    store.increment_stat("total_chats")
+
+    # 连续天数
+    streak = _compute_streak(store)
+
+    # 本轮消息数
+    round_count = ai_chat_db.get_message_count(conversation_id)
+
+    # 语气集合
+    store.append_stat("tones_seen", personality.tone.value)
+
+    # 关注度锁定连胜
+    if personality.attention >= 71:
+        store.increment_stat("lock_streak")
+    else:
+        store._stats["lock_streak"] = 0
+        store._flush()
+
+    context = {
+        "user_message": user_message,
+        "total_chats": store._stats.get("total_chats", 0),
+        "streak_days": streak,
+        "round_count": round_count,
+        "memory_count": len(memory),
+        "engagement": personality.engagement,
+        "attention": personality.attention,
+        "tones_seen": len(store._stats.get("tones_seen", [])),
+        "tools_used": len(store._stats.get("tools_used", [])),
+        "tool_get_current_time": store._stats.get("tool_get_current_time", 0),
+        "tool_get_silence_hours": store._stats.get("tool_get_silence_hours", 0),
+        "tool_check_memory": store._stats.get("tool_check_memory", 0),
+        "tool_calc": store._stats.get("tool_calc", 0),
+        "tool_translate": store._stats.get("tool_translate", 0),
+        "translate_directions": len(store._stats.get("translate_directions", [])),
+        "tone_safety_triggered": store._stats.get("tone_safety_triggered", 0),
+        "lock_streak": store._stats.get("lock_streak", 0),
+    }
+
+    new_achievements = []
+    for ach in ACHIEVEMENTS:
+        if ach.get("ai_judged"):
+            continue  # AI 自主判断，不由代码自动触发
+        result = store.check_and_unlock(ach, context)
+        if result:
+            new_achievements.append(AchievementVO(
+                id=result["id"],
+                name=result["name"],
+                desc=result["desc"],
+                emoji=result["emoji"],
+                tier=result.get("tier", "bronze"),
+            ))
+
+    return new_achievements
+
+
 class AIChatService(IAIChatService):
 
     # ===================== 会话管理 =====================
@@ -216,9 +349,27 @@ class AIChatService(IAIChatService):
             messages_limit=limit,
         ))
 
+    # ===================== 成就系统 =====================
+
+    def get_achievements(self, user_id):
+        store = AchievementStore(user_id, AI_DATA_DIR)
+        all_unlocked = store.get_all()
+        result = []
+        for ach in ACHIEVEMENTS:
+            unlocked = ach["id"] in all_unlocked
+            result.append({
+                "id": ach["id"],
+                "name": ach["name"],
+                "desc": ach["desc"],
+                "emoji": ach["emoji"],
+                "tier": ach.get("tier", "bronze"),
+                "unlocked": unlocked,
+            })
+        return ApiResponse(msg="查询成功", data=result)
+
     # ===================== 对话核心逻辑 =====================
 
-    def chat(self, user_id, message, conversation_id=None, model=None, role="user", user_name=""):
+    def chat(self, user_id, message, conversation_id=None, model=None, role="user", user_name="", images=None):
         if model is None:
             model = DEFAULT_MODEL
         # ── 0. 每日配额（管理员无限 + 解锁检查） ──
@@ -240,7 +391,15 @@ class AIChatService(IAIChatService):
             title = message[:20] + ("..." if len(message) > 20 else "")
             conversation_id = ai_chat_db.create_conversation(user_id, title, model)
 
-        # ── 2. 保存用户消息 ──
+        # ── 2. 处理图片 → 保存用户消息 ──
+        if images:
+            ocr_parts = []
+            for img in images:
+                ocr = _process_image(img)
+                if ocr:
+                    ocr_parts.append(ocr)
+            if ocr_parts:
+                message = f"{message}\n\n" + "\n---\n".join(ocr_parts) if message.strip() else "\n---\n".join(ocr_parts)
         ai_chat_db.create_message(conversation_id, "user", message)
 
         # ── 3. 加载人格和记忆（按 conversation_id 隔离） ──
@@ -252,8 +411,24 @@ class AIChatService(IAIChatService):
         personality.on_user_message(message)
         memory = MemoryStore(conversation_id, AI_DATA_DIR)
 
+        # ── 3.5 收集用户状态（嵌入提示词） ──
+        ach_store = AchievementStore(user_id, AI_DATA_DIR)
+        ach_unlocked = ach_store.get_all()
+        ach_names = [a["name"] for a in ACHIEVEMENTS if a["id"] in ach_unlocked]
+        user_state = {
+            "unlocked_ach": ach_names,
+            "unlocked_ach_ids": ach_unlocked,
+            "total_ach": len(ACHIEVEMENTS),
+            "messages_today": today_count,
+            "messages_limit": MAX_MESSAGES_PER_DAY if not is_unlocked else "∞",
+            "streak_days": ach_store._stats.get("streak_days", 0),
+            "memory_count": len(memory),
+            "is_admin": role == "admin",
+            "is_unlocked": is_unlocked and role != "admin",
+        }
+
         # ── 4. 构建消息上下文 ──
-        system_prompt = build_system_prompt(personality, memory, user_name)
+        system_prompt = build_system_prompt(personality, memory, user_name, user_state)
         messages = [{"role": "system", "content": system_prompt}]
         history = ai_chat_db.get_messages_by_conversation(conversation_id)
         # 只加载 user/assistant 消息，跳过 tool 和空 content
@@ -268,8 +443,24 @@ class AIChatService(IAIChatService):
         # ── 6. 调 AI（带 function calling 循环） ──
         provider = get_ai_provider(model)
 
-        tool_map = build_tool_map(personality, memory)
+        ai_achievements = []  # AI 自主授予的成就
+        def _ach_callback(ach_id):
+            for ach in ACHIEVEMENTS:
+                if ach["id"] == ach_id:
+                    result = ach_store.force_unlock(ach)
+                    if result:
+                        ai_achievements.append(AchievementVO(
+                            id=result["id"], name=result["name"],
+                            desc=result["desc"], emoji=result["emoji"],
+                            tier=result.get("tier", "bronze"),
+                        ))
+                    return result["name"] if result else "已解锁"
+            return "未知成就"
 
+        # 工具映射
+        tool_map = build_tool_map(personality, memory, _ach_callback)
+
+        tools_seen = set()
         for _ in range(MAX_TOOL_ROUNDS):
             response = provider.chat(messages, TOOLS, "auto")
             tool_calls = response.get("tool_calls", [])
@@ -285,6 +476,21 @@ class AIChatService(IAIChatService):
                 args = json.loads(fn["arguments"])
                 handler = tool_map.get(fn["name"])
                 result = handler(**args) if handler else f"未知工具：{fn['name']}"
+                # 工具使用统计
+                tools_seen.add(fn["name"])
+                if fn["name"] == "get_current_time":
+                    ach_store.increment_stat("tool_get_current_time")
+                elif fn["name"] == "get_silence_hours":
+                    ach_store.increment_stat("tool_get_silence_hours")
+                elif fn["name"] == "check_memory":
+                    ach_store.increment_stat("tool_check_memory")
+                elif fn["name"] == "calc":
+                    ach_store.increment_stat("tool_calc")
+                elif fn["name"] == "translate":
+                    ach_store.increment_stat("tool_translate")
+                    ach_store.append_stat("translate_directions", args.get("target", ""))
+                elif fn["name"] == "set_tone" and args.get("tone") == "safety":
+                    ach_store.increment_stat("tone_safety_triggered")
                 messages.append({
                     "role": "tool",
                     "tool_call_id": tc["id"],
@@ -295,6 +501,9 @@ class AIChatService(IAIChatService):
             messages.append({"role": "user", "content": "请根据已有信息用自然语言回复用户。"})
             final = provider.chat(messages)
             ai_content = final.get("content", "抱歉，我暂时无法回答这个问题。")
+
+        for t in tools_seen:
+            ach_store.append_stat("tools_used", t)
 
         # ── 6.5 强制投入度调整：AI 不调就代码调 ──
         _enforce_engagement(messages, personality, message)
@@ -311,6 +520,10 @@ class AIChatService(IAIChatService):
         # ── 8. 持久化人格状态 ──
         personality.passive_decay()
         personality.save(os.path.join(AI_DATA_DIR, f"conv_{conversation_id}_personality.json"))
+
+        # ── 8.5 成就检测 ──
+        new_achievements = _check_achievements(user_id, message, personality, memory, conversation_id)
+        new_achievements.extend(ai_achievements)
 
         # ── 9. 返回 ──
         ai_message = ai_chat_db.get_messages_by_conversation(conversation_id)[-1]
@@ -329,4 +542,5 @@ class AIChatService(IAIChatService):
             conversation_id=conversation_id,
             message=to_message_vo(ai_message),
             state=state,
+            new_achievements=new_achievements,
         ))

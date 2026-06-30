@@ -1,25 +1,20 @@
 <script setup>
 /**
- * AI 教研助手 AiChatView.vue
- * 对接真实 AI 后端：多人格系统 + 记忆系统 + Function Calling
+ * AI 教研助手 — 拼装组件，持有全部状态与逻辑
  */
-import { ref, nextTick } from 'vue'
-import { useRouter } from 'vue-router'
-import {
-  Bot, Send, User, Plus, MessageSquare,
-  RotateCcw, ChevronLeft, Lightbulb, Sparkles,
-  Sun, Moon
-} from 'lucide-vue-next'
+import { ref, nextTick, onMounted } from 'vue'
+import { Lightbulb } from 'lucide-vue-next'
 import { useTheme } from '@/composables/useTheme.js'
-import MarkdownIt from 'markdown-it'
+import axios from 'axios'
 import api from '@/api/client'
 import { useAuthStore } from '@/stores/auth'
+import SessionSidebar from '@/components/chat/SessionSidebar.vue'
+import MessageList from '@/components/chat/MessageList.vue'
+import ChatInput from '@/components/chat/ChatInput.vue'
+import InfoSidebar from '@/components/chat/InfoSidebar.vue'
+import AchievementToast from '@/components/chat/AchievementToast.vue'
 
 const auth = useAuthStore()
-
-const md = new MarkdownIt({ breaks: true, linkify: true })
-
-const router = useRouter()
 const { isDark, toggle } = useTheme()
 
 // ===================== 会话 =====================
@@ -30,7 +25,7 @@ async function loadSessions() {
   try {
     const res = await api.get('/ai-chat/conversations')
     sessions.value = res.data || []
-  } catch { /* 静默失败 */ }
+  } catch { /* */ }
 }
 
 function createSession() {
@@ -39,7 +34,7 @@ function createSession() {
   saveLastConversation(null)
   stateActivated.value = false
   aiState.value = null
-  clearChat()
+  messages.value = [welcomeMsg()]
 }
 
 function saveLastConversation(id) {
@@ -49,28 +44,22 @@ function saveLastConversation(id) {
 
 async function switchSession(conv) {
   if (conv.id === currentConversationId.value) return
-
   sessions.value.forEach(s => (s.active = false))
   conv.active = true
   currentConversationId.value = conv.id
   saveLastConversation(conv.id)
   loadState(conv.id)
-
   try {
     const res = await api.get(`/ai-chat/conversations/${conv.id}`)
     const detail = res.data
-    if (detail && detail.messages && detail.messages.length > 0) {
-      messages.value = detail.messages.map(m => ({
-        role: m.role,
-        content: m.content,
-        timestamp: m.timestamp,
-      }))
+    if (detail?.messages?.length > 0) {
+      messages.value = detail.messages.map(m => ({ id: m.id, role: m.role, content: m.content, timestamp: m.timestamp }))
       stateActivated.value = true
     } else {
       messages.value = [welcomeMsg()]
       stateActivated.value = false
     }
-    await scrollToBottom()
+    await msgListRef.value?.scrollToBottom()
   } catch {
     messages.value = [welcomeMsg()]
     stateActivated.value = false
@@ -79,42 +68,41 @@ async function switchSession(conv) {
 
 async function renameConversation(conv) {
   const title = prompt('新名称：', conv.title)
-  if (!title || !title.trim()) return
+  if (!title?.trim()) return
   try {
     await api.put(`/ai-chat/conversations/${conv.id}/rename`, { title: title.trim() })
     conv.title = title.trim()
-  } catch { /* 静默 */ }
+  } catch { /* */ }
 }
 
 async function deleteConversation(conv) {
   if (!confirm(`删除会话「${conv.title}」？`)) return
   try {
     await api.delete(`/ai-chat/conversations/${conv.id}`)
-    if (currentConversationId.value === conv.id) {
-      currentConversationId.value = null
-      clearChat()
-    }
+    if (currentConversationId.value === conv.id) { currentConversationId.value = null; messages.value = [welcomeMsg()] }
     loadSessions()
-  } catch { /* 静默 */ }
+  } catch { /* */ }
 }
 
 // ===================== 消息 =====================
 function welcomeMsg() {
-  return {
-    role: 'assistant',
-    content: '你好！我是 AI 教研助手。我可以帮您解答英语教学、课程设计、教研资源等方面的问题。',
-    timestamp: Date.now(),
-  }
+  return { role: 'assistant', content: '你好！我是 AI 教研助手。我可以帮您解答英语教学、课程设计、教研资源等方面的问题。', timestamp: Date.now() }
 }
 
+const msgListRef = ref(null)
+const inputText = ref('')
 const messages = ref([welcomeMsg()])
-const input = ref('')
 const loading = ref(false)
-const messagesContainer = ref(null)
+const abortController = ref(null)
+const imagePreviews = ref([])  // [{ dataUrl, id }]
 const aiState = ref(null)
 const showFocusHelp = ref(false)
 const stateVersion = ref(0)
 const stateActivated = ref(false)
+const achievements = ref([])
+const newAchievementToast = ref(null)
+const showMobileSidebar = ref(window.innerWidth > 1024)
+const showMobileInfo = ref(window.innerWidth > 1024)
 
 const quickPrompts = [
   '如何设计一堂高职英语听说课？',
@@ -124,43 +112,59 @@ const quickPrompts = [
 ]
 
 async function scrollToBottom() {
-  await nextTick()
-  if (messagesContainer.value) {
-    messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
-  }
+  await msgListRef.value?.scrollToBottom()
 }
 
-async function sendMessage(text = input.value.trim()) {
-  if (!text || loading.value) return
+// ===================== 图片 =====================
+let _imgId = 0
+const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif', 'image/bmp']
+function processImageFile(file) {
+  if (!file || !ALLOWED_TYPES.includes(file.type)) return false
+  if (file.size > 20 * 1024 * 1024) return false
+  const reader = new FileReader()
+  reader.onload = () => { imagePreviews.value.push({ dataUrl: reader.result, id: ++_imgId }) }
+  reader.readAsDataURL(file)
+  return true
+}
+function handlePaste(e) {
+  let had = false
+  for (const item of e.clipboardData?.items || []) {
+    if (item.type.startsWith('image/')) { e.preventDefault(); processImageFile(item.getAsFile()); had = true }
+  }
+}
+function handleDrop(e) {
+  e.preventDefault()
+  for (const f of e.dataTransfer?.files || []) { processImageFile(f) }
+}
+function removeImage(id) { imagePreviews.value = imagePreviews.value.filter(p => p.id !== id) }
 
+// ===================== 发送 =====================
+async function sendMessage(text) {
+  if ((!text && !imagePreviews.value.length) || loading.value) return
   if (!auth.isLoggedIn) {
     messages.value.push({
       role: 'assistant',
       content: '<div class="login-cta"><div class="login-cta-icon"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-600)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v1"/><path d="M9 13v1"/></svg></div><div class="login-cta-text">登录后解锁 AI 教研助手</div><div class="login-cta-sub">人格系统 · 长期记忆 · 智能对话</div><div class="login-cta-actions"><a href="/login" class="login-cta-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg><span>登录</span></a><a href="/register" class="login-cta-register"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg><span>注册</span></a></div></div>',
-      timestamp: Date.now(),
-      loginPrompt: true,
+      timestamp: Date.now(), loginPrompt: true,
     })
     await scrollToBottom()
     return
   }
-
-  // 显示用户消息
-  messages.value.push({ role: 'user', content: text, timestamp: Date.now() })
-  input.value = ''
+  const userMsg = { role: 'user', content: text, timestamp: Date.now() }
+  if (imagePreviews.value.length) userMsg.images = imagePreviews.value.map(p => p.dataUrl)
+  messages.value.push(userMsg)
+  inputText.value = ''
+  imagePreviews.value = []
   await scrollToBottom()
-
   loading.value = true
-  await scrollToBottom()
+  const ctrl = new AbortController()
+  abortController.value = ctrl
 
   try {
-    const res = await api.post('/ai-chat/chat', {
-      message: text,
-      conversation_id: currentConversationId.value,
-      model: null,
-    })
-
+    const payload = { message: text, conversation_id: currentConversationId.value, model: null }
+    if (userMsg.images) payload.images = userMsg.images
+    const res = await api.post('/ai-chat/chat', payload, { signal: ctrl.signal })
     const reply = res.data
-    // 更新 AI 状态面板
     if (reply.state) {
       const s = reply.state
       aiState.value = { ...s, engagement: 0, attention: 0 }
@@ -171,66 +175,39 @@ async function sendMessage(text = input.value.trim()) {
       stateVersion.value++
     }
     stateActivated.value = true
-    // 首次对话 → 后端返回新 conversation_id
+    if (reply.new_achievements?.length > 0) {
+      reply.new_achievements.forEach(ach => showAchievementToast(ach))
+      loadAchievements()
+    }
     if (reply.conversation_id && !currentConversationId.value) {
       currentConversationId.value = reply.conversation_id
       saveLastConversation(reply.conversation_id)
       loadSessions()
     }
-
-    messages.value.push({
-      role: 'assistant',
-      content: reply.message.content,
-      timestamp: reply.message.timestamp,
-    })
-    loading.value = false
-    await scrollToBottom()
+    messages.value.push({ role: 'assistant', content: reply.message.content, timestamp: reply.message.timestamp })
   } catch (e) {
-    loading.value = false
-    messages.value.push({
-      role: 'assistant',
-      content: '抱歉，出了点问题，请稍后重试。',
-      timestamp: Date.now(),
-    })
+    if (axios.isCancel(e) || e?.name === 'AbortError' || e?.code === 'ERR_CANCELED') {
+      // 用户主动停止，不发错误消息
+    } else {
+      messages.value.push({ role: 'assistant', content: '抱歉，出了点问题，请稍后重试。', timestamp: Date.now() })
+    }
   } finally {
+    loading.value = false
+    abortController.value = null
     await scrollToBottom()
   }
 }
 
-function clearChat() {
-  messages.value = [welcomeMsg()]
+function stopAI() {
+  if (abortController.value) abortController.value.abort()
 }
 
-function formatTime(ts) {
-  const d = new Date(ts)
-  return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`
-}
-
-function focusEmoji(v) {
-  if (v <= 30) return '🌀'  // 🌀
-  if (v <= 70) return '🎯'  // 🎯
-  return '🔒'               // 🔒
-}
-
-function focusLabel(v) {
-  if (v <= 30) return '发散态'
-  if (v <= 70) return '聚焦态'
-  return '锁定态'
-}
-
-function focusLevel(v) {
-  if (v <= 30) return 'open'
-  if (v <= 70) return 'focus'
-  return 'lock'
-}
-
-// 数字从 0 计数到目标值
+// ===================== 动画 =====================
 function animateCounts(target) {
   const start = performance.now()
-  const DURATION = 800
   function tick() {
-    const t = Math.min((performance.now() - start) / DURATION, 1)
-    const e = 1 - Math.pow(1 - t, 3) // easeOutCubic
+    const t = Math.min((performance.now() - start) / 800, 1)
+    const e = 1 - Math.pow(1 - t, 3)
     aiState.value = {
       ...aiState.value,
       silence_hours: +(target.silence_hours * e).toFixed(1),
@@ -243,1297 +220,198 @@ function animateCounts(target) {
   requestAnimationFrame(tick)
 }
 
-// 页面加载时拉会话列表 + AI 状态 + 恢复上次会话
-(async () => {
-  await loadSessions()
-  const lastConv = localStorage.getItem('ai_last_conv')
-  if (lastConv) {
-    const conv = sessions.value.find(s => s.id === Number(lastConv))
-    if (conv) { switchSession(conv); return }
-  }
-  loadState()
-})()
-
+// ===================== 成就 =====================
+let _audioCtx = null
+function playUnlockSound(tier) {
+  try {
+    if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+    if (_audioCtx.state === 'suspended') _audioCtx.resume()
+    const now = _audioCtx.currentTime
+    const notes = { gold:[523.25,659.25,783.99], silver:[587.33,783.99], bronze:[783.99], special:[523.25,659.25,783.99,1046.5] }[tier] || [659.25]
+    notes.forEach((freq, i) => {
+      const osc = _audioCtx.createOscillator(); const gain = _audioCtx.createGain()
+      osc.type = tier === 'gold' ? 'triangle' : 'sine'
+      osc.frequency.setValueAtTime(freq, now + i * 0.12)
+      gain.gain.setValueAtTime(0, now + i * 0.12)
+      gain.gain.linearRampToValueAtTime(0.18, now + i * 0.12 + 0.04)
+      gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 0.5)
+      osc.connect(gain); gain.connect(_audioCtx.destination)
+      osc.start(now + i * 0.12); osc.stop(now + i * 0.12 + 0.5)
+    })
+  } catch { /* */ }
+}
+function showAchievementToast(ach) {
+  playUnlockSound(ach.tier || 'bronze')
+  newAchievementToast.value = ach
+  setTimeout(() => { newAchievementToast.value = null }, 8000)
+}
+async function loadAchievements() {
+  try { const res = await api.get('/ai-chat/achievements'); achievements.value = res.data || [] } catch { /* */ }
+}
 async function loadState(convId = null) {
   try {
     const params = convId ? { conversation_id: convId } : {}
     const res = await api.get('/ai-chat/state', { params })
     const data = res.data
-    // 归零 → 渲染 → 目标值，触发进度条 CSS transition
     aiState.value = { ...data, engagement: 0, attention: 0 }
-    await nextTick()
-    await new Promise(r => requestAnimationFrame(r))
-    aiState.value = data
-    animateCounts(data)
-    stateVersion.value++
-  } catch { /* 静默 */ }
+    await nextTick(); await new Promise(r => requestAnimationFrame(r))
+    aiState.value = data; animateCounts(data); stateVersion.value++
+  } catch { /* */ }
 }
+
+// ===================== 初始化 =====================
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 1024) { showMobileSidebar.value = true; showMobileInfo.value = true }
+})
+
+onMounted(async () => {
+  await loadSessions()
+  loadAchievements()
+  const last = localStorage.getItem('ai_last_conv')
+  if (last) { const c = sessions.value.find(s => s.id === Number(last)); if (c) { switchSession(c); return } }
+  loadState()
+})
 </script>
 
 <template>
-  <div class="chat-layout">
-    <!-- 左侧：会话栏 -->
-    <aside class="session-sidebar">
-      <div class="sidebar-header">
-        <span class="sidebar-title">新建会话</span>
-        <button class="btn-new" title="新建会话" @click="createSession">
-          <Plus :size="16" />
-        </button>
-      </div>
+  <div class="chat-layout" @paste="handlePaste" @dragover.prevent @drop="handleDrop">
+    <button class="mobile-menu-btn left" @click="showMobileSidebar = !showMobileSidebar" title="会话列表">
+      {{ showMobileSidebar ? '✕' : '☰' }}
+    </button>
+    <button class="mobile-menu-btn right" @click="showMobileInfo = !showMobileInfo" title="状态面板">
+      {{ showMobileInfo ? '✕' : '◧' }}
+    </button>
 
-      <div class="session-list">
-        <button
-          v-for="session in sessions"
-          :key="session.id"
-          :class="['session-item', session.id === currentConversationId ? 'active' : '']"
-          @click="switchSession(session)"
-          @dblclick="renameConversation(session)"
-          @contextmenu.prevent="deleteConversation(session)"
-        >
-          <MessageSquare :size="14" />
-          <span class="session-name">{{ session.title }}</span>
-          <span class="session-count">{{ session.message_count || 0 }}</span>
-        </button>
-      </div>
+    <!-- 左侧会话栏 -->
+    <SessionSidebar
+      v-show="showMobileSidebar"
+      class="layout-sidebar"
+      :sessions="sessions"
+      :current-conversation-id="currentConversationId"
+      @select="switchSession"
+      @rename="renameConversation"
+      @delete="deleteConversation"
+      @create="createSession"
+    />
 
-      <div class="session-tips">
-        <span>单击切换 · 双击重命名 · 右键删除</span>
-      </div>
-
-      <div class="sidebar-footer">
-        <button class="btn-back" @click="router.push('/')">
-          <ChevronLeft :size="14" />
-          <span>返回首页</span>
-        </button>
-      </div>
-    </aside>
-
-    <!-- 中间：聊天区 -->
+    <!-- 中间聊天区 -->
     <main class="chat-main">
-      <!-- 消息列表 -->
-      <div ref="messagesContainer" class="messages-scroll">
-        <div class="messages-list">
-          <div
-            v-for="(msg, idx) in messages"
-            :key="msg.timestamp + '-' + idx"
-            :class="['message-row', msg.role]"
-          >
-            <div class="message-avatar">
-              <Bot v-if="msg.role === 'assistant'" :size="16" />
-              <User v-else :size="16" />
-            </div>
-            <div class="message-body">
-              <div class="message-meta">
-                <span class="meta-name">{{ msg.role === 'assistant' ? 'AI 助手' : '我' }}</span>
-                <span class="meta-time">{{ formatTime(msg.timestamp) }}</span>
-              </div>
-              <div class="message-bubble" :class="{ 'markdown-body': msg.role === 'assistant' }">
-                <div v-if="msg.role === 'assistant'" class="message-text" v-html="msg.loginPrompt ? msg.content : md.render(msg.content)" />
-                <pre v-else class="message-text">{{ msg.content }}</pre>
-              </div>
-            </div>
-          </div>
-
-          <!-- 加载态 -->
-          <div v-if="loading" class="message-row assistant">
-            <div class="message-avatar">
-              <Bot :size="16" />
-            </div>
-            <div class="message-body">
-              <div class="message-meta">
-                <span class="meta-name">AI 助手</span>
-              </div>
-              <div class="message-bubble thinking-bubble">
-                <span class="typing-label">Thinking...</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <MessageList ref="msgListRef" :messages="messages" :loading="loading" />
 
       <!-- 快捷提问 -->
       <div v-if="messages.length <= 1" class="quick-prompts">
-        <div class="prompts-label">
-          <Lightbulb :size="12" />
-          <span>试试这样问</span>
-        </div>
+        <div class="prompts-label"><Lightbulb :size="12" /><span>试试这样问</span></div>
         <div class="prompts-list">
-          <button
-            v-for="(p, i) in quickPrompts"
-            :key="i"
-            class="prompt-chip"
-            @click="sendMessage(p)"
-          >
-            {{ p }}
-          </button>
+          <button v-for="(p, i) in quickPrompts" :key="i" class="prompt-chip" @click="sendMessage(p)">{{ p }}</button>
         </div>
       </div>
 
-      <!-- 输入区 -->
-      <div class="input-area">
-        <div class="input-toolbar">
-          <button class="tool-btn" title="清空对话" @click="clearChat">
-            <RotateCcw :size="14" />
-          </button>
-        </div>
-        <div class="input-wrapper">
-          <input
-            v-model="input"
-            type="text"
-            placeholder="试试问问我吧！"
-            class="chat-input"
-            :disabled="loading"
-            @keydown.enter.prevent="sendMessage()"
-          />
-          <button
-            class="btn-send"
-            :disabled="!input.trim() || loading"
-            @click="sendMessage()"
-          >
-            <Send :size="14" />
-          </button>
-        </div>
-        <div class="input-footer">
-          <Sparkles :size="10" />
-          <span>AI 生成内容仅供参考</span>
+      <!-- 图片预览 -->
+      <div v-if="imagePreviews.length && auth.isLoggedIn" class="img-preview-bar">
+        <div v-for="p in imagePreviews" :key="p.id" class="img-preview-item">
+          <img :src="p.dataUrl" class="img-preview-thumb" />
+          <button class="img-preview-close" @click="removeImage(p.id)">&times;</button>
         </div>
       </div>
+
+      <ChatInput v-if="auth.isLoggedIn" v-model="inputText" :loading="loading" :disabled="!inputText.trim() && !imagePreviews.length" @send="sendMessage" @stop="stopAI" />
     </main>
 
-    <!-- 右侧：说明栏 -->
-    <aside class="info-sidebar">
-      <div class="info-header">
-        <span class="info-title">AI 教研助手</span>
-      </div>
-      <div class="info-body">
-        <!-- 人格状态 -->
-        <div class="state-section">
-          <div class="section-label">人格状态</div>
-          <div class="ai-state-panel" :class="{ 'state-locked': !stateActivated }">
-            <div v-if="aiState && stateActivated" class="state-grid">
-              <div class="state-item">
-                <span class="state-icon">&#x1F3AD;</span>
-                <span class="state-desc">语气</span>
-                <span class="tone-badge" :class="'tone-' + aiState.tone">{{ aiState.tone_label }}</span>
-              </div>
-              <div class="state-sep" />
-              <div class="state-item">
-                <span class="state-icon">&#x2764;</span>
-                <span class="state-desc">投入度</span>
-                <div class="state-bar-wrap">
-                  <div class="state-bar" :class="{ 'bar-overdrive': aiState.engagement > 100 }">
-                    <div class="state-fill" :class="{ 'fill-overdrive': aiState.engagement > 100 }" :style="{width: Math.min(aiState.engagement, 100) + '%'}" />
-                  </div>
-                  <span class="state-num" :class="{ 'num-overdrive': aiState.engagement > 100 }">{{ aiState.engagement }}</span>
-                </div>
-              </div>
-              <div class="state-sep" />
-              <div class="state-item">
-                <span class="state-icon">&#x1F441;</span>
-                <span class="state-desc">关注度</span>
-                <div class="state-bar-wrap">
-                  <div class="state-bar"><div class="state-fill attention" :style="{width: aiState.attention + '%'}" /></div>
-                  <span class="state-num">{{ aiState.attention }}</span>
-                </div>
-              </div>
-            </div>
-            <div v-else class="state-locked-overlay">
-              <p>发送第一条消息<br/>唤醒 AI 人格</p>
-            </div>
-          </div>
-          <div class="state-hint-row">
-            <p class="state-hint">人格数据仅保存在当前会话</p>
-            <button class="help-btn" @click.stop="showFocusHelp = !showFocusHelp">?</button>
-          </div>
-          <div v-if="showFocusHelp" class="help-popover">
-            <div class="help-section">
-              <div class="help-row"><span>🎭 语气</span><span>四态自动切换</span></div>
-              <div class="help-desc">根据对话氛围自动调整：专业/轻松/鼓励/分析</div>
-            </div>
-            <div class="help-section">
-              <div class="help-row"><span>❤️ 投入度</span><span>0-100</span></div>
-              <div class="help-desc">反映对话深度。分享真实教学案例 +5，追问 +3，认可 +2，敷衍 -3</div>
-            </div>
-            <div class="help-section">
-              <div class="help-row"><span>👁 关注度</span><span>0-100</span></div>
-              <div class="help-desc">对当前话题的锁定程度</div>
-              <div class="help-desc">🌀 发散态 0-30 — 话题灵活，可接各种方向，不咬住一个点</div>
-              <div class="help-desc">🎯 聚焦态 31-70 — 开始咬住话题深入追问，不容易被带跑</div>
-              <div class="help-desc">🔒 锁定态 71-100 — 固执围绕当前话题深挖，换话题会拉回来</div>
-            </div>
-            <div class="help-section">
-              <div class="help-row"><span>⚙️ 技术实现</span></div>
-              <div class="help-desc">人格状态机 — 三维度数值实时动态变化</div>
-              <div class="help-desc">长期记忆 — 自动存档 · 对话中自然引用</div>
-              <div class="help-desc">Function Calling — 7 个 AI 工具自主决策调用</div>
-              <div class="help-desc">裁切总结 — 超长对话自动压缩摘要存入记忆</div>
-            </div>
-          </div>
-        </div>
+    <!-- 右侧信息栏 -->
+    <InfoSidebar
+      v-show="showMobileInfo"
+      class="layout-sidebar"
+      :ai-state="aiState"
+      :state-activated="stateActivated"
+      :show-focus-help="showFocusHelp"
+      :is-dark="isDark"
+      @toggle-help="showFocusHelp = !showFocusHelp"
+      @toggle-theme="toggle"
+    />
 
-        <!-- 运行数据 -->
-        <div class="state-section">
-          <div class="section-label">运行数据</div>
-          <div class="ai-state-panel" :class="{ 'state-locked': !stateActivated }">
-            <div v-if="aiState && stateActivated" class="stats-inline">
-              <div class="stat-mini">
-                <span class="stat-num">{{ aiState.silence_hours }}h</span>
-                <span class="stat-label">静默</span>
-              </div>
-              <div class="stat-mini">
-                <span class="stat-num">{{ aiState.memory_count }}</span>
-                <span class="stat-label">记忆</span>
-              </div>
-              <div class="stat-mini">
-                <span class="stat-num">{{ aiState.messages_today }}/{{ aiState.messages_limit }}</span>
-                <span class="stat-label">今日</span>
-              </div>
-            </div>
-            <div v-else class="state-locked-overlay">
-              <p>发送第一条消息<br/>解锁运行数据</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- 快捷提问 -->
-        <div class="state-section">
-          <div class="section-label">试试这样问</div>
-          <div class="info-tags">
-            <span class="info-tag">教案设计</span>
-            <span class="info-tag">活动推荐</span>
-            <span class="info-tag">思政融合</span>
-            <span class="info-tag">评价量表</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- 主题切换 -->
-      <div class="info-footer">
-        <span class="footer-label">外观</span>
-        <button class="theme-toggle" @click="toggle">
-          <Moon v-if="isDark" :size="14" />
-          <Sun v-else :size="14" />
-          <span>{{ isDark ? '暗黑模式' : '浅色模式' }}</span>
-        </button>
-      </div>
-    </aside>
+    <AchievementToast :achievement="newAchievementToast" />
   </div>
 </template>
 
 <style scoped>
-/* 三栏固定布局 */
-.chat-layout {
-  display: flex;
-  height: 100vh;
-  background: var(--bg-page);
-  overflow: hidden;
-}
-
-/* 左侧会话栏 */
-.session-sidebar {
-  width: 220px;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid var(--border-light);
-  background: var(--bg-card);
-}
-
-.sidebar-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-4);
-  border-bottom: 1px solid var(--border-light);
-}
-
-.sidebar-title {
-  font-size: var(--text-base);
-  font-weight: var(--font-bold);
-  color: var(--text-primary);
-}
-
-.btn-new {
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-light);
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: all var(--duration-fast) var(--ease-out);
-}
-
-.btn-new:hover {
-  background: var(--color-brand-50);
-  color: var(--color-brand-600);
-  border-color: var(--color-brand-300);
-}
-
-.session-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: var(--space-2);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-.session-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-md);
-  border: none;
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: var(--text-sm);
-  cursor: pointer;
-  text-align: left;
-  transition: all var(--duration-fast) var(--ease-out);
-  width: 100%;
-}
-
-.session-item:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-
-.session-item.active {
-  background: var(--color-brand-50);
-  color: var(--color-brand-700);
-  font-weight: var(--font-semibold);
-}
-
-.session-name {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.session-count {
-  font-size: var(--text-xs);
-  color: var(--text-tertiary);
-  background: var(--bg-page);
-  padding: 0 6px;
-  border-radius: var(--radius-full);
-}
-
-.session-tips {
-  text-align: center;
-  padding: var(--space-2) var(--space-3);
-  border-top: 1px solid var(--border-light);
-  font-size: 11px;
-  color: var(--text-tertiary);
-}
-
-.sidebar-footer {
-  padding: var(--space-3);
-  border-top: 1px solid var(--border-light);
-}
-
-.btn-back {
-  width: 100%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-1);
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-light);
-  background: var(--bg-page);
-  color: var(--text-secondary);
-  font-size: var(--text-sm);
-  cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-out);
-}
-
-.btn-back:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-
-/* 中间聊天区 */
-.chat-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  background: var(--bg-page);
-}
-
-.messages-scroll {
-  flex: 1;
-  overflow-y: auto;
-  padding: var(--space-5);
-}
-
-.messages-list {
-  max-width: 720px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-.message-row {
-  display: flex;
-  gap: var(--space-3);
-  animation: msg-slide-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-@keyframes msg-slide-up {
-  from { opacity: 0; transform: translateY(24px) scale(0.97); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-.message-row.user {
-  flex-direction: row-reverse;
-}
-
-.message-avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-full);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  background: var(--color-brand-100);
-  color: var(--color-brand-600);
-}
-
-.message-row.user .message-avatar {
-  background: var(--color-brand-600);
-  color: #fff;
-}
-
-.message-body {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  max-width: 80%;
-}
-
-.message-row.user .message-body {
-  align-items: flex-end;
-}
-
-.message-meta {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: var(--text-xs);
-  color: var(--text-tertiary);
-}
-
-.meta-name {
-  font-weight: var(--font-semibold);
-  color: var(--text-secondary);
-}
-
-.message-bubble {
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-lg);
-  background: var(--bg-card);
-  border: 1px solid var(--border-light);
-  box-shadow: var(--shadow-xs);
-  line-height: 1.7;
-}
-
-.message-row.user .message-bubble {
-  background: linear-gradient(135deg, var(--color-brand-500), var(--color-brand-600));
-  color: #fff;
-  border: none;
-}
-
-.message-text {
-  margin: 0;
-  font-family: inherit;
-  font-size: var(--text-sm);
-  white-space: pre-wrap;
-  word-break: break-word;
-  color: inherit;
-}
-
-.message-row.user .message-text {
-  color: #fff;
-}
-
-/* Markdown 渲染样式 */
-.markdown-body .message-text :deep(h1),
-.markdown-body .message-text :deep(h2),
-.markdown-body .message-text :deep(h3) {
-  margin: var(--space-3) 0 var(--space-2) 0;
-  font-weight: var(--font-bold);
-  color: var(--text-primary);
-}
-.markdown-body .message-text :deep(h1) { font-size: var(--text-xl); }
-.markdown-body .message-text :deep(h2) { font-size: var(--text-lg); }
-.markdown-body .message-text :deep(h3) { font-size: var(--text-base); }
-
-.markdown-body .message-text :deep(ul),
-.markdown-body .message-text :deep(ol) {
-  padding-left: var(--space-5);
-  margin: var(--space-2) 0;
-}
-
-.markdown-body .message-text :deep(li) {
-  margin-bottom: var(--space-1);
-}
-
-.markdown-body .message-text :deep(code) {
-  background: var(--bg-hover);
-  padding: 1px 5px;
-  border-radius: var(--radius-sm);
-  font-size: 0.9em;
-  font-family: 'Consolas', 'Monaco', monospace;
-}
-
-.markdown-body .message-text :deep(pre) {
-  background: var(--bg-hover);
-  border-radius: var(--radius-md);
-  padding: var(--space-3);
-  overflow-x: auto;
-  margin: var(--space-2) 0;
-}
-
-.markdown-body .message-text :deep(pre code) {
-  background: none;
-  padding: 0;
-}
-
-.markdown-body .message-text :deep(strong) {
-  font-weight: var(--font-bold);
-  color: var(--text-primary);
-}
-
-.markdown-body .message-text :deep(blockquote) {
-  border-left: 3px solid var(--color-brand-400);
-  padding-left: var(--space-3);
-  margin: var(--space-2) 0;
-  color: var(--text-secondary);
-  font-style: italic;
-}
-
-.markdown-body .message-text :deep(a) {
-  color: var(--color-brand-600);
-  text-decoration: underline;
-}
-
-.markdown-body .message-text :deep(p) {
-  margin: var(--space-1) 0;
-}
-
-
-.markdown-body .message-text :deep(table) {
-  border-collapse: collapse;
-  width: 100%;
-  margin: var(--space-2) 0;
-}
-
-.markdown-body .message-text :deep(th),
-.markdown-body .message-text :deep(td) {
-  border: 1px solid var(--border-light);
-  padding: var(--space-1) var(--space-2);
-  text-align: left;
-  font-size: var(--text-xs);
-}
-
-.thinking-bubble {
-  padding: var(--space-2) var(--space-3);
-}
-
-.typing-label {
-  font-size: var(--text-xs);
-  color: var(--text-tertiary);
-  font-style: italic;
-  animation: thinking-pulse 1.8s ease-in-out infinite;
-}
-
-@keyframes thinking-pulse {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
-}
+.chat-layout { display:flex; height:100vh; background:var(--bg-page); overflow:hidden; }
+.chat-main { flex:1; display:flex; flex-direction:column; min-width:0; background:var(--bg-page); }
 
 /* 快捷提问 */
-.quick-prompts {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 0 var(--space-5) var(--space-3);
-  flex-shrink: 0;
-  animation: slide-up-enter 0.3s var(--ease-out) both;
-  transition: opacity 0.3s var(--ease-out), max-height 0.4s var(--ease-out);
-  overflow: hidden;
+.quick-prompts { max-width:820px; width:100%; margin:0 auto; padding:0 var(--space-5) var(--space-3); flex-shrink:0; }
+.prompts-label { display:inline-flex; align-items:center; gap:var(--space-1); font-size:var(--text-xs); color:var(--text-tertiary); margin-bottom:var(--space-2); }
+.prompts-list { display:flex; flex-wrap:wrap; gap:var(--space-2); }
+.prompt-chip { padding:var(--space-1) var(--space-3); border-radius:var(--radius-full); border:1px solid var(--border-light); background:var(--bg-card); color:var(--text-secondary); font-size:var(--text-xs); cursor:pointer; transition:all var(--duration-fast) var(--ease-out); }
+.prompt-chip:hover { border-color:var(--color-brand-400); color:var(--color-brand-600); background:var(--color-brand-50); transform:translateY(-1px); }
+[data-theme="dark"] .prompt-chip:hover { background:rgba(79,70,229,0.1); }
+
+/* 图片预览 */
+.img-preview-bar { max-width:720px; margin:0 auto; display:flex; align-items:center; gap:6px; padding:var(--space-2) var(--space-5); flex-wrap:wrap; }
+.img-preview-item { position:relative; flex-shrink:0; }
+.img-preview-thumb { width:56px; height:56px; object-fit:cover; border-radius:6px; border:1px solid var(--border-light); display:block; }
+.img-preview-close { position:absolute; top:-8px; right:-8px; width:22px; height:22px; border-radius:50%; border:none; background:rgba(0,0,0,0.55); color:#fff; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; line-height:1; transition:all var(--duration-fast); }
+.img-preview-close:hover { background:rgba(239,68,68,0.85); transform:scale(1.1); }
+
+/* 移动端菜单按钮 */
+.mobile-menu-btn { display:none; position:fixed; top:12px; z-index:100; width:32px; height:32px; border-radius:var(--radius-md); border:1px solid var(--border-light); background:var(--bg-card); color:var(--text-secondary); font-size:14px; cursor:pointer; box-shadow:var(--shadow-md); }
+.mobile-menu-btn.left { left:12px; }
+.mobile-menu-btn.right { right:12px; }
+
+/* ===================== 响应式 ===================== */
+@media (max-width: 1280px) {
+  .layout-sidebar:last-of-type { display:none; }
 }
 
-.prompts-label {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  font-size: var(--text-xs);
-  color: var(--text-tertiary);
-  margin-bottom: var(--space-2);
-}
-
-.prompts-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
-.prompt-chip {
-  padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius-full);
-  border: 1px solid var(--border-light);
-  background: var(--bg-card);
-  color: var(--text-secondary);
-  font-size: var(--text-xs);
-  cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-out);
-}
-
-.prompt-chip:hover {
-  border-color: var(--color-brand-400);
-  color: var(--color-brand-600);
-  background: var(--color-brand-50);
-  transform: translateY(-1px);
-}
-
-/* 输入区 */
-.input-area {
-  padding: var(--space-3) var(--space-5);
-  border-top: 1px solid var(--border-light);
-  background: var(--bg-card);
-  flex-shrink: 0;
-}
-
-.input-toolbar {
-  max-width: 720px;
-  margin: 0 auto var(--space-2);
-  display: flex;
-  justify-content: flex-end;
-}
-
-.tool-btn {
-  width: 26px;
-  height: 26px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-light);
-  background: transparent;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: all var(--duration-fast) var(--ease-out);
-}
-
-.tool-btn:hover {
-  color: var(--text-primary);
-  background: var(--bg-hover);
-}
-
-.input-wrapper {
-  max-width: 720px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--border-light);
-  background: var(--bg-page);
-  transition: box-shadow var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out);
-}
-
-.input-wrapper:focus-within {
-  border-color: var(--color-brand-400);
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
-}
-
-.chat-input {
-  flex: 1;
-  border: none;
-  outline: none;
-  background: transparent;
-  padding: var(--space-2) var(--space-3);
-  font-size: var(--text-sm);
-  color: var(--text-primary);
-  line-height: 1.5;
-}
-
-.chat-input::placeholder {
-  color: var(--text-tertiary);
-}
-
-.btn-send {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-lg);
-  border: none;
-  background: linear-gradient(135deg, var(--color-brand-500), var(--color-brand-600));
-  color: #fff;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s var(--ease-out);
-  flex-shrink: 0;
-}
-
-.btn-send:hover:not(:disabled) {
-  transform: scale(1.08);
-  box-shadow: 0 0 12px rgba(79,70,229,0.3);
-}
-
-.btn-send:active:not(:disabled) {
-  transform: scale(0.92);
-}
-
-.btn-send:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-.input-footer {
-  max-width: 720px;
-  margin: var(--space-1) auto 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-1);
-  font-size: var(--text-xs);
-  color: var(--text-tertiary);
-}
-
-/* 右侧说明栏 */
-.info-sidebar {
-  width: 280px;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  border-left: 1px solid var(--border-light);
-  background: var(--bg-card);
-}
-
-.info-header {
-  padding: var(--space-4);
-  border-bottom: 1px solid var(--border-light);
-}
-
-.info-title {
-  font-size: var(--text-base);
-  font-weight: var(--font-bold);
-  color: var(--text-primary);
-}
-
-.info-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: var(--space-4);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-}
-
-.info-section h4 {
-  font-size: var(--text-sm);
-  font-weight: var(--font-bold);
-  color: var(--text-primary);
-  margin: 0 0 var(--space-2) 0;
-}
-
-.info-section p,
-.info-section ul {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-  line-height: 1.7;
-  margin: 0;
-}
-
-.info-section ul {
-  padding-left: var(--space-4);
-}
-
-.info-section li {
-  margin-bottom: var(--space-1);
-}
-
-.info-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
-.info-tag {
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-full);
-  background: var(--color-brand-50);
-  color: var(--color-brand-700);
-  font-size: var(--text-xs);
-  font-weight: var(--font-medium);
-}
-
-/* 动画 */
-@keyframes slide-up-enter {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* 响应式 */
 @media (max-width: 1024px) {
-  .info-sidebar { display: none; }
+  .chat-layout { position:relative; }
+  .mobile-menu-btn { display:flex; align-items:center; justify-content:center; }
+  .layout-sidebar { position:fixed; top:0; bottom:0; z-index:50; box-shadow:var(--shadow-lg); transition:transform 0.25s var(--ease-out); }
+  .layout-sidebar:first-of-type { left:0; }
+  .layout-sidebar:last-of-type { right:0; }
+  :deep(.session-sidebar) { position:static; }
+  :deep(.info-sidebar) { position:static; }
 }
 
 @media (max-width: 768px) {
-  .session-sidebar { display: none; }
-  .messages-scroll { padding: var(--space-3); }
-  .message-body { max-width: 90%; }
-  .input-area { padding: var(--space-3); }
+  .chat-main { padding:0; }
+  .messages-scroll { padding:var(--space-3); }
+  .message-body { max-width:90%; }
+  .quick-prompts { padding:0 var(--space-3) var(--space-2); }
+  .input-area { padding:var(--space-2) var(--space-3) var(--space-2); }
 }
 
-/* AI 状态面板 */
-.section-label {
-  font-size: var(--text-xs);
-  color: var(--text-tertiary);
-  font-weight: var(--font-semibold);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: var(--space-2);
-}
-
-.state-section {
-  margin-bottom: var(--space-4);
-}
-
-.ai-state-panel {
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-lg);
-  background: var(--bg-page);
-  border: 1px solid var(--border-light);
-}
-
-.state-locked {
-  position: relative;
-  overflow: hidden;
-}
-
-.state-locked-overlay {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  padding: var(--space-5) var(--space-3);
-  text-align: center;
-  animation: fade-in-up 0.35s var(--ease-out) both;
-}
-
-.state-grid {
-}
-
-.stats-inline {
-}
-
-@keyframes fade-in-up {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.lock-icon {
-  font-size: 22px;
-  opacity: 0.5;
-}
-
-.state-locked-overlay p {
-  margin: 0;
-  font-size: var(--text-xs);
-  color: var(--text-tertiary);
-  line-height: 1.6;
-}
-
-.state-hint-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-top: var(--space-2);
-}
-
-.state-hint {
-  font-size: 10px;
-  color: var(--text-tertiary);
-  font-style: italic;
-  opacity: 0.5;
-  margin: 0;
-  text-align: left;
-}
-
-.help-popover .help-section {
-  padding: var(--space-1) 0;
-}
-
-.help-popover .help-section + .help-section {
-  border-top: 1px solid var(--border-light);
-  padding-top: var(--space-2);
-}
-
-.state-empty {
-  color: var(--text-tertiary);
-  font-size: var(--text-xs);
-  text-align: center;
-  padding: var(--space-4) 0;
-}
-
-.state-empty p { margin: 0; }
-
-.state-grid {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.state-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-}
-
-.state-icon { font-size: 14px; flex-shrink: 0; }
-
-.state-desc {
-  font-size: var(--text-xs);
-  color: var(--text-secondary);
-  min-width: 38px;
-}
-
-.state-bar-wrap {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-width: 80px;
-}
-
-.state-sep {
-  height: 1px;
-  background: var(--border-light);
-  margin: 0 var(--space-1);
-}
-
-.tone-badge {
-  padding: 2px 10px;
-  border-radius: var(--radius-full);
-  font-size: var(--text-xs);
-  font-weight: var(--font-semibold);
-}
-
-.tone-professional { background: var(--color-brand-50); color: var(--color-brand-700); }
-.tone-casual { background: var(--color-success-50); color: var(--color-success-700); }
-.tone-encouraging { background: var(--color-warning-50); color: var(--color-warning-700); }
-.tone-analytical { background: var(--color-info-50); color: var(--color-info-700); }
-.tone-safety { background: var(--color-danger-50); color: var(--color-danger-700); }
-
-.state-bar {
-  flex: 1;
-  height: 4px;
-  border-radius: var(--radius-full);
-  background: var(--border-light);
-  overflow: hidden;
-}
-
-.state-fill {
-  height: 100%;
-  border-radius: var(--radius-full);
-  background: linear-gradient(90deg, var(--color-brand-400), var(--color-brand-600));
-  width: 0;
-  transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
-  transition-delay: 0.3s;
-}
-
-.state-fill.attention {
-  background: linear-gradient(90deg, var(--color-success-400), var(--color-success-600));
-}
-
-/* Overdrive: 投入度突破 100 */
-.bar-overdrive {
-  box-shadow: 0 0 6px rgba(239,68,68,0.4), 0 0 12px rgba(239,68,68,0.2);
-  animation: overdrive-glow 1.5s ease-in-out infinite alternate;
-}
-
-.state-bar .state-fill.fill-overdrive {
-  width: 100% !important;
-  background: linear-gradient(90deg, #ef4444, #dc2626) !important;
-}
-
-.num-overdrive {
-  color: #ef4444 !important;
-  text-shadow: 0 0 4px rgba(239,68,68,0.3);
-}
-
-@keyframes overdrive-glow {
-  0% { box-shadow: 0 0 4px rgba(239,68,68,0.3), 0 0 8px rgba(239,68,68,0.1); }
-  100% { box-shadow: 0 0 8px rgba(239,68,68,0.5), 0 0 16px rgba(239,68,68,0.3); }
-}
-
-.state-num {
-  font-size: var(--text-xs);
-  color: var(--text-secondary);
-  font-weight: var(--font-bold);
-  min-width: 22px;
-  text-align: right;
-}
-
-.help-btn {
-  width: 15px;
-  height: 15px;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--border-light);
-  background: transparent;
-  color: var(--text-tertiary);
-  font-size: 10px;
-  font-weight: var(--font-bold);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  flex-shrink: 0;
-  transition: all var(--duration-fast);
-}
-
-.help-btn:hover {
-  background: var(--color-brand-50);
-  color: var(--color-brand-600);
-  border-color: var(--color-brand-300);
-}
-
-.help-popover {
-  margin: var(--space-2) 0;
-  padding: var(--space-3);
-  border-radius: var(--radius-md);
-  background: var(--bg-page);
-  border: 1px solid var(--border-light);
-  font-size: 11px;
-  color: var(--text-secondary);
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  animation: fade-in-up 0.2s var(--ease-out) both;
-}
-
-.help-row {
-  display: flex;
-  justify-content: space-between;
-  font-weight: var(--font-semibold);
-}
-
-.help-desc {
-  font-size: 10px;
-  color: var(--text-tertiary);
-  margin-bottom: var(--space-1);
-  padding-left: 2px;
-}
-
-/* 运行数据 */
-.stats-inline {
-  display: flex;
-  gap: var(--space-3);
-}
-
-.stat-mini {
-  flex: 1;
-  text-align: center;
-  padding: var(--space-2) 0;
-}
-
-.stat-mini .stat-num {
-  display: block;
-  font-size: var(--text-lg);
-  font-weight: var(--font-extrabold);
-  color: var(--text-primary);
-  font-variant-numeric: tabular-nums;
-}
-
-.stat-mini .stat-label {
-  display: block;
-  font-size: var(--text-xs);
-  color: var(--text-tertiary);
-  margin-top: 2px;
-}
-
-[data-theme="dark"] .tone-professional { background: rgba(79,70,229,0.15); color: var(--color-brand-300); }
-[data-theme="dark"] .tone-casual { background: rgba(34,197,94,0.15); color: var(--color-success-300); }
-[data-theme="dark"] .tone-encouraging { background: rgba(234,179,8,0.15); color: var(--color-warning-300); }
-[data-theme="dark"] .tone-analytical { background: rgba(59,130,246,0.15); color: var(--color-info-300); }
-[data-theme="dark"] .tone-safety { background: rgba(239,68,68,0.15); color: var(--color-danger-300); }
-
-.info-footer {
-  padding: var(--space-3) var(--space-4);
-  border-top: 1px solid var(--border-light);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-}
-
-.footer-label {
-  font-size: var(--text-xs);
-  color: var(--text-tertiary);
-  font-weight: var(--font-medium);
-}
-
-.theme-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-light);
-  background: var(--bg-page);
-  color: var(--text-secondary);
-  font-size: var(--text-xs);
-  cursor: pointer;
-  transition: all var(--duration-fast) var(--ease-out);
-}
-
-.theme-toggle:hover {
-  border-color: var(--color-brand-400);
-  color: var(--color-brand-600);
-  background: var(--color-brand-50);
-}
-
-/* 暗黑模式 */
-[data-theme="dark"] .btn-new:hover {
-  background: rgba(79, 70, 229, 0.12);
-}
-
-[data-theme="dark"] .session-item.active {
-  background: rgba(79, 70, 229, 0.15);
-  color: var(--color-brand-300);
-}
-
-[data-theme="dark"] .prompt-chip:hover {
-  background: rgba(79, 70, 229, 0.1);
-}
-
-[data-theme="dark"] .input-wrapper:focus-within {
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
-}
-
-[data-theme="dark"] .info-tag {
-  background: rgba(79, 70, 229, 0.15);
-  color: var(--color-brand-300);
-}
-
-[data-theme="dark"] .session-count {
-  background: rgba(255, 255, 255, 0.06);
-}
+/* 消息搜索 */
+.search-bar { display:flex; align-items:center; gap:6px; padding:8px var(--space-4); border-bottom:1px solid var(--border-light); background:var(--bg-card); animation:search-in 0.2s var(--ease-out); }
+.search-input { flex:1; border:none; outline:none; background:var(--bg-page); padding:8px 12px; border-radius:var(--radius-md); font-size:var(--text-sm); color:var(--text-primary); }
+.search-input::placeholder { color:var(--text-tertiary); }
+.search-clear,.search-close { background:none; border:none; cursor:pointer; padding:4px; display:flex; }
+.search-clear { color:var(--text-tertiary); }
+.search-close { color:var(--text-secondary); }
+.search-results { max-height:260px; overflow-y:auto; border-bottom:1px solid var(--border-light); background:var(--bg-card); animation:search-in 0.25s var(--ease-out); scrollbar-width:thin; scrollbar-color:var(--border-light) transparent; }
+.search-item { display:flex; align-items:center; gap:var(--space-2); padding:8px var(--space-4); cursor:pointer; border-bottom:1px solid var(--border-light); transition:background var(--duration-fast); }
+.search-item:hover { background:var(--bg-hover); }
+.search-item:last-child { border-bottom:none; }
+.search-role { font-size:var(--text-xs); font-weight:var(--font-bold); padding:1px 6px; border-radius:var(--radius-full); flex-shrink:0; }
+.search-role.user { background:var(--color-brand-100); color:var(--color-brand-700); }
+.search-role.assistant { background:var(--color-success-100); color:var(--color-success-700); }
+.search-snippet { flex:1; font-size:var(--text-xs); color:var(--text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.search-conv { font-size:11px; color:var(--text-tertiary); flex-shrink:0; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.search-status { padding:12px var(--space-4); font-size:var(--text-xs); color:var(--text-tertiary); text-align:center; }
+@keyframes search-in { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
 </style>
 
 <style>
-/* 登录 CTA — 非 scoped，因为通过 v-html 注入 */
-.login-cta {
-  text-align: center;
-  padding: var(--space-5) var(--space-2) var(--space-3);
-  max-width: 260px;
-  margin: 0 auto;
-  animation: cta-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-@keyframes cta-enter {
-  from { opacity: 0; transform: translateY(12px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-.login-cta-icon {
-  margin-bottom: var(--space-3);
-  display: flex;
-  justify-content: center;
-  animation: cta-float 3s ease-in-out infinite;
-}
-
-.login-cta-icon svg {
-  display: block;
-}
-
-@keyframes cta-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
-}
-
-.login-cta-text {
-  font-size: var(--text-sm);
-  font-weight: var(--font-bold);
-  color: var(--text-primary);
-  margin-bottom: 4px;
-}
-
-.login-cta-sub {
-  font-size: 11px;
-  color: var(--text-tertiary);
-  margin-bottom: var(--space-4);
-}
-
-.login-cta-actions {
-  display: flex;
-  justify-content: center;
-  gap: var(--space-2);
-}
-
-.login-cta-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 20px;
-  border-radius: var(--radius-md);
-  background: linear-gradient(135deg, var(--color-brand-500), var(--color-brand-600), #6366f1);
-  background-size: 200% 200%;
-  animation: cta-shimmer 3s ease infinite;
-  color: #fff !important;
-  text-decoration: none !important;
-  font-size: var(--text-sm);
-  font-weight: var(--font-semibold);
-  box-shadow: 0 2px 8px rgba(79,70,229,0.25);
-  transition: box-shadow 0.15s ease-out;
-}
-
-.login-cta-btn:hover {
-  box-shadow: 0 4px 16px rgba(79,70,229,0.4);
-}
-
-.login-cta-register {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 20px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-light);
-  color: var(--text-secondary) !important;
-  text-decoration: none !important;
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  transition: all 0.15s ease-out;
-}
-
-.login-cta-register:hover {
-  border-color: var(--color-brand-300);
-  color: var(--color-brand-600) !important;
-  background: var(--color-brand-50);
-  text-decoration: none !important;
-}
-
-@keyframes cta-shimmer {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
+/* 登录 CTA — 非 scoped */
+.login-cta { text-align:center; padding:var(--space-5) var(--space-2) var(--space-3); max-width:260px; margin:0 auto; animation:cta-enter 0.5s cubic-bezier(0.16,1,0.3,1) both; }
+@keyframes cta-enter { from{opacity:0;transform:translateY(12px) scale(0.95)} to{opacity:1;transform:translateY(0) scale(1)} }
+.login-cta-icon { margin-bottom:var(--space-3); display:flex; justify-content:center; animation:cta-float 3s ease-in-out infinite; }
+@keyframes cta-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+.login-cta-text { font-size:var(--text-sm); font-weight:var(--font-bold); color:var(--text-primary); margin-bottom:4px; }
+.login-cta-sub { font-size:11px; color:var(--text-tertiary); margin-bottom:var(--space-4); }
+.login-cta-actions { display:flex; justify-content:center; gap:var(--space-2); }
+.login-cta-btn { display:inline-flex; align-items:center; gap:4px; padding:6px 20px; border-radius:var(--radius-md); background:linear-gradient(135deg,var(--color-brand-500),var(--color-brand-600),#6366f1); background-size:200% 200%; animation:cta-shimmer 3s ease infinite; color:#fff!important; text-decoration:none!important; font-size:var(--text-sm); font-weight:var(--font-semibold); box-shadow:0 2px 8px rgba(79,70,229,0.25); transition:box-shadow 0.15s ease-out; }
+.login-cta-btn:hover { box-shadow:0 4px 16px rgba(79,70,229,0.4); }
+.login-cta-register { display:inline-flex; align-items:center; gap:4px; padding:6px 20px; border-radius:var(--radius-md); border:1px solid var(--border-light); color:var(--text-secondary)!important; text-decoration:none!important; font-size:var(--text-sm); font-weight:var(--font-medium); transition:all 0.15s ease-out; }
+.login-cta-register:hover { border-color:var(--color-brand-300); color:var(--color-brand-600)!important; background:var(--color-brand-50); }
+@keyframes cta-shimmer { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
 </style>

@@ -1,13 +1,18 @@
 from __future__ import annotations
+import os
 
 from backend.domain.community import ICommunityService
 from backend.db import community_db
 from backend.core.exceptions import BusinessException
+from backend.core.config import settings
+from backend.Agent.achievements import AchievementStore
 from backend.schema.vo.common import ApiResponse
 from backend.schema.vo.community import (
     PostVO, PostListVO, CommentVO, NotificationVO, CategoryVO, LikedVO, NotificationListVO,
     to_post_vo, to_comment_vo, to_notification_vo, to_category_vo,
 )
+
+AI_DATA_DIR = os.path.join(settings.BASE_DIR, "backend", "data", "ai")
 
 
 class CommunityService(ICommunityService):
@@ -15,6 +20,12 @@ class CommunityService(ICommunityService):
     def create_post_service(self, post_data, user) -> ApiResponse:
         """创建帖子"""
         community_db.create_post(post_data, user.id)
+        # 成就追踪：首次发帖
+        try:
+            ach_store = AchievementStore(user.id, AI_DATA_DIR)
+            ach_store.increment_stat("posts_created")
+        except Exception:
+            pass
         return ApiResponse(msg="发布成功")
 
     def get_post_list_service(self, category_id=None, sort='new', keyword=None, user_id=None, page=1, page_size=10) -> ApiResponse[PostListVO]:

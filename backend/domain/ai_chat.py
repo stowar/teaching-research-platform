@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from typing import List
 
 from backend.schema.vo.common import ApiResponse
-from backend.schema.vo.ai_chat import ConversationVO, ConversationDetailVO, ChatReplyVO, AIStateVO
+from backend.schema.vo.ai_chat import ConversationVO, ConversationDetailVO, ChatReplyVO, AIStateVO, AchievementVO
 
 
 class IAIChatService(ABC):
@@ -37,11 +37,16 @@ class IAIChatService(ABC):
     # ===================== 对话 =====================
 
     @abstractmethod
-    def chat(self, user_id: int, message: str, conversation_id: int = None, model: str = None, role: str = "user", user_name: str = "") -> ApiResponse[ChatReplyVO]:
-        """发送消息并获取 AI 回复"""
+    def chat(self, user_id: int, message: str, conversation_id: int = None, model: str = None, role: str = "user", user_name: str = "", images: list = None) -> ApiResponse[ChatReplyVO]:
+        """发送消息并获取 AI 回复（可带图片数组）"""
         ...
 
     @abstractmethod
     def get_state(self, user_id: int, conversation_id: int = None, role: str = "user") -> ApiResponse[AIStateVO]:
         """获取 AI 当前状态（指定会话则返回该会话人格）"""
+        ...
+
+    @abstractmethod
+    def get_achievements(self, user_id: int) -> ApiResponse[List[AchievementVO]]:
+        """获取用户已解锁的成就列表"""
         ...

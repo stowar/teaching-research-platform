@@ -23,6 +23,7 @@ class ConversationVO(BaseModel):
 
 class MessageVO(BaseModel):
     """消息 VO"""
+    id: int = 0
     role: str
     content: str
     timestamp: int   # 前端用毫秒时间戳
@@ -48,11 +49,22 @@ class AIStateVO(BaseModel):
     messages_limit: Union[int, str]
 
 
+class AchievementVO(BaseModel):
+    """成就 VO"""
+    id: str
+    name: str
+    desc: str
+    emoji: str
+    tier: str = "bronze"
+    unlocked: bool = False
+
+
 class ChatReplyVO(BaseModel):
     """AI 回复 VO（非流式）"""
     conversation_id: int
     message: "MessageVO"
     state: Optional["AIStateVO"] = None
+    new_achievements: List["AchievementVO"] = []
 
 
 # ===================== 转换函数 =====================
@@ -71,6 +83,7 @@ def to_conversation_vo(c: "ConversationDO", msg_count: int) -> ConversationVO:
 
 def to_message_vo(m: "MessageDO") -> MessageVO:
     return MessageVO(
+        id=m.id,
         role=m.role,
         content=m.content,
         timestamp=int(m.create_time.timestamp() * 1000),

@@ -7,19 +7,96 @@
   3. 每条规则都要能回答"为什么有这个"
 """
 from backend.Agent.memory import MemoryStore
+from backend.Agent.achievements import ACHIEVEMENTS
+
+
+def _build_ach_rules(unlocked_ids: set = None) -> str:
+    """动态生成成就授予规则，已解锁的不再出现"""
+    unlocked = unlocked_ids or set()
+    ai_judged = [a for a in ACHIEVEMENTS if a.get("ai_judged") and a["id"] not in unlocked]
+    if not ai_judged:
+        return "### 二、成就：所有成就已解锁，无需再授予。"
+    lines = [
+        "### 二、成就授予规则（AI 自主判断，每次对话最多授予 1 个）",
+        "教师对话内容命中以下课堂场景时，调用 `unlock_achievement(achievement_id)` 授予成就。",
+        "每次对话只给最贴切的那一个，不强行凑。没命中就不调。",
+        "",
+        "| 成就 ID | 名称 | 触发条件（AI 判断） |",
+        "|---------|------|---------------------|",
+    ]
+    for ach in ai_judged:
+        cond = ach.get("ai_hint", ach.get("desc", ""))
+        lines.append(f"| {ach['id']} | {ach['name']} | {cond} |")
+    return "\n".join(lines)
+
+
+def _build_user_state(state: dict) -> str:
+    """动态生成用户当前状态摘要，嵌入 system prompt"""
+    parts = ["## 当前教师状态"]
+
+    # 成就
+    unlocked = state.get("unlocked_ach", [])
+    total = state.get("total_ach", 0)
+    if unlocked:
+        names = "、".join(unlocked)
+        parts.append(f"- 已解锁成就（{len(unlocked)}/{total}）：{names}")
+    else:
+        parts.append(f"- 尚未解锁任何成就（{total} 个待解锁）")
+
+    # 配额
+    msgs = state.get("messages_today", 0)
+    limit = state.get("messages_limit", 30)
+    quota_left = max(0, int(limit) - msgs) if isinstance(limit, int) else -1
+    if quota_left >= 0:
+        if quota_left <= 3:
+            parts.append(f"- 今日配额紧张：仅剩 {quota_left} 条，请精简回复")
+        else:
+            parts.append(f"- 今日剩余配额：{quota_left} 条")
+    else:
+        parts.append(f"- 今日已发 {msgs} 条，无限制（管理员）")
+
+    # 连续天数
+    streak = state.get("streak_days", 0)
+    if streak >= 7:
+        parts.append(f"- 连续活跃 {streak} 天 — 铁杆用户，语气亲切")
+    elif streak >= 3:
+        parts.append(f"- 连续活跃 {streak} 天 — 渐入佳境")
+    elif streak == 1:
+        parts.append("- 今天首次对话，可能是新用户，保持友好引导")
+
+    # 记忆
+    mc = state.get("memory_count", 0)
+    if mc >= 10:
+        parts.append(f"- 已有 {mc} 条长期记忆 — 老熟人了，多引用过往信息")
+    elif mc >= 3:
+        parts.append(f"- 已有 {mc} 条长期记忆 — 正在建立用户画像")
+    else:
+        parts.append("- 记忆较少，多问多记，主动了解教师背景")
+
+    # 账户
+    if state.get("is_admin"):
+        parts.append("- 该教师是平台管理员，可适当开放高级功能讨论")
+    elif state.get("is_unlocked"):
+        parts.append("- 该教师今日配额已解锁，可能是 VIP 或需要特殊关照")
+
+    return "\n".join(parts)
 
 
 # ============================================================
 # 系统提示模板
 # ============================================================
 
-def build_system_prompt(personality, memory, user_name: str = "") -> str:
+def build_system_prompt(personality, memory, user_name: str = "",
+                        user_state: dict = None) -> str:
     """构建 AI 教研助手的完整 system prompt"""
     tone_desc = personality.get_tone_prompt()
     ranked = memory.query("", personality.engagement)
     memories = memory.format_query_results(ranked)
+    unlocked = set(user_state.get("unlocked_ach_ids", []) if user_state else [])
+    ach_rules = _build_ach_rules(unlocked)
     status = personality.get_status()
     name_hint = f"当前对话的教师:{user_name}。" if user_name else ""
+    state_block = _build_user_state(user_state or {})
 
     return f"""
     你是 AI 教研助手，面向职业院校英语教师。给实际建议，不空谈理论。
@@ -27,8 +104,10 @@ def build_system_prompt(personality, memory, user_name: str = "") -> str:
     {name_hint}
     {status}
     {tone_desc}
-    {memories if memories else "还不了解这位教师，多问多记。"}
-    
+    {memories}
+
+    {state_block}
+
     ## 工具列表
     - record_memory — 记住用户核心信息
     - check_memory — 查询历史记忆
@@ -36,6 +115,9 @@ def build_system_prompt(personality, memory, user_name: str = "") -> str:
     - set_tone — 按对话氛围调整语气
     - adjust_engagement — 动态调整投入度
     - adjust_attention — 根据话题一致性调整关注度
+    - calc — 数学计算/统计/换算
+    - translate — 中英互译
+    - unlock_achievement — 授予教师教学成就（仅课堂场景类）
     
     ## 核心硬性规则（优先级从高到低，违反视为逻辑错误）
     ### 一、投入度调整：最高优先级，每轮对话强制必调
@@ -53,7 +135,9 @@ def build_system_prompt(personality, memory, user_name: str = "") -> str:
           2. 表达不满、质疑、对输出内容不满意 → -2
           3. 重复同一问题，未承接上下文 → -1
     
-    ### 二、记忆与工具使用规则（与投入度调用并行不冲突）
+    {ach_rules}
+
+    ### 三、记忆与工具使用规则（与投入度调用并行不冲突）
     1. **记忆查询前置**
        用户提问涉及学生情况、班级特征、课程内容、历史活动、个人经历/喜好/痛点，以及任何过往提及的具体信息，必须调用 `check_memory`。
        若返回空记忆，通过追问补全信息，禁止凭空编造。
@@ -62,7 +146,7 @@ def build_system_prompt(personality, memory, user_name: str = "") -> str:
     3. **记忆记录告知**
        用户提供学生情况、教学困难、课程数据等核心新信息时，必须调用 `record_memory` 记录，并同步告知用户：“我记住了，之后我会用这个信息帮你做更精准的回应。”
     
-    ### 三、安全边界（软触发）
+    ### 四、安全边界（软触发）
     检测到暴力、违法、自残等极端内容时：
     
     1. **首次触发** — 不直接切安全模式。先问一句确认：
@@ -70,7 +154,7 @@ def build_system_prompt(personality, memory, user_name: str = "") -> str:
     2. **二次确认** — 用户明确表示是创作/教学/案例讨论 → 恢复正常语气。用户继续推演极端细节或明确拒绝说明 → 用 set_tone(safety) 切换安全模式，回复简短拒绝信息，不使用 emoji、不接梗、不延伸。
     3. **连续触发** — 3 轮内连续检测到极端关键词 → 强制安全模式，不再询问。
     
-    ### 四、输出规范
+    ### 五、输出规范
     - 使用 Markdown 格式回复，核心信息加粗标注
     - 所有内容基于已确认信息与记忆，不输出无依据内容
     - 全程使用中文回复
@@ -121,7 +205,7 @@ MAX_TOOL_ROUNDS = 3
 DEFAULT_MODEL = "deepseek-v4-flash"
 
 # 每日消息上限（防止 API key 被刷爆，比赛演示足够）
-MAX_MESSAGES_PER_DAY = 80
+MAX_MESSAGES_PER_DAY = 30
 
 # 裁切总结：上下文窗口上限，超过则 AI 总结旧消息写入记忆
 SUMMARIZE_THRESHOLD = 40   # 超过此数量触发总结

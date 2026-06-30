@@ -72,12 +72,14 @@ class Personality:
             hint = "（用户离开一阵了，简短问候后拉回话题）"
         else:
             hint = "（用户离开很久了，轻松问候，提及时间跨度）"
+
         return (
             f"【{self.name} 状态】"
             f"语气：{self.tone.value}，"
             f"投入度：{self.engagement}，"
             f"关注度：{self.attention}，"
             f"静默：{h:.1f}h{hint}"
+            f"精准的时间：{self.get_current_time()}"
         )
 
     def set_tone(self, tone_str: str) -> str:
