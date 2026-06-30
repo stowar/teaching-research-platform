@@ -282,6 +282,7 @@ def _check_achievements(user_id: int, user_message: str, personality, memory,
                 desc=result["desc"],
                 emoji=result["emoji"],
                 tier=result.get("tier", "bronze"),
+                unlock_time=result.get("unlock_time", ""),
             ))
 
     return new_achievements
@@ -352,20 +353,30 @@ class AIChatService(IAIChatService):
     # ===================== 成就系统 =====================
 
     def get_achievements(self, user_id):
+        from backend.Agent.achievements import TIER_LABELS, TIER_ORDER, TIER_NAMES
         store = AchievementStore(user_id, AI_DATA_DIR)
-        all_unlocked = store.get_all()
-        result = []
+        all_unlocked = store.get_all()  # [{id, time}, ...]
+        unlocked_map = {item["id"]: item.get("time", "") for item in all_unlocked}
+        items = []
         for ach in ACHIEVEMENTS:
-            unlocked = ach["id"] in all_unlocked
-            result.append({
+            tier = ach.get("tier", "bronze")
+            unlocked = ach["id"] in unlocked_map
+            items.append({
                 "id": ach["id"],
                 "name": ach["name"],
                 "desc": ach["desc"],
                 "emoji": ach["emoji"],
-                "tier": ach.get("tier", "bronze"),
+                "tier": tier,
+                "tier_label": TIER_LABELS.get(tier, tier),
+                "unlock_time": unlocked_map.get(ach["id"], ""),
                 "unlocked": unlocked,
             })
-        return ApiResponse(msg="查询成功", data=result)
+        return ApiResponse(msg="查询成功", data={
+            "items": items,
+            "tier_order": TIER_ORDER,
+            "tier_names": TIER_NAMES,
+            "tier_labels": TIER_LABELS,
+        })
 
     # ===================== 对话核心逻辑 =====================
 
@@ -413,11 +424,12 @@ class AIChatService(IAIChatService):
 
         # ── 3.5 收集用户状态（嵌入提示词） ──
         ach_store = AchievementStore(user_id, AI_DATA_DIR)
-        ach_unlocked = ach_store.get_all()
-        ach_names = [a["name"] for a in ACHIEVEMENTS if a["id"] in ach_unlocked]
+        ach_unlocked = ach_store.get_all()  # [{id, time}, ...]
+        ach_unlocked_ids = [item["id"] for item in ach_unlocked]
+        ach_names = [a["name"] for a in ACHIEVEMENTS if a["id"] in ach_unlocked_ids]
         user_state = {
             "unlocked_ach": ach_names,
-            "unlocked_ach_ids": ach_unlocked,
+            "unlocked_ach_ids": ach_unlocked_ids,
             "total_ach": len(ACHIEVEMENTS),
             "messages_today": today_count,
             "messages_limit": MAX_MESSAGES_PER_DAY if not is_unlocked else "∞",

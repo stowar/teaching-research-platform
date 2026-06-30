@@ -16,9 +16,14 @@ const unreadCount = ref(0)
 const myPosts = ref([])
 const achievements = ref([])
 const unlockedCount = ref(0)
+const tierOrder = ref([])
+const tierLabel = ref({})
+const tierNames = ref({})
 const loading = ref(true)
 
-const tierLabel = { gold: '金杯', silver: '银杯', bronze: '铜杯', special: '特殊' }
+const selectedAch = ref(null)
+function openAchDetail(ach) { selectedAch.value = ach }
+function closeAchDetail() { selectedAch.value = null }
 
 async function fetchAll() {
   loading.value = true
@@ -32,7 +37,11 @@ async function fetchAll() {
     notifications.value = notifRes.data?.items || []
     unreadCount.value = notifRes.data?.unread || 0
     myPosts.value = postRes.data?.items || []
-    achievements.value = achRes.data || []
+    const achData = achRes.data || {}
+    achievements.value = achData.items || []
+    tierOrder.value = achData.tier_order || []
+    tierLabel.value = achData.tier_labels || {}
+    tierNames.value = achData.tier_names || {}
     unlockedCount.value = achievements.value.filter(a => a.unlocked).length
   } catch { /* ignore */ }
   finally { loading.value = false }
@@ -146,7 +155,7 @@ onMounted(fetchAll)
         </div>
       </div>
 
-      <!-- 教学成就 — 只展示已解锁 -->
+      <!-- 教学成就 — 只展示已解锁，按品级分组 -->
       <div v-if="unlockedCount > 0" class="account-card card">
         <div class="card-toolbar">
           <div class="toolbar-title">
@@ -154,19 +163,41 @@ onMounted(fetchAll)
             <h3>教学成就</h3>
           </div>
         </div>
-        <div class="ach-grid">
-          <div v-for="ach in achievements.filter(a => a.unlocked)" :key="ach.id" :class="['ach-item', 'tier-' + ach.tier]">
-            <span class="ach-emoji">{{ ach.emoji }}</span>
-            <div class="ach-text">
-              <span class="ach-name">{{ ach.name }}</span>
-              <span class="ach-desc">{{ ach.desc }}</span>
+        <template v-for="tier in tierOrder" :key="tier">
+          <div v-if="achievements.filter(a => a.unlocked && a.tier === tier).length > 0" class="ach-tier-group">
+            <h4 class="ach-tier-head" :class="'tier-' + tier">{{ tierNames[tier] }}</h4>
+            <div class="ach-grid">
+              <div v-for="ach in achievements.filter(a => a.unlocked && a.tier === tier)" :key="ach.id" :class="['ach-item', 'tier-' + ach.tier]" @click="openAchDetail(ach)">
+                <span class="ach-emoji">{{ ach.emoji }}</span>
+                <div class="ach-text">
+                  <span class="ach-name">{{ ach.name }}</span>
+                  <span class="ach-desc">{{ ach.desc }}</span>
+                </div>
+              </div>
             </div>
-            <span class="ach-tier-tag" :class="'tier-' + ach.tier">{{ tierLabel[ach.tier] || ach.tier }}</span>
           </div>
-        </div>
+        </template>
       </div>
     </template>
   </div>
+
+  <!-- 成就详情弹窗 -->
+  <Teleport to="body">
+    <Transition name="modal">
+      <div v-if="selectedAch" class="ach-modal-overlay" @click.self="closeAchDetail">
+        <div :class="['ach-modal', 'modal-tier-' + selectedAch.tier]">
+          <span class="ach-modal-emoji">{{ selectedAch.emoji }}</span>
+          <h3 class="ach-modal-name">{{ selectedAch.name }}</h3>
+          <p class="ach-modal-desc">{{ selectedAch.desc }}</p>
+          <div class="ach-modal-meta">
+            <span class="ach-modal-tier" :class="'tier-' + selectedAch.tier">{{ tierLabel[selectedAch.tier] }}</span>
+            <span class="ach-modal-time" v-if="selectedAch.unlock_time">获得于 {{ selectedAch.unlock_time }}</span>
+          </div>
+          <button class="ach-modal-close" @click="closeAchDetail">确定</button>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -224,26 +255,88 @@ onMounted(fetchAll)
 .mp-meta { display:flex; align-items:center; gap:3px var(--space-2); font-size:var(--text-xs); color:var(--text-tertiary); flex-shrink:0; margin-left:var(--space-3); }
 
 /* 成就 */
-.ach-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:6px; }
-.ach-item { display:flex; align-items:center; gap:var(--space-2); padding:8px 10px; border-radius:var(--radius-md); border:1px solid var(--border-light); background:var(--bg-card); transition:all var(--duration-fast) var(--ease-out); }
-.ach-item:hover { transform:translateY(-2px); box-shadow:var(--shadow-md); border-color:var(--color-brand-200); }
-.ach-item.tier-gold { background:linear-gradient(135deg, #fffef5, #fffbeb); }
-.ach-item.tier-silver { background:linear-gradient(135deg, #fafafa, #f0f0f0); }
-.ach-item.tier-bronze { background:linear-gradient(135deg, #fdf8f3, #fef0e4); }
-.ach-item.tier-special { border:2px solid transparent; background-clip:padding-box; position:relative; }
-.ach-item.tier-special::before { content:''; position:absolute; inset:-2px; border-radius:inherit; padding:2px; background:linear-gradient(135deg, #ef4444, #f59e0b, #22c55e, #3b82f6, #a855f7, #ec4899); background-size:300% 300%; animation:ach-rainbow 3s ease infinite; -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); mask-composite:exclude; pointer-events:none; z-index:-1; }
-@keyframes ach-rainbow { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+.ach-tier-group { margin-bottom:var(--space-5); }
+.ach-tier-head { font-size:11px; font-weight:var(--font-bold); text-transform:uppercase; letter-spacing:0.1em; margin:0 0 var(--space-3) 0; padding:0 0 var(--space-2) 0; border-bottom:2px solid var(--border-light); }
+.ach-tier-head.tier-special { color:#a855f7; border-color:rgba(168,85,247,0.25); }
+.ach-tier-head.tier-gold { color:#ca8a04; border-color:rgba(202,138,4,0.3); }
+.ach-tier-head.tier-silver { color:#475569; border-color:rgba(71,85,105,0.2); }
+.ach-tier-head.tier-bronze { color:#b08968; border-color:rgba(176,137,104,0.2); }
+.ach-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:8px; }
+.ach-item { display:flex; align-items:center; gap:var(--space-2); padding:10px 12px; border-radius:var(--radius-lg); border:2px solid transparent; background:var(--bg-card); transition:all var(--duration-fast) var(--ease-out); cursor:pointer; }
+.ach-item.tier-gold { background:linear-gradient(160deg, #fefdf8, #fdf8e8, #faf0d7); }
+.ach-item.tier-silver { background:linear-gradient(135deg, #fcfcfc, #f1f5f9, #e2e8f0); }
+.ach-item.tier-bronze { background:linear-gradient(135deg, #fefdfb, #fef9f4, #fef5ec); }
+.ach-item.tier-special { position:relative; background:linear-gradient(135deg, #fdf2f8, #ede9fe, #e0f2fe, #fce7f3); background-size:200% 200%; animation:special-bg 4s ease infinite; border:none; }
+.ach-item.tier-special::before { content:''; position:absolute; inset:-2px; border-radius:inherit; padding:2px; background:linear-gradient(135deg, #ef4444, #f59e0b, #22c55e, #3b82f6, #a855f7, #ec4899, #ef4444); background-size:200% 200%; animation:special-border 3s ease infinite; -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); mask-composite:exclude; pointer-events:none; z-index:0; }
+.ach-item.tier-special > * { position:relative; z-index:1; }
+@keyframes special-bg { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+@keyframes special-border { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+.ach-item:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,0.08); }
+[data-theme="dark"] .ach-item:hover { box-shadow:0 6px 20px rgba(0,0,0,0.3); }
 .ach-emoji { font-size:20px; flex-shrink:0; }
 .ach-text { display:flex; flex-direction:column; gap:1px; min-width:0; flex:1; }
 .ach-name { font-size:var(--text-xs); font-weight:var(--font-bold); color:var(--text-primary); }
 .ach-desc { font-size:11px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.ach-tier-tag { font-size:10px; font-weight:var(--font-bold); padding:2px 8px; border-radius:var(--radius-full); text-transform:uppercase; letter-spacing:0.05em; flex-shrink:0; }
-.ach-tier-tag.tier-gold { background:#fef3c7; color:#92400e; }
-.ach-tier-tag.tier-silver { background:#e0e0e0; color:#555; }
-.ach-tier-tag.tier-bronze { background:#fce4cc; color:#b85c38; }
-.ach-tier-tag.tier-special { background:linear-gradient(135deg, #ede9fe, #fce7f3, #e0f2fe); color:#7c3aed; }
+
+/* 弹窗 */
+.ach-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; z-index:1000; backdrop-filter:blur(4px); }
+.ach-modal { border-radius:var(--radius-xl); padding:var(--space-8) var(--space-6) var(--space-6); text-align:center; max-width:380px; width:90%; box-shadow:0 16px 64px rgba(0,0,0,0.15); position:relative; }
+.ach-modal.modal-tier-gold { background:linear-gradient(160deg, #fffef5, #fffbeb, #fef3c7); border:1px solid rgba(245,158,11,0.25); }
+.ach-modal.modal-tier-silver { background:linear-gradient(160deg, #fdfdfd, #f5f5f5, #ececec); border:1px solid rgba(180,180,180,0.3); }
+.ach-modal.modal-tier-bronze { background:linear-gradient(160deg, #fefdfb, #fef9f4, #fef5ec); border:1px solid rgba(176,137,104,0.18); }
+.ach-modal.modal-tier-special { background:linear-gradient(160deg, #faf5ff, #fdf2f8, #eff6ff); border:2px solid transparent; background-clip:padding-box; }
+.ach-modal.modal-tier-special::before { content:''; position:absolute; inset:-2px; border-radius:var(--radius-xl); padding:2px; background:linear-gradient(135deg, #ef4444, #f59e0b, #22c55e, #3b82f6, #a855f7, #ec4899); background-size:300% 300%; animation:ach-rainbow 3s ease infinite; -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); mask-composite:exclude; pointer-events:none; z-index:-1; }
+.ach-modal-emoji { font-size:56px; display:block; margin-bottom:var(--space-3); }
+.ach-modal-name { font-size:var(--text-xl); font-weight:var(--font-extrabold); color:var(--text-primary); margin:0 0 var(--space-2); }
+.ach-modal-desc { font-size:var(--text-sm); color:var(--text-secondary); margin:0 0 var(--space-4); line-height:1.6; }
+.ach-modal-meta { display:flex; align-items:center; justify-content:center; gap:var(--space-3); margin-bottom:var(--space-5); }
+.ach-modal-tier { font-size:var(--text-xs); font-weight:var(--font-bold); padding:3px 12px; border-radius:var(--radius-full); }
+.ach-modal-tier.tier-gold { background:#fef3c7; color:#92400e; }
+.ach-modal-tier.tier-silver { background:#e0e0e0; color:#555; }
+.ach-modal-tier.tier-bronze { background:#fef5ec; color:#8b6f4e; }
+.ach-modal-tier.tier-special { background:linear-gradient(135deg, #ede9fe, #fce7f3, #e0f2fe); color:#7c3aed; }
+.ach-modal-time { font-size:var(--text-xs); color:var(--text-tertiary); }
+.ach-modal-close { margin-top:var(--space-2); padding:8px 32px; border-radius:var(--radius-full); border:1px solid var(--border-light); background:var(--bg-card); color:var(--text-primary); font-size:var(--text-sm); cursor:pointer; transition:all var(--duration-fast); }
+.ach-modal-close:hover { background:var(--bg-hover); }
+
+.modal-enter-active { transition:all 0.3s cubic-bezier(0.16,1,0.3,1); }
+.modal-leave-active { transition:all 0.2s cubic-bezier(0.4,0,0.2,1); }
+.modal-enter-from { opacity:0; }
+.modal-enter-from .ach-modal { transform:scale(0.9) translateY(16px); }
+.modal-leave-to { opacity:0; }
+.modal-leave-to .ach-modal { transform:scale(0.95) translateY(8px); }
 
 @keyframes slide-up-enter { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
 [data-theme="dark"] .notif-item.unread { background:rgba(99,102,241,0.08); }
+
+/* 暗黑模式成就 */
+[data-theme="dark"] .ach-item.tier-gold { background:linear-gradient(160deg, #1e1808, #241e0c, #1a1408); }
+[data-theme="dark"] .ach-item.tier-silver { background:linear-gradient(160deg, #1a1a1c, #1e1e22, #18181b); }
+[data-theme="dark"] .ach-item.tier-bronze { background:linear-gradient(160deg, #1c1410, #201812, #18100c); }
+[data-theme="dark"] .ach-item.tier-special { background:linear-gradient(160deg, #1a1220, #1c1424, #181022); }
+[data-theme="dark"] .ach-item .ach-name { color:var(--text-primary); }
+[data-theme="dark"] .ach-item.tier-gold .ach-name { color:#e8c574; }
+[data-theme="dark"] .ach-item.tier-gold .ach-desc { color:#b8976e; }
+[data-theme="dark"] .ach-item.tier-silver .ach-name { color:#cbd5e1; }
+[data-theme="dark"] .ach-item.tier-silver .ach-desc { color:#94a3b8; }
+[data-theme="dark"] .ach-item.tier-bronze .ach-name { color:#f4b896; }
+[data-theme="dark"] .ach-item.tier-bronze .ach-desc { color:#c0814a; }
+[data-theme="dark"] .ach-item.tier-special .ach-name { color:#c4b5fd; }
+[data-theme="dark"] .ach-item.tier-special .ach-desc { color:#a78bfa; }
+[data-theme="dark"] .ach-modal { box-shadow:0 16px 64px rgba(0,0,0,0.4); }
+[data-theme="dark"] .ach-modal.modal-tier-gold { background:linear-gradient(160deg, #1e1808, #241e0c, #1a1408); }
+[data-theme="dark"] .ach-modal.modal-tier-silver { background:linear-gradient(160deg, #1a1a1c, #1e1e22, #18181b); }
+[data-theme="dark"] .ach-modal.modal-tier-bronze { background:linear-gradient(160deg, #1c1410, #201812, #18100c); }
+[data-theme="dark"] .ach-modal.modal-tier-special { background:linear-gradient(160deg, #1a1220, #1c1424, #181022); }
+[data-theme="dark"] .ach-modal-name { color:#f0f0f0; }
+[data-theme="dark"] .ach-modal-desc { color:#a0a0a0; }
+[data-theme="dark"] .ach-modal-time { color:#808080; }
+[data-theme="dark"] .ach-modal-close { background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.1); color:#ccc; }
+[data-theme="dark"] .ach-modal-close:hover { background:rgba(255,255,255,0.12); }
+[data-theme="dark"] .ach-tier-head.tier-gold { color:#e8c574; border-color:rgba(232,197,116,0.3); }
+[data-theme="dark"] .ach-tier-head.tier-silver { color:#cbd5e1; border-color:rgba(203,213,225,0.2); }
+[data-theme="dark"] .ach-tier-head.tier-bronze { color:#f4b896; border-color:rgba(244,184,150,0.2); }
+[data-theme="dark"] .ach-tier-head.tier-special { color:#c4b5fd; border-color:rgba(196,181,253,0.25); }
+
 @media (max-width: 768px) { .action-cards { grid-template-columns:1fr 1fr 1fr; } .ach-grid { grid-template-columns:1fr 1fr; } }
 </style>

@@ -56,6 +56,7 @@ class AchievementVO(BaseModel):
     desc: str
     emoji: str
     tier: str = "bronze"
+    unlock_time: str = ""
     unlocked: bool = False
 
 

@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, Query
 
 from backend.core.deps import get_ai_chat_service, get_current_user, require_admin
 from backend.schema.vo.common import ApiResponse
-from backend.schema.vo.ai_chat import ConversationVO, ConversationDetailVO, ChatReplyVO, AIStateVO, AchievementVO
+from backend.schema.vo.ai_chat import ConversationVO, ConversationDetailVO, ChatReplyVO, AIStateVO
 from backend.schema.request.ai_chat import ChatRequest, RenameConversation
 from backend.domain.ai_chat import IAIChatService
 
@@ -74,7 +74,7 @@ def get_state(
     return svc.get_state(current_user.id, conversation_id, current_user.role)
 
 
-@router.get("/achievements", summary="成就列表", response_model=ApiResponse[List[AchievementVO]])
+@router.get("/achievements", summary="成就列表")
 def get_achievements(
     current_user=Depends(get_current_user),
     svc: IAIChatService = Depends(get_ai_chat_service),

@@ -3,7 +3,17 @@
 from __future__ import annotations
 import json
 import os
+import time
 from datetime import datetime
+
+TIER_LABELS = {"gold": "金杯", "silver": "银杯", "bronze": "铜杯", "special": "特殊"}
+TIER_ORDER = ["special", "gold", "silver", "bronze"]
+TIER_NAMES = {
+    "special": "传说品质 · 可遇不可求",
+    "gold": "金色传说 · 用实力说话",
+    "silver": "白银进阶 · 渐入佳境",
+    "bronze": "青铜起点 · 每一步都算数",
+}
 
 ACHIEVEMENTS = [
     # ── 对话里程碑 ──
@@ -328,6 +338,7 @@ class AchievementStore:
         self.user_id = user_id
         self.path = os.path.join(base_dir, f"user_{user_id}_achievements.json")
         self._unlocked: set = set()
+        self._unlocked_times: dict = {}  # ach_id → "2026-06-30 14:23"
         self._stats: dict = {}
         self._load()
 
@@ -335,17 +346,33 @@ class AchievementStore:
         try:
             with open(self.path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                self._unlocked = set(data.get("unlocked", []))
-                self._stats = data.get("stats", {})
+            # 兼容旧格式：老用户 unlocked 是字符串列表
+            unlocked_raw = data.get("unlocked", [])
+            if unlocked_raw and isinstance(unlocked_raw[0], dict):
+                for item in unlocked_raw:
+                    self._unlocked.add(item["id"])
+                    self._unlocked_times[item["id"]] = item.get("time", "")
+            else:
+                self._unlocked = set(unlocked_raw)
+                # 旧数据无时间戳，标记为未知
+                for ach_id in unlocked_raw:
+                    self._unlocked_times[ach_id] = ""
+            self._stats = data.get("stats", {})
         except (FileNotFoundError, json.JSONDecodeError):
             self._unlocked = set()
+            self._unlocked_times = {}
             self._stats = {}
 
     def _flush(self):
         os.makedirs(os.path.dirname(self.path), exist_ok=True)
+        unlocked_data = [{"id": ach_id, "time": self._unlocked_times.get(ach_id, "")}
+                         for ach_id in self._unlocked]
         with open(self.path, "w", encoding="utf-8") as f:
-            json.dump({"unlocked": list(self._unlocked), "stats": self._stats}, f,
+            json.dump({"unlocked": unlocked_data, "stats": self._stats}, f,
                       ensure_ascii=False, indent=2)
+
+    def _now(self) -> str:
+        return time.strftime("%Y-%m-%d %H:%M")
 
     def is_unlocked(self, ach_id: str) -> bool:
         return ach_id in self._unlocked
@@ -386,18 +413,23 @@ class AchievementStore:
             if not ops.get(op, lambda a, b: True)(actual, target):
                 return None
 
+        now = self._now()
         self._unlocked.add(ach_id)
+        self._unlocked_times[ach_id] = now
         self._flush()
-        return {"id": ach_id, "name": ach["name"], "desc": ach["desc"], "emoji": ach["emoji"], "tier": ach.get("tier", "bronze")}
+        return {"id": ach_id, "name": ach["name"], "desc": ach["desc"], "emoji": ach["emoji"], "tier": ach.get("tier", "bronze"), "unlock_time": now}
 
     def force_unlock(self, ach: dict) -> dict | None:
         """AI 判断触发：直接解锁指定成就，返回成就信息或 None"""
         ach_id = ach["id"]
         if ach_id in self._unlocked:
             return None
+        now = self._now()
         self._unlocked.add(ach_id)
+        self._unlocked_times[ach_id] = now
         self._flush()
-        return {"id": ach_id, "name": ach["name"], "desc": ach["desc"], "emoji": ach["emoji"], "tier": ach.get("tier", "bronze")}
+        return {"id": ach_id, "name": ach["name"], "desc": ach["desc"], "emoji": ach["emoji"], "tier": ach.get("tier", "bronze"), "unlock_time": now}
 
     def get_all(self) -> list:
-        return list(self._unlocked)
+        return [{"id": ach_id, "time": self._unlocked_times.get(ach_id, "")}
+                for ach_id in self._unlocked]
