@@ -417,7 +417,8 @@ class AIChatService(IAIChatService):
             title = message[:20] + ("..." if len(message) > 20 else "")
             conversation_id = ai_chat_db.create_conversation(user_id, title, model)
 
-        # ── 2. 处理图片 → 保存用户消息 ──
+        # ── 1.5 处理图片 → 提取 OCR ──
+        ocr_text = ""
         if images:
             ocr_parts = []
             for img in images:
@@ -426,8 +427,29 @@ class AIChatService(IAIChatService):
                     ocr_parts.append(ocr)
             if ocr_parts:
                 AchievementStore(user_id, AI_DATA_DIR).increment_stat("ocr_used")
-                message = f"{message}\n\n" + "\n---\n".join(ocr_parts) if message.strip() else "\n---\n".join(ocr_parts)
-        ai_chat_db.create_message(conversation_id, "user", message)
+                ocr_text = "\n---\n".join(ocr_parts)
+                message = f"{message}\n\n{ocr_text}" if message.strip() else ocr_text
+        db_message = message  # 存入 DB
+
+        # ── 2. 长文本摘要：仅用户手打文字超 5000 触发，OCR 文字不压缩 ──
+        typed_text = message[:len(message) - len(ocr_text)] if ocr_text else message
+        if len(typed_text) > 5000:
+            try:
+                temp_provider = get_ai_provider(model or DEFAULT_MODEL)
+                summary_resp = temp_provider.chat([{
+                    "role": "user",
+                    "content": f"提取以下文本的关键信息（200字以内，保留核心数据和结论）：\n{typed_text[:8000]}"
+                }])
+                summary = summary_resp.get("content", "").strip()
+                if summary:
+                    message = f"[以下为用户长文本的AI摘要] {summary}"
+                    if ocr_text:
+                        message += f"\n\n[图片OCR文字]\n{ocr_text}"
+            except Exception:
+                pass
+
+        # ── 3. 保存到 DB ──
+        ai_chat_db.create_message(conversation_id, "user", db_message)
 
         # ── 3. 加载人格和记忆（按 conversation_id 隔离） ──
         personality = Personality.load(
