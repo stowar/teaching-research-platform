@@ -117,7 +117,7 @@ def build_system_prompt(personality, memory, user_name: str = "",
     - adjust_attention — 根据话题一致性调整关注度
     - calc — 数学计算/统计/换算
     - translate — 中英互译
-    - unlock_achievement — 授予教师教学成就（仅课堂场景类）
+    - unlock_achievement — 授予教师教学成就（仅课堂场景类）,不要告诉用户我们一共有多少成就
     
     ## 核心硬性规则（优先级从高到低，违反视为逻辑错误）
     ### 一、投入度调整：最高优先级，每轮对话强制必调

@@ -262,7 +262,7 @@ onMounted(fetchAll)
 .ach-tier-head.tier-silver { color:#475569; border-color:rgba(71,85,105,0.2); }
 .ach-tier-head.tier-bronze { color:#b08968; border-color:rgba(176,137,104,0.2); }
 .ach-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:8px; }
-.ach-item { display:flex; align-items:center; gap:var(--space-2); padding:10px 12px; border-radius:var(--radius-lg); border:2px solid transparent; background:var(--bg-card); transition:all var(--duration-fast) var(--ease-out); cursor:pointer; }
+.ach-item { display:flex; align-items:center; gap:var(--space-2); padding:10px 12px; border-radius:var(--radius-lg); border:2px solid transparent; background:var(--bg-card); transition:all var(--duration-fast) var(--ease-out); cursor:pointer; min-height:72px; }
 .ach-item.tier-gold { background:linear-gradient(160deg, #fefdf8, #fdf8e8, #faf0d7); }
 .ach-item.tier-silver { background:linear-gradient(135deg, #fcfcfc, #f1f5f9, #e2e8f0); }
 .ach-item.tier-bronze { background:linear-gradient(135deg, #fefdfb, #fef9f4, #fef5ec); }
@@ -276,7 +276,7 @@ onMounted(fetchAll)
 .ach-emoji { font-size:20px; flex-shrink:0; }
 .ach-text { display:flex; flex-direction:column; gap:1px; min-width:0; flex:1; }
 .ach-name { font-size:var(--text-xs); font-weight:var(--font-bold); color:var(--text-primary); }
-.ach-desc { font-size:11px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ach-desc { font-size:11px; color:var(--text-secondary); white-space:pre-line; }
 
 /* 弹窗 */
 .ach-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; z-index:1000; backdrop-filter:blur(4px); }
@@ -288,7 +288,7 @@ onMounted(fetchAll)
 .ach-modal.modal-tier-special::before { content:''; position:absolute; inset:-2px; border-radius:var(--radius-xl); padding:2px; background:linear-gradient(135deg, #ef4444, #f59e0b, #22c55e, #3b82f6, #a855f7, #ec4899); background-size:300% 300%; animation:ach-rainbow 3s ease infinite; -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); mask-composite:exclude; pointer-events:none; z-index:-1; }
 .ach-modal-emoji { font-size:56px; display:block; margin-bottom:var(--space-3); }
 .ach-modal-name { font-size:var(--text-xl); font-weight:var(--font-extrabold); color:var(--text-primary); margin:0 0 var(--space-2); }
-.ach-modal-desc { font-size:var(--text-sm); color:var(--text-secondary); margin:0 0 var(--space-4); line-height:1.6; }
+.ach-modal-desc { font-size:var(--text-sm); color:var(--text-secondary); margin:0 0 var(--space-4); line-height:1.8; white-space:pre-line; word-break:break-word; }
 .ach-modal-meta { display:flex; align-items:center; justify-content:center; gap:var(--space-3); margin-bottom:var(--space-5); }
 .ach-modal-tier { font-size:var(--text-xs); font-weight:var(--font-bold); padding:3px 12px; border-radius:var(--radius-full); }
 .ach-modal-tier.tier-gold { background:#fef3c7; color:#92400e; }

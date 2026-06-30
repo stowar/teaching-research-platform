@@ -12,9 +12,10 @@ import SessionSidebar from '@/components/chat/SessionSidebar.vue'
 import MessageList from '@/components/chat/MessageList.vue'
 import ChatInput from '@/components/chat/ChatInput.vue'
 import InfoSidebar from '@/components/chat/InfoSidebar.vue'
-import AchievementToast from '@/components/chat/AchievementToast.vue'
+import { useAchievementToast } from '@/composables/useAchievementToast.js'
 
 const auth = useAuthStore()
+const { show: showAchievementToast } = useAchievementToast()
 const { isDark, toggle } = useTheme()
 
 // ===================== 会话 =====================
@@ -100,7 +101,6 @@ const showFocusHelp = ref(false)
 const stateVersion = ref(0)
 const stateActivated = ref(false)
 const achievements = ref([])
-const newAchievementToast = ref(null)
 const showMobileSidebar = ref(window.innerWidth > 1024)
 const showMobileInfo = ref(window.innerWidth > 1024)
 
@@ -176,7 +176,7 @@ async function sendMessage(text) {
     }
     stateActivated.value = true
     if (reply.new_achievements?.length > 0) {
-      reply.new_achievements.forEach(ach => showAchievementToast(ach))
+      reply.new_achievements.forEach(ach => { playUnlockSound(ach.tier || 'bronze'); showAchievementToast(ach) })
       loadAchievements()
     }
     if (reply.conversation_id && !currentConversationId.value) {
@@ -240,13 +240,8 @@ function playUnlockSound(tier) {
     })
   } catch { /* */ }
 }
-function showAchievementToast(ach) {
-  playUnlockSound(ach.tier || 'bronze')
-  newAchievementToast.value = ach
-  setTimeout(() => { newAchievementToast.value = null }, 8000)
-}
 async function loadAchievements() {
-  try { const res = await api.get('/ai-chat/achievements'); achievements.value = res.data || [] } catch { /* */ }
+  try { const res = await api.get('/ai-chat/achievements'); achievements.value = res.data?.items || [] } catch { /* */ }
 }
 async function loadState(convId = null) {
   try {
@@ -329,7 +324,6 @@ onMounted(async () => {
       @toggle-theme="toggle"
     />
 
-    <AchievementToast :achievement="newAchievementToast" />
   </div>
 </template>
 

@@ -24,7 +24,7 @@ defineProps({ achievement: Object })
 .ach-toast-overlay { position:fixed; bottom:24px; right:0; z-index:1000; pointer-events:none; }
 .ach-toast-card {
   display:flex; align-items:stretch; border-radius:0; background:var(--bg-card);
-  border:1px solid var(--border-light); overflow:hidden; max-width:380px;
+  border:1px solid var(--border-light); overflow:hidden; max-width:420px;
   box-shadow:0 8px 32px rgba(0,0,0,0.12),0 2px 8px rgba(0,0,0,0.06);
 }
 .ach-tier-gold { box-shadow:0 8px 32px rgba(245,158,11,0.2),0 2px 8px rgba(245,158,11,0.1); }
@@ -44,7 +44,7 @@ defineProps({ achievement: Object })
 .ach-toast-body { display:flex; flex-direction:column; gap:1px; min-width:0; }
 .ach-toast-title { font-size:10px; font-weight:var(--font-bold); color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.05em; }
 .ach-toast-name { font-size:var(--text-sm); font-weight:var(--font-extrabold); color:var(--text-primary); }
-.ach-toast-desc { font-size:var(--text-xs); color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ach-toast-desc { font-size:var(--text-xs); color:var(--text-secondary); white-space:pre-line; word-break:break-word; }
 .ach-tier-bar { width:6px; flex-shrink:0; }
 .ach-tier-bar.tier-gold { background:linear-gradient(180deg,#fef3c7,#f59e0b); }
 .ach-tier-bar.tier-silver { background:linear-gradient(180deg,#e0e0e0,#b0b0b0,#d4d4d4); }

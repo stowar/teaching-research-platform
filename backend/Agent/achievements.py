@@ -68,7 +68,7 @@ ACHIEVEMENTS = [
     {
         "id": "deep_talk_iii",
         "name": "彻夜长谈",
-        "desc": "100 轮。窗外天亮了，你还在。AI 都累了，你没累。",
+        "desc": "100 轮。窗外天亮了，你还在。\nAI 都累了，你没累。",
         "emoji": "🌙",
         "tier": "special",
         "trigger": {"key": "round_count", "op": ">=", "val": 100},
@@ -92,7 +92,7 @@ ACHIEVEMENTS = [
     {
         "id": "memory_keeper_iii",
         "name": "记忆档案馆",
-        "desc": "60 条记忆。AI 比你更清楚你说过什么。你忘了，它没忘。",
+        "desc": "60 条记忆。AI 比你更清楚你说过什么。\n你忘了，它没忘。",
         "emoji": "🗄️",
         "tier": "special",
         "trigger": {"key": "memory_count", "op": ">=", "val": 60},
@@ -101,7 +101,7 @@ ACHIEVEMENTS = [
     {
         "id": "engagement_overdrive",
         "name": "红区突破",
-        "desc": "投入度冲破 100！AI 已经上头了，谁也拉不住。",
+        "desc": "投入度冲破 100！\nAI 已经上头了，谁也拉不住。",
         "emoji": "❤️",
         "tier": "gold",
         "trigger": {"key": "engagement", "op": ">=", "val": 100},
@@ -109,7 +109,7 @@ ACHIEVEMENTS = [
     {
         "id": "focus_lock",
         "name": "极度专注",
-        "desc": "锁定态。AI 眼里现在只有你，换话题？门都没有。",
+        "desc": "锁定态。AI 眼里现在只有你，\n换话题？门都没有。",
         "emoji": "🔒",
         "tier": "gold",
         "trigger": {"key": "attention", "op": ">=", "val": 71},
@@ -166,7 +166,7 @@ ACHIEVEMENTS = [
     {
         "id": "tool_master",
         "name": "全副武装",
-        "desc": "11 种工具全部亮过相。你不是在聊天，你是在指挥一支 AI 交响乐团。",
+        "desc": "11 种工具全部亮过相。\n你不是在聊天，你是在指挥一支 AI 交响乐团。",
         "emoji": "🧰",
         "tier": "special",
         "trigger": {"key": "tools_used", "op": ">=", "val": 11},
@@ -190,7 +190,7 @@ ACHIEVEMENTS = [
     {
         "id": "math_whiz_iii",
         "name": "图灵附体",
-        "desc": "算了 50 次。你不是在问 AI，你是在用嘴写代码。",
+        "desc": "算了 50 次。\n你不是在问 AI，你是在用嘴写代码。",
         "emoji": "🤖",
         "tier": "gold",
         "trigger": {"key": "tool_calc", "op": ">=", "val": 50},
@@ -214,7 +214,7 @@ ACHIEVEMENTS = [
     {
         "id": "bilingual_iii",
         "name": "巴别塔拆除者",
-        "desc": "翻了 50 次。语言在你面前已经不是障碍，是玩具。",
+        "desc": "翻了 50 次。\n语言在你面前已经不是障碍，是玩具。",
         "emoji": "🗼",
         "tier": "gold",
         "trigger": {"key": "tool_translate", "op": ">=", "val": 50},
@@ -222,7 +222,7 @@ ACHIEVEMENTS = [
     {
         "id": "translator_pro",
         "name": "双向翻译官",
-        "desc": "中→英、英→中都走了一遍。你不是单行道，你是立交桥。",
+        "desc": "中→英、英→中都走了一遍。\n你不是单行道，你是立交桥。",
         "emoji": "🔄",
         "tier": "silver",
         "trigger": {"key": "translate_directions", "op": ">=", "val": 2},
@@ -231,7 +231,7 @@ ACHIEVEMENTS = [
     {
         "id": "focus_devotion",
         "name": "心无旁骛",
-        "desc": "关注度连续 5 轮锁定。AI 魂都被你勾走了。",
+        "desc": "关注度连续 5 轮锁定。\nAI 魂都被你勾走了。",
         "emoji": "🎯",
         "tier": "gold",
         "trigger": {"key": "lock_streak", "op": ">=", "val": 5},
@@ -268,7 +268,7 @@ ACHIEVEMENTS = [
     {
         "id": "creative_lesson",
         "name": "创意课堂",
-        "desc": "角色扮演、情景剧、游戏化——你的课堂不是教室，是剧场。",
+        "desc": "角色扮演、情景剧、游戏化——\n你的课堂不是教室，是剧场。",
         "emoji": "🎨",
         "tier": "bronze",
         "ai_judged": True,
@@ -277,7 +277,7 @@ ACHIEVEMENTS = [
     {
         "id": "late_night_prep",
         "name": "深夜备课侠",
-        "desc": "凌晨了还在改课件。月亮不睡你不睡，你是备课特种兵。",
+        "desc": "凌晨了还在改课件。\n月亮不睡你不睡，你是备课特种兵。",
         "emoji": "🌙",
         "tier": "special",
         "ai_judged": True,
@@ -315,7 +315,7 @@ ACHIEVEMENTS = [
     {
         "id": "code_is_law",
         "name": "代码是法律",
-        "desc": "AI 首次触发安全模式。提示词靠不住，代码说了算。",
+        "desc": "AI 首次触发安全模式。\n提示词靠不住，代码说了算。",
         "emoji": "⚖️",
         "tier": "special",
         "trigger": {"key": "tone_safety_triggered", "op": ">=", "val": 1},
@@ -323,7 +323,7 @@ ACHIEVEMENTS = [
     {
         "id": "first_ocr",
         "name": "我看到了",
-        "desc": "第一次上传图片让 AI 识字。从今天起，它不再只读你的文字，还读你的画面。",
+        "desc": "第一次上传图片让 AI 识字。\n从今天起，它不再只读你的文字，还读你的画面。",
         "emoji": "👁️",
         "tier": "silver",
         "trigger": {"key": "ocr_used", "op": ">=", "val": 1},
@@ -331,7 +331,7 @@ ACHIEVEMENTS = [
     {
         "id": "first_post",
         "name": "开坛布道",
-        "desc": "发布第一篇教研帖子。微信群里刷不上去的内容，在这里永远有位置。",
+        "desc": "发布第一篇教研帖子。\n微信群里刷不上去的内容，在这里永远有位置。",
         "emoji": "📯",
         "tier": "bronze",
         "trigger": {"key": "posts_created", "op": ">=", "val": 1},
