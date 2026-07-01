@@ -40,16 +40,18 @@ class Personality:
         self.name = name
         self.engagement = 50
         self.attention = 30
-        self.tone = Tone.CASUAL
+        self.tone = Tone.PROFESSIONAL
         self._last_user_time = time.time()
-        self._last_silence = 0.0
+        self._last_short_silence = 0.0
+        self._last_long_silence = 0.0  # 上一次长静默（>2h），不随短间隔覆盖
+        self._longest_silence = 0.0
 
     # ── 时间感知 ──────────────────────────────────
 
     @property
-    def silence_hours(self):
-        """从最后消息时间戳计算静默时长（小时）"""
-        return (time.time() - self._last_user_time) / 3600.0
+    def silence_timing(self):
+        """从最后消息时间戳计算静默时长（秒）"""
+        return time.time() - self._last_user_time
 
     def get_current_time(self) -> str:
         """AI 调用：返回当前时间和星期几"""
@@ -57,29 +59,35 @@ class Personality:
         weekdays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
         return f"{now.tm_year}年{now.tm_mon}月{now.tm_mday}日 {now.tm_hour:02d}:{now.tm_min:02d} {weekdays[now.tm_wday]}"
 
-    def get_silence_hours(self) -> str:
-        """AI 调用：返回本轮对话前的静默时长（快照值，不会被 on_user_message 归零）"""
+    def get_silence_timing(self) -> str:
+        """AI 调用：返回本轮对话前的静默时长（快照值）"""
         h = self._last_silence
+        if h < 0.01:
+            return "用户刚刚还在"
+        elif h < 2:
+            return f"用户离开了 {h*60:.0f} 分钟"
         return f"用户已 {h:.1f} 小时未互动"
 
     # ── AI 工具接口 ──────────────────────────────
 
     def get_status(self) -> str:
-        h = self._last_silence
-        if h < 0.5:
-            hint = "（用户刚在，自然承接）"
-        elif h < 6:
-            hint = "（用户离开一阵了，简短问候后拉回话题）"
+        s_h = self._last_short_silence  # 用户发消息时的快照，不回零
+        h_t = self.silence_timing  # 实时值，持续增长
+        if s_h < 0.5:
+            hint = "立刻回复"
+        elif s_h < 2:
+            hint = f"离开了{s_h*60:.0f}分钟，自然承接"
         else:
-            hint = "（用户离开很久了，轻松问候，提及时间跨度）"
+            hint = f"离开了{s_h:.0f}小时，先问候再聊正事"
+
+        l_h = self._last_long_silence
+        last_long = f"\n长静默:{l_h:.0f}小时" if l_h > 2 else ""
 
         return (
-            f"【{self.name} 状态】"
-            f"语气：{self.tone.value}，"
-            f"投入度：{self.engagement}，"
-            f"关注度：{self.attention}，"
-            f"静默：{h:.1f}h{hint}"
-            f"精准的时间：{self.get_current_time()}"
+            f"现在时间: {self.get_current_time()}\n"
+            f"语气: {self.tone.value}  投入度: {self.engagement}  关注度: {self.attention}\n"
+            f"短静默(5分钟以上2小时以内的沉默): {s_h:.1f}小时{last_long}小时\n当前实时静默: {h_t:.1f}秒"
+            f"提示: {hint}"
         )
 
     def set_tone(self, tone_str: str) -> str:
@@ -108,12 +116,22 @@ class Personality:
         self.attention = min(100, int(self.attention + 2))
 
         # 沉默超 2 小时 → 降为专业模式
-        if self.silence_hours > 2 and self.tone != Tone.PROFESSIONAL:
+        if self.silence_timing / 3600 > 2 and self.tone != Tone.PROFESSIONAL:
             self.tone = Tone.PROFESSIONAL
 
     def on_user_message(self, content: str):
         """收到用户消息：快照静默时长、更新时间戳、消耗关注度、微增投入、自动调语气"""
-        self._last_silence = self.silence_hours
+        # 短静默:只有间隔超过 5 分钟才刷新静默快照，同轮对话不覆盖
+        sh = self.silence_timing / 3600
+        if sh > 0.08:
+            self._last_silence = sh
+        # 长静默（>2h）单独记录，不随短间隔丢失
+        if sh > 2:
+            self._last_long_silence = sh
+        # 最长静默（历史最长）
+        if sh > self._longest_silence:
+            self._longest_silence = sh
+
         self._last_user_time = time.time()
         self.attention = max(0, self.attention - 3)
         self.engagement = min(200, self.engagement + 1)
@@ -137,6 +155,8 @@ class Personality:
             "tone": self.tone.value,
             "last_user_time": self._last_user_time,
             "last_silence": self._last_silence,
+            "last_long_silence": self._last_long_silence,
+            "longest_silence": self._longest_silence,
         }
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "w", encoding="utf-8") as f:
@@ -153,6 +173,8 @@ class Personality:
             p.tone = Tone(data.get("tone", "casual"))
             p._last_user_time = data.get("last_user_time", time.time())
             p._last_silence = data.get("last_silence", 0.0)
+            p._last_long_silence = data.get("last_long_silence", 0.0)
+            p._longest_silence = data.get("longest_silence", 0.0)
             return p
         except (FileNotFoundError, json.JSONDecodeError, KeyError):
             return cls(name)

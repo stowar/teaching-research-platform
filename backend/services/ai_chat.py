@@ -149,7 +149,7 @@ def _summarize_and_trim(system_msg, history, memory, model):
 
 def _enforce_silence(personality):
     """沉默超过 2 小时：投入度 -2/小时、关注度重置为发散态"""
-    h = personality.silence_hours
+    h = personality.silence_timing / 3600
     if h > 2:
         decay = int(h * 2)
         personality.engagement = max(0, personality.engagement - decay)
@@ -359,7 +359,7 @@ class AIChatService(IAIChatService):
             tone_label=_tone_label(personality.tone),
             engagement=personality.engagement,
             attention=personality.attention,
-            silence_hours=round(personality.silence_hours, 1),
+            silence_hours=round(personality.silence_timing / 3600, 1),
             memory_count=len(memory),
             messages_today=today_count,
             messages_limit=limit,
@@ -530,7 +530,7 @@ class AIChatService(IAIChatService):
                 tools_seen.add(fn["name"])
                 if fn["name"] == "get_current_time":
                     ach_store.increment_stat("tool_get_current_time")
-                elif fn["name"] == "get_silence_hours":
+                elif fn["name"] == "get_silence_timing":
                     ach_store.increment_stat("tool_get_silence_hours")
                 elif fn["name"] == "check_memory":
                     ach_store.increment_stat("tool_check_memory")
@@ -583,7 +583,7 @@ class AIChatService(IAIChatService):
             tone_label=_tone_label(personality.tone),
             engagement=personality.engagement,
             attention=personality.attention,
-            silence_hours=round(personality.silence_hours, 1),
+            silence_hours=round(personality.silence_timing / 3600, 1),
             memory_count=len(memory),
             messages_today=today_count,
             messages_limit="∞" if is_unlocked else MAX_MESSAGES_PER_DAY,

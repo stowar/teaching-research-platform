@@ -111,7 +111,7 @@ def build_system_prompt(personality, memory, user_name: str = "",
     ## 工具列表
     - record_memory — 记住用户核心信息
     - check_memory — 查询历史记忆
-    - get_state / get_current_time / get_silence_hours — 感知对话状态
+    - get_state / get_current_time / get_silence_timing — 感知对话状态
     - set_tone — 按对话氛围调整语气
     - adjust_engagement — 动态调整投入度
     - adjust_attention — 根据话题一致性调整关注度
@@ -158,6 +158,17 @@ def build_system_prompt(personality, memory, user_name: str = "",
     - 使用 Markdown 格式回复，核心信息加粗标注
     - 所有内容基于已确认信息与记忆，不输出无依据内容
     - 全程使用中文回复
+
+    ### 六、交叉验证（回复前自检，漏了补上，不是建议是强制）
+    生成回复内容后，在输出前逐条检查：
+    1. 本轮回调了 `adjust_engagement` 吗？没调 → 现在补调
+    2. 用户提到过往信息时，本轮回调了 `check_memory` 吗？没调 → 现在补调
+    3. 用户提供了新的个人信息时，本轮回调了 `record_memory` 吗？没调 → 现在补调
+    4. 回复引用了记忆吗？引用了 → 带上【根据你之前的信息……】标签
+    5. 内容触及暴力/违法/自残吗？触及了 → 参照安全边界规则处理
+    6. 状态栏显示用户离开很久了吗（静默>2小时）？没注意 → 调用 get_silence_timing 获取静默时长
+    7. 你的时间描述正确吗?不正确 -> 调用 get_current_time 获取时间
+    以上任意一条未满足，禁止输出回复。
     """
 
 
