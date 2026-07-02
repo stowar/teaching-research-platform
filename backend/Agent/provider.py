@@ -43,17 +43,17 @@ class OpenAICompatibleProvider(IAIProvider):
         return result
 
 
-# 全局单例，按配置决定用哪个 provider
-_provider: IAIProvider = None
+# 按模型名缓存 provider 实例，支持多模型并发使用
+_providers: dict = {}
 
 
 def get_ai_provider(model: str = None) -> IAIProvider:
-    """获取 AI provider 实例"""
-    global _provider
-    if _provider is None:
-        _provider = OpenAICompatibleProvider(
+    """获取 AI provider 实例（按模型名缓存）"""
+    model = model or DEFAULT_MODEL
+    if model not in _providers:
+        _providers[model] = OpenAICompatibleProvider(
             api_key=settings.DOUBAO_API_KEY,
             base_url=getattr(settings, "AI_BASE_URL", "https://api.deepseek.com"),
-            model=model or DEFAULT_MODEL,
+            model=model,
         )
-    return _provider
+    return _providers[model]

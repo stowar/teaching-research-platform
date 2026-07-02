@@ -159,11 +159,33 @@ TOOLS = [
             },
         },
     },
+    # [TODO] web_search 暂不可用，待部署后启用
+    # {
+    #     "type": "function",
+    #     "function": {
+    #         "name": "web_search",
+    #         "description": "联网搜索实时信息。用户问最新资讯、政策、新闻、数据时调用。",
+    #         "parameters": {
+    #             "type": "object",
+    #             "properties": {
+    #                 "query": {"type": "string", "description": "搜索关键词"},
+    #             },
+    #             "required": ["query"],
+    #         },
+    #     },
+    # },
 ]
 
 
 # ============================================================
 # 工具执行器（build_tool_map 模式 — 从 XiaoBai 迁移）
+# ============================================================
+
+
+# [TODO] web_search 暂不可用，待部署后启用
+# def _web_search(query: str) -> str:
+#     """Bing 搜索 + AI 摘要"""
+#     ...
 # ============================================================
 
 def _calc(expression: str) -> str:
@@ -226,6 +248,8 @@ def build_tool_map(personality: Personality, memory_store: MemoryStore,
         "adjust_attention": lambda **kw: personality.adjust_attention(int(kw["delta"])),
         "calc": lambda **kw: _calc(kw["expression"]),
         "translate": lambda **kw: _translate(kw["text"], kw["target"]),
+        # [TODO] web_search 暂不可用
+        # "web_search": lambda **kw: _web_search(kw["query"]),
     }
     if unlock_ach_cb:
         tm["unlock_achievement"] = lambda **kw: unlock_ach_cb(kw["achievement_id"])

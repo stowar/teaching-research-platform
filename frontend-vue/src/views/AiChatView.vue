@@ -102,6 +102,8 @@ const stateVersion = ref(0)
 const stateActivated = ref(false)
 const achievements = ref([])
 const showMobileSidebar = ref(window.innerWidth > 1024)
+const enableSearch = ref(true)
+const enableDeepThink = ref(true)
 const showMobileInfo = ref(window.innerWidth > 1024)
 
 const quickPrompts = [
@@ -161,7 +163,7 @@ async function sendMessage(text) {
   abortController.value = ctrl
 
   try {
-    const payload = { message: text, conversation_id: currentConversationId.value, model: null }
+    const payload = { message: text, conversation_id: currentConversationId.value, model: null, enable_search: enableSearch.value, enable_deep_think: enableDeepThink.value }
     if (userMsg.images) payload.images = userMsg.images
     const res = await api.post('/ai-chat/chat', payload, { signal: ctrl.signal })
     const reply = res.data
@@ -309,7 +311,12 @@ onMounted(async () => {
         </div>
       </div>
 
-      <ChatInput v-if="auth.isLoggedIn" v-model="inputText" :loading="loading" :disabled="!inputText.trim() && !imagePreviews.length" @send="sendMessage" @stop="stopAI" />
+      <ChatInput v-if="auth.isLoggedIn" v-model="inputText" :loading="loading"
+        :disabled="!inputText.trim() && !imagePreviews.length"
+        :enable-search="enableSearch" :enable-deep-think="enableDeepThink"
+        @send="sendMessage" @stop="stopAI"
+        @toggle-search="enableSearch = !enableSearch"
+        @toggle-deep-think="enableDeepThink = !enableDeepThink" />
     </main>
 
     <!-- 右侧信息栏 -->

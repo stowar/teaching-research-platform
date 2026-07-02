@@ -10,6 +10,8 @@ class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=50000, description="用户消息")
     images: Optional[list] = Field(None, description="base64 图片数组")
     model: Optional[str] = None
+    enable_search: bool = Field(True, description="允许 AI 联网搜索")
+    enable_deep_think: bool = Field(True, description="允许 AI 深度思考")
 
 
 class RenameConversation(BaseModel):

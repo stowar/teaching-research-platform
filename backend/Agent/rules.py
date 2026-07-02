@@ -1,102 +1,43 @@
 # -*- coding: utf-8 -*-
-"""AI 教研助手行为规则 — 系统提示、语气切换、交互约束
+"""AI 教研助手行为规则 — 语气切换、交互约束、系统提示模板（已废弃）
 
 设计原则：
   1. 规则和代码分离——改 AI 行为只改这个文件，不动 service
   2. 规则是"宪法"，代码是"执法"——规则说怎么做，代码执行
   3. 每条规则都要能回答"为什么有这个"
+
+build_system_prompt() 已废弃，新代码使用 prompt_builder.build_layered_prompt()。
+_build_ach_rules() 和 _build_user_state() 已迁至 prompt_builder.py。
 """
-from backend.Agent.memory import MemoryStore
-from backend.Agent.achievements import ACHIEVEMENTS
-
-
-def _build_ach_rules(unlocked_ids: set = None) -> str:
-    """动态生成成就授予规则，已解锁的不再出现"""
-    unlocked = unlocked_ids or set()
-    ai_judged = [a for a in ACHIEVEMENTS if a.get("ai_judged") and a["id"] not in unlocked]
-    if not ai_judged:
-        return "### 二、成就：所有成就已解锁，无需再授予。"
-    lines = [
-        "### 二、成就授予规则（AI 自主判断，每次对话最多授予 1 个）",
-        "教师对话内容命中以下课堂场景时，调用 `unlock_achievement(achievement_id)` 授予成就。",
-        "每次对话只给最贴切的那一个，不强行凑。没命中就不调。",
-        "",
-        "| 成就 ID | 名称 | 触发条件（AI 判断） |",
-        "|---------|------|---------------------|",
-    ]
-    for ach in ai_judged:
-        cond = ach.get("ai_hint", ach.get("desc", ""))
-        lines.append(f"| {ach['id']} | {ach['name']} | {cond} |")
-    return "\n".join(lines)
-
-
-def _build_user_state(state: dict) -> str:
-    """动态生成用户当前状态摘要，嵌入 system prompt"""
-    parts = ["## 当前教师状态"]
-
-    # 成就
-    unlocked = state.get("unlocked_ach", [])
-    total = state.get("total_ach", 0)
-    if unlocked:
-        names = "、".join(unlocked)
-        parts.append(f"- 已解锁成就（{len(unlocked)}/{total}）：{names}")
-    else:
-        parts.append(f"- 尚未解锁任何成就（{total} 个待解锁）")
-
-    # 配额
-    msgs = state.get("messages_today", 0)
-    limit = state.get("messages_limit", 30)
-    quota_left = max(0, int(limit) - msgs) if isinstance(limit, int) else -1
-    if quota_left >= 0:
-        if quota_left <= 3:
-            parts.append(f"- 今日配额紧张：仅剩 {quota_left} 条，请精简回复")
-        else:
-            parts.append(f"- 今日剩余配额：{quota_left} 条")
-    else:
-        parts.append(f"- 今日已发 {msgs} 条，无限制（管理员）")
-
-    # 连续天数
-    streak = state.get("streak_days", 0)
-    if streak >= 7:
-        parts.append(f"- 连续活跃 {streak} 天 — 铁杆用户，语气亲切")
-    elif streak >= 3:
-        parts.append(f"- 连续活跃 {streak} 天 — 渐入佳境")
-    elif streak == 1:
-        parts.append("- 今天首次对话，可能是新用户，保持友好引导")
-
-    # 记忆
-    mc = state.get("memory_count", 0)
-    if mc >= 10:
-        parts.append(f"- 已有 {mc} 条长期记忆 — 老熟人了，多引用过往信息")
-    elif mc >= 3:
-        parts.append(f"- 已有 {mc} 条长期记忆 — 正在建立用户画像")
-    else:
-        parts.append("- 记忆较少，多问多记，主动了解教师背景")
-
-    # 账户
-    if state.get("is_admin"):
-        parts.append("- 该教师是平台管理员，可适当开放高级功能讨论")
-    elif state.get("is_unlocked"):
-        parts.append("- 该教师今日配额已解锁，可能是 VIP 或需要特殊关照")
-
-    return "\n".join(parts)
 
 
 # ============================================================
 # 系统提示模板
 # ============================================================
 
+import warnings
+
+
+# 这些导入移到函数内部以避免循环导入
+# build_achievement_rules / _build_user_state_layer 在 build_system_prompt() 中延迟导入
+
+
 def build_system_prompt(personality, memory, user_name: str = "",
                         user_state: dict = None) -> str:
-    """构建 AI 教研助手的完整 system prompt"""
+    """[已废弃] 构建 AI 教研助手的完整 system prompt。
+    新代码请使用 prompt_builder.build_layered_prompt()。"""
+    from backend.Agent.prompt_builder import build_achievement_rules, _build_user_state_layer
+    from backend.Agent.achievements import ACHIEVEMENTS
+
+    warnings.warn("build_system_prompt() is deprecated, use prompt_builder.build_layered_prompt()", DeprecationWarning, stacklevel=2)
     tone_desc = personality.get_tone_prompt()
     ranked = memory.query("", personality.engagement)
     memories = memory.format_query_results(ranked)
     unlocked = set(user_state.get("unlocked_ach_ids", []) if user_state else [])
-    ach_rules = _build_ach_rules(unlocked)
+    ach_rules = build_achievement_rules(unlocked)
     status = personality.get_status()
     name_hint = f"当前对话的教师:{user_name}。" if user_name else ""
-    state_block = _build_user_state(user_state or {})
+    state_block = _build_user_state_layer(user_state or {})
 
     return f"""
     你是 AI 教研助手，面向职业院校英语教师。给实际建议，不空谈理论。
@@ -207,7 +148,7 @@ TONE_RULES = {
 # ============================================================
 
 # 上下文窗口：最多带多少条历史消息给 AI
-MAX_CONTEXT_MESSAGES = 30
+MAX_CONTEXT_MESSAGES = 10
 
 # Function calling 最大循环次数：防止 AI 反复调工具陷入死循环
 MAX_TOOL_ROUNDS = 3

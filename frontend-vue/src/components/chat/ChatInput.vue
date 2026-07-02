@@ -1,14 +1,16 @@
 <script setup>
 import { ref } from 'vue'
-import { Send } from 'lucide-vue-next'
+import { Send, Brain } from 'lucide-vue-next'
 
 const props = defineProps({
   loading: Boolean,
   disabled: Boolean,
   modelValue: String,
+  enableSearch: Boolean,
+  enableDeepThink: Boolean,
 })
 
-const emit = defineEmits(['update:modelValue', 'send', 'stop'])
+const emit = defineEmits(['update:modelValue', 'send', 'stop', 'toggle-search', 'toggle-deep-think'])
 const inputEl = ref(null)
 
 function autoResize() {
@@ -53,6 +55,23 @@ defineExpose({ resetHeight })
         @keydown="onKeydown"
         @input="onInput"
       />
+      <!-- [TODO] 搜索暂不可用 -->
+      <!-- <button
+        class="btn-toggle"
+        :class="{ active: enableSearch }"
+        title="联网搜索"
+        @click="emit('toggle-search')"
+      >
+        <Globe :size="13" />
+      </button> -->
+      <button
+        class="btn-toggle"
+        :class="{ active: enableDeepThink }"
+        title="深度思考"
+        @click="emit('toggle-deep-think')"
+      >
+        <Brain :size="13" />
+      </button>
       <button
         v-if="!loading"
         class="btn-send"
@@ -95,6 +114,16 @@ defineExpose({ resetHeight })
 .chat-input::-webkit-scrollbar-thumb { background:transparent; border-radius:2px; }
 .chat-input:hover::-webkit-scrollbar-thumb { background:var(--border-light); }
 .chat-input::placeholder { color:var(--text-tertiary); }
+.btn-toggle {
+  width:32px; height:32px; border-radius:var(--radius-lg); border:1px solid var(--border-light);
+  background:transparent; color:var(--text-tertiary); cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center;
+  transition:all 0.15s var(--ease-out); flex-shrink:0;
+}
+.btn-toggle:hover { border-color:var(--color-brand-300); color:var(--color-brand-500); }
+.btn-toggle.active { border-color:var(--color-brand-400); background:var(--color-brand-50); color:var(--color-brand-600); }
+[data-theme="dark"] .btn-toggle.active { background:rgba(79,70,229,0.15); color:var(--color-brand-300); border-color:var(--color-brand-400); }
+
 .btn-send {
   width:32px; height:32px; border-radius:var(--radius-lg); border:none;
   background:linear-gradient(135deg,var(--color-brand-500),var(--color-brand-600));

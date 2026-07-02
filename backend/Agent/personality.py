@@ -60,34 +60,33 @@ class Personality:
         return f"{now.tm_year}年{now.tm_mon}月{now.tm_mday}日 {now.tm_hour:02d}:{now.tm_min:02d} {weekdays[now.tm_wday]}"
 
     def get_silence_timing(self) -> str:
-        """AI 调用：返回本轮对话前的静默时长（快照值）"""
-        h = self._last_silence
-        if h < 0.01:
-            return "用户刚刚还在"
-        elif h < 2:
-            return f"用户离开了 {h*60:.0f} 分钟"
-        return f"用户已 {h:.1f} 小时未互动"
+        """AI 调用：返回全阶段静默追踪（短期/长期/历史最长）"""
+        current = self.silence_timing / 3600
+        short = self._last_short_silence
+        long_s = self._last_long_silence
+        longest = self._longest_silence
+
+        parts = []
+        if current < 0.01:
+            parts.append("当前静默：刚刚")
+        elif current < 2:
+            parts.append(f"当前静默：{current*60:.0f}分钟")
+        else:
+            parts.append(f"当前静默：{current:.1f}小时（长静默）")
+
+        if long_s > 2:
+            parts.append(f"上次长静默：{long_s:.1f}小时")
+        if longest > 0:
+            parts.append(f"历史最长静默：{longest:.1f}小时")
+
+        return " | ".join(parts)
 
     # ── AI 工具接口 ──────────────────────────────
 
     def get_status(self) -> str:
-        s_h = self._last_short_silence  # 用户发消息时的快照，不回零
-        h_t = self.silence_timing  # 实时值，持续增长
-        if s_h < 0.5:
-            hint = "立刻回复"
-        elif s_h < 2:
-            hint = f"离开了{s_h*60:.0f}分钟，自然承接"
-        else:
-            hint = f"离开了{s_h:.0f}小时，先问候再聊正事"
-
-        l_h = self._last_long_silence
-        last_long = f"\n长静默:{l_h:.0f}小时" if l_h > 2 else ""
-
+        """返回人格状态 — 语气/投入度/关注度"""
         return (
-            f"现在时间: {self.get_current_time()}\n"
-            f"语气: {self.tone.value}  投入度: {self.engagement}  关注度: {self.attention}\n"
-            f"短静默(5分钟以上2小时以内的沉默): {s_h:.1f}小时{last_long}小时\n当前实时静默: {h_t:.1f}秒"
-            f"提示: {hint}"
+            f"语气: {self.tone.value}  投入度: {self.engagement}  关注度: {self.attention}"
         )
 
     def set_tone(self, tone_str: str) -> str:
