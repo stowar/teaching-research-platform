@@ -1192,6 +1192,134 @@ AI 没调 → 代码强制（兜底层）
 
 投入度兜底：按消息长度推断
 关注度兜底：按投入度趋势推断（投入度是对话质量的 proxy）
+
+# Dev Log 2026-07-02
+
+## RAG + Agent 三阶段管道架构重构
+
+### 背景
+
+旧版 AI 聊天室 `chat()` 方法 ~270 行单体，所有上下文（状态、记忆、时间）塞进巨型 system prompt，依赖 AI 在 function calling 循环中自行调用 11 个工具获取。问题：
+1. 无预处理层，AI 每轮来回调 get_state/get_current_time/check_memory，慢且不稳
+2. 无 RAG 检索，记忆是 system prompt 构建时的简单关键词匹配
+3. 工具混杂，信息类和动作类工具全暴露给 AI
+4. Provider 单例 bug，不支持多模型
+
+### 新架构
+
+```
+用户输入（原始保留）
+    │
+    ▼
+Phase 1: 通用预处理（轻量模型 flash）
+    Call 1: 提取意图/关键词/实体/search+think 标志位
+    代码层: 关键词匹配 → 调 calc/translate/safety（通用工具）
+    Call 2: 整合上下文 → 紧凑摘要
+    │
+    ▼
+Phase 2: 个性化层
+    代码注入: get_state / get_current_time / get_silence_timing（全阶段静默）
+    个人记忆检索: Phase 1 关键词 → MemoryStore.query()
+    组装: 5 层 system prompt（系统指令/状态/记忆/预处理/用户状态）
+    │
+    ▼
+Phase 3: 主模型生成
+    工具: check_memory / record_memory / adjust_engagement / adjust_attention / unlock_achievement
+    模型路由: 投入度 ≥ 90 或 AI 判需深度思考 → deepseek-v4-pro
+    web_search 预备（Bing 实搜，注释待启用）
+```
+
+### 工具分类
+
+| 阶段 | 工具 | 触发方式 |
+|------|------|---------|
+| Phase 1/2（代码） | get_state, get_current_time, get_silence_timing, calc, translate, set_tone | 代码决定 → 结果注入 prompt |
+| Phase 3（AI） | check_memory, record_memory, adjust_engagement, adjust_attention, unlock_achievement | AI function calling 自主调用 |
+
+### 文件变更
+
+- **新建**: `Agent/preprocessor.py`, `Agent/prompt_builder.py`, `Agent/tool_router.py`
+- **新建包**: `services/ai_chat/` (service / pipeline / helpers / achievements)
+- **修改**: provider（单例→字典）, rules（常量保留）, config（PREPROCESS_MODEL）
+- **测试**: 4 个测试文件 34 个用例，全部通过
+- **前端**: ChatInput 加深度思考开关（搜索开关预留）
+- **优化**: 上下文 30→10 条, 提取 prompt few-shot 示例, 全阶段静默追踪
+
+### 收益
+
+- Token 消耗: ~7000 → ~4000（省 43%）
+- chat() 270 行 → 20 行骨架
+- 代码决定工具 → 零 function calling 来回，更稳更快
+- 模型按需自动切换 flash / pro
+- 每层独立可测可换
+
+### 用户故事
+
+见 `docs/exhibition/rag-agent-user-stories.md`
+
+# Dev Log 2026-07-02
+
+## RAG + Agent 三阶段管道架构重构
+
+### 背景
+
+旧版 AI 聊天室 `chat()` 方法 ~270 行单体，所有上下文（状态、记忆、时间）塞进巨型 system prompt，依赖 AI 在 function calling 循环中自行调用 11 个工具获取。问题：
+1. 无预处理层，AI 每轮来回调 get_state/get_current_time/check_memory，慢且不稳
+2. 无 RAG 检索，记忆是 system prompt 构建时的简单关键词匹配
+3. 工具混杂，信息类和动作类工具全暴露给 AI
+4. Provider 单例 bug，不支持多模型
+
+### 新架构
+
+```
+用户输入（原始保留）
+    │
+    ▼
+Phase 1: 通用预处理（轻量模型 flash）
+    Call 1: 提取意图/关键词/实体/search+think 标志位
+    代码层: 关键词匹配 → 调 calc/translate/safety（通用工具）
+    Call 2: 整合上下文 → 紧凑摘要
+    │
+    ▼
+Phase 2: 个性化层
+    代码注入: get_state / get_current_time / get_silence_timing（全阶段静默）
+    个人记忆检索: Phase 1 关键词 → MemoryStore.query()
+    组装: 5 层 system prompt（系统指令/状态/记忆/预处理/用户状态）
+    │
+    ▼
+Phase 3: 主模型生成
+    工具: check_memory / record_memory / adjust_engagement / adjust_attention / unlock_achievement
+    模型路由: 投入度 ≥ 90 或 AI 判需深度思考 → deepseek-v4-pro
+    web_search 预备（Bing 实搜，注释待启用）
+```
+
+### 工具分类
+
+| 阶段 | 工具 | 触发方式 |
+|------|------|---------|
+| Phase 1/2（代码） | get_state, get_current_time, get_silence_timing, calc, translate, set_tone | 代码决定 → 结果注入 prompt |
+| Phase 3（AI） | check_memory, record_memory, adjust_engagement, adjust_attention, unlock_achievement | AI function calling 自主调用 |
+
+### 文件变更
+
+- **新建**: `Agent/preprocessor.py`, `Agent/prompt_builder.py`, `Agent/tool_router.py`
+- **新建包**: `services/ai_chat/` (service / pipeline / helpers / achievements)
+- **修改**: provider（单例→字典）, rules（常量保留）, config（PREPROCESS_MODEL）
+- **测试**: 4 个测试文件 34 个用例，全部通过
+- **前端**: ChatInput 加深度思考开关（搜索开关预留）
+- **优化**: 上下文 30→10 条, 提取 prompt few-shot 示例, 全阶段静默追踪
+
+### 收益
+
+- Token 消耗: ~7000 → ~4000（省 43%）
+- chat() 270 行 → 20 行骨架
+- 代码决定工具 → 零 function calling 来回，更稳更快
+- 模型按需自动切换 flash / pro
+- 每层独立可测可换
+
+### 用户故事
+
+见 `docs/exhibition/rag-agent-user-stories.md`
 ```
 
 这套模式可以扩展到任意需要"AI 判断 + 代码兜底"的数值维度。**提示词是建议，代码是法律。**
