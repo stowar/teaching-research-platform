@@ -95,7 +95,6 @@ const inputText = ref('')
 const messages = ref([welcomeMsg()])
 const loading = ref(false)
 const abortController = ref(null)
-const imagePreviews = ref([])  // [{ dataUrl, id }]
 const aiState = ref(null)
 const showFocusHelp = ref(false)
 const stateVersion = ref(0)
@@ -105,6 +104,18 @@ const showMobileSidebar = ref(window.innerWidth > 1024)
 const enableSearch = ref(true)
 const enableDeepThink = ref(true)
 const showMobileInfo = ref(window.innerWidth > 1024)
+const pipelineToast = ref(null)  // { type, label }
+
+function toneLabel(tone) {
+  return { professional: '专业模式', casual: '轻松模式', encouraging: '鼓励模式', analytical: '分析模式', safety: '安全模式' }[tone] || tone
+}
+
+function showPipelineToast(type, label) {
+  const icons = { tone: '🎭', model: '🧠', memory: '🔄' }
+  const texts = { tone: '语气切换为', model: '已启用深度思考' }
+  pipelineToast.value = { icon: icons[type] || '', text: texts[type] ? `${texts[type]} ${label}` : label }
+  setTimeout(() => { pipelineToast.value = null }, 3000)
+}
 
 const quickPrompts = [
   '如何设计一堂高职英语听说课？',
@@ -117,32 +128,9 @@ async function scrollToBottom() {
   await msgListRef.value?.scrollToBottom()
 }
 
-// ===================== 图片 =====================
-let _imgId = 0
-const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif', 'image/bmp']
-function processImageFile(file) {
-  if (!file || !ALLOWED_TYPES.includes(file.type)) return false
-  if (file.size > 20 * 1024 * 1024) return false
-  const reader = new FileReader()
-  reader.onload = () => { imagePreviews.value.push({ dataUrl: reader.result, id: ++_imgId }) }
-  reader.readAsDataURL(file)
-  return true
-}
-function handlePaste(e) {
-  let had = false
-  for (const item of e.clipboardData?.items || []) {
-    if (item.type.startsWith('image/')) { e.preventDefault(); processImageFile(item.getAsFile()); had = true }
-  }
-}
-function handleDrop(e) {
-  e.preventDefault()
-  for (const f of e.dataTransfer?.files || []) { processImageFile(f) }
-}
-function removeImage(id) { imagePreviews.value = imagePreviews.value.filter(p => p.id !== id) }
-
 // ===================== 发送 =====================
-async function sendMessage(text) {
-  if ((!text && !imagePreviews.value.length) || loading.value) return
+async function sendMessage(text, attachments = []) {
+  if ((!text && !attachments.length) || loading.value) return
   if (!auth.isLoggedIn) {
     messages.value.push({
       role: 'assistant',
@@ -153,10 +141,9 @@ async function sendMessage(text) {
     return
   }
   const userMsg = { role: 'user', content: text, timestamp: Date.now() }
-  if (imagePreviews.value.length) userMsg.images = imagePreviews.value.map(p => p.dataUrl)
+  if (attachments.length) userMsg.attachments = attachments.map(a => a.name)
   messages.value.push(userMsg)
   inputText.value = ''
-  imagePreviews.value = []
   await scrollToBottom()
   loading.value = true
   const ctrl = new AbortController()
@@ -164,17 +151,30 @@ async function sendMessage(text) {
 
   try {
     const payload = { message: text, conversation_id: currentConversationId.value, model: null, enable_search: enableSearch.value, enable_deep_think: enableDeepThink.value }
-    if (userMsg.images) payload.images = userMsg.images
+    if (attachments.length) {
+      const imgs = attachments.filter(a => a.type === 'image').map(a => a.dataUrl)
+      const docs = attachments.filter(a => a.type === 'doc').map(a => ({ filename: a.name, data: a.base64 }))
+      if (imgs.length) payload.images = imgs
+      if (docs.length) payload.documents = docs
+    }
     const res = await api.post('/ai-chat/chat', payload, { signal: ctrl.signal })
     const reply = res.data
     if (reply.state) {
       const s = reply.state
+      const prev = aiState.value
       aiState.value = { ...s, engagement: 0, attention: 0 }
       await nextTick()
       await new Promise(r => requestAnimationFrame(r))
       aiState.value = s
       animateCounts(s)
       stateVersion.value++
+      // 状态变化提示
+      if (prev && prev.tone !== s.tone) {
+        showPipelineToast('tone', toneLabel(s.tone))
+      }
+      if (prev && prev.engagement < 90 && s.engagement >= 90) {
+        showPipelineToast('model', 'deepseek-v4-pro')
+      }
     }
     stateActivated.value = true
     if (reply.new_achievements?.length > 0) {
@@ -303,16 +303,14 @@ onMounted(async () => {
         </div>
       </div>
 
-      <!-- 图片预览 -->
-      <div v-if="imagePreviews.length && auth.isLoggedIn" class="img-preview-bar">
-        <div v-for="p in imagePreviews" :key="p.id" class="img-preview-item">
-          <img :src="p.dataUrl" class="img-preview-thumb" />
-          <button class="img-preview-close" @click="removeImage(p.id)">&times;</button>
+      <Transition name="toast-fade">
+        <div v-if="pipelineToast" class="pipeline-toast">
+          <span class="toast-icon">{{ pipelineToast.icon }}</span>
+          <span>{{ pipelineToast.text }}</span>
         </div>
-      </div>
-
+      </Transition>
       <ChatInput v-if="auth.isLoggedIn" v-model="inputText" :loading="loading"
-        :disabled="!inputText.trim() && !imagePreviews.length"
+        :disabled="!inputText.trim()"
         :enable-search="enableSearch" :enable-deep-think="enableDeepThink"
         @send="sendMessage" @stop="stopAI"
         @toggle-search="enableSearch = !enableSearch"
@@ -399,6 +397,17 @@ onMounted(async () => {
 .search-conv { font-size:11px; color:var(--text-tertiary); flex-shrink:0; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .search-status { padding:12px var(--space-4); font-size:var(--text-xs); color:var(--text-tertiary); text-align:center; }
 @keyframes search-in { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+
+/* 管道状态提示 */
+.pipeline-toast {
+  max-width:820px; margin:0 auto 4px; padding:6px 12px; border-radius:var(--radius-md);
+  background:var(--color-brand-50); border:1px solid var(--color-brand-200);
+  color:var(--color-brand-700); font-size:12px; display:flex; align-items:center; gap:6px;
+}
+[data-theme="dark"] .pipeline-toast { background:rgba(79,70,229,0.12); border-color:var(--color-brand-400); color:var(--color-brand-300); }
+.toast-icon { font-size:14px; }
+.toast-fade-enter-active, .toast-fade-leave-active { transition:all 0.3s ease; }
+.toast-fade-enter-from, .toast-fade-leave-to { opacity:0; transform:translateY(-6px); }
 </style>
 
 <style>

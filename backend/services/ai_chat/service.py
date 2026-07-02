@@ -2,6 +2,7 @@
 """AIChatService — 会话管理 + 状态 + 成就 + 对话编排"""
 from __future__ import annotations
 
+import base64
 import os
 from typing import Optional, Tuple
 
@@ -17,6 +18,7 @@ from backend.Agent.provider import get_ai_provider
 from backend.Agent.personality import Personality
 from backend.Agent.memory import MemoryStore
 from backend.Agent.achievements import AchievementStore, ACHIEVEMENTS
+from backend.Agent.preprocessor import PreprocessResult
 from backend.Agent.rules import MAX_CONTEXT_MESSAGES, MAX_MESSAGES_PER_DAY, SUMMARIZE_THRESHOLD, DEFAULT_MODEL
 from backend.Agent.tools import build_tool_map
 from backend.core.config import settings
@@ -27,7 +29,9 @@ from .helpers import (
 )
 from .pipeline import (
     enforce_silence, summarize_and_trim, resolve_model,
-    phase1_preprocess, phase2_personalize, phase3_generate,
+    _make_tool_map,
+    phase1_extract, collect_context, phase1_optimize,
+    phase2_assemble, phase3_respond,
 )
 from .achievements import check_achievements
 
@@ -119,7 +123,7 @@ class AIChatService(IAIChatService):
     # ═══════════════════════════════════════════════════
 
     def chat(self, user_id, message, conversation_id=None, model=None, role="user", user_name="",
-             images=None, enable_search=True, enable_deep_think=True):
+             images=None, documents=None, enable_search=True, enable_deep_think=True):
         unlocked = role == "admin" or is_unlocked(user_id)
 
         if not self._check_quota(user_id, unlocked):
@@ -130,20 +134,26 @@ class AIChatService(IAIChatService):
 
         # 轻量操作用 flash
         conversation_id, message, db_message = self._prepare_message(
-            user_id, message, conversation_id, DEFAULT_MODEL, images)
+            user_id, message, conversation_id, DEFAULT_MODEL, images, documents)
 
         personality, memory, ach_store, user_state = self._load_conversation_state(
-            user_id, conversation_id, message, role, unlocked)
+            user_id, conversation_id, message, role, unlocked, db_message)
         engagement_before = personality.engagement
 
         history = self._load_history(conversation_id, memory, DEFAULT_MODEL)
 
-        # 三阶段管道
-        pre = phase1_preprocess(message, history, personality, memory, ach_store)
-        # Phase 1 之后根据提取结果选模型
-        final_model = resolve_model(pre, personality.engagement, model, enable_deep_think)
-        prompt = phase2_personalize(pre, personality, memory, ach_store, user_state, user_name)
-        ai_content, ai_achievements = phase3_generate(
+        # 三阶段管道: AI提取 → 代码收集 → AI优化 → 代码组装 → AI回复
+        code_tools = _make_tool_map(personality, memory)
+        extraction = phase1_extract(message, history, code_tools)
+        final_model = resolve_model(PreprocessResult(
+            search_needed=extraction.get("search_needed", False),
+            deep_think_needed=extraction.get("deep_think_needed", False),
+        ), personality.engagement, model, enable_deep_think)
+        context = collect_context(extraction, message, db_message, personality,
+                                  memory, ach_store, code_tools)
+        optimized = phase1_optimize(message, extraction, context, code_tools)
+        prompt = phase2_assemble(optimized, extraction, context, personality, user_state, user_name)
+        ai_content, ai_achievements = phase3_respond(
             prompt, history, personality, memory, ach_store, final_model)
 
         # 后处理
@@ -170,15 +180,38 @@ class AIChatService(IAIChatService):
 
     @staticmethod
     def _prepare_message(user_id: int, message: str, conversation_id: Optional[int],
-                         model: str, images: Optional[list]) -> Tuple[int, str, str]:
+                         model: str, images: Optional[list],
+                         documents: Optional[list] = None) -> Tuple[int, str, str]:
         if conversation_id:
             conv = ai_chat_db.get_conversation_by_id(conversation_id)
             if not conv or conv.user_id != user_id:
                 raise BusinessException("会话不存在", code=404)
         else:
-            title = message[:20] + ("..." if len(message) > 20 else "")
+            title = (message or "文件对话")[:20] + ("..." if len(message or "") > 20 else "")
             conversation_id = ai_chat_db.create_conversation(user_id, title, model)
 
+        original_message = message  # 保存原文，文档内容只给 AI 看
+
+        # ── 文档解析: Word/PPT 提文字, PDF 逐页转图片 ──
+        doc_text = ""
+        if documents:
+            from backend.utils.file_parser import parse_document
+            for doc in documents:
+                try:
+                    data = base64.b64decode(doc["data"]) if "data" in doc else base64.b64decode(doc.get("base64", ""))
+                    text, pdf_images = parse_document(data, doc.get("filename", ""))
+                    if text:
+                        doc_text += f"\n\n[文档内容: {doc.get('filename', '未知')}]\n{text}"
+                    if pdf_images:
+                        if images is None:
+                            images = []
+                        images.extend(pdf_images)
+                except Exception:
+                    pass
+        if doc_text:
+            message = doc_text + "\n\n[用户消息]\n" + message if message.strip() else doc_text
+
+        # ── OCR: 图片文字提取 ──
         ocr_text = ""
         if images:
             ocr_parts = []
@@ -189,9 +222,19 @@ class AIChatService(IAIChatService):
             if ocr_parts:
                 AchievementStore(user_id, AI_DATA_DIR).increment_stat("ocr_used")
                 ocr_text = "\n---\n".join(ocr_parts)
-                message = f"{message}\n\n{ocr_text}" if message.strip() else ocr_text
+                message = f"{message}\n\n[本次上传图片内容]\n{ocr_text}" if message.strip() else f"[本次上传图片内容]\n{ocr_text}"
 
-        db_message = message
+        # db_message: 原文 + 文件标签（不包含文档内容）
+        file_tags = []
+        if documents:
+            for doc in documents:
+                fname = doc.get("filename", "文件")
+                ext = fname.rsplit(".", 1)[-1].upper() if "." in fname else ""
+                file_tags.append(f"[📄 {ext} {fname}]")
+        if file_tags:
+            db_message = " ".join(file_tags) + ("\n" + original_message if original_message.strip() else "")
+        else:
+            db_message = original_message
         typed_text = message[:len(message) - len(ocr_text)] if ocr_text else message
         if len(typed_text) > 5000:
             try:
@@ -210,12 +253,13 @@ class AIChatService(IAIChatService):
 
     @staticmethod
     def _load_conversation_state(user_id: int, conversation_id: int, message: str,
-                                  role: str, is_unlocked: bool
+                                  role: str, is_unlocked: bool, raw_message: str = None
                                   ) -> Tuple[Personality, MemoryStore, AchievementStore, dict]:
         personality = Personality.load(
             os.path.join(AI_DATA_DIR, f"conv_{conversation_id}_personality.json"))
         enforce_silence(personality)
-        personality.on_user_message(message)
+        # 用原始输入做关键词匹配，避免 OCR/摘要文本误触发语气切换
+        personality.on_user_message(raw_message or message)
         memory = MemoryStore(conversation_id, AI_DATA_DIR)
 
         ach_store = AchievementStore(user_id, AI_DATA_DIR)

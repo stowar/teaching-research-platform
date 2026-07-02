@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     DOUBAO_API_KEY: str = os.getenv("API_KEY", "")
     AI_BASE_URL: str = os.getenv("AI_BASE_URL", "https://api.deepseek.com")
     PREPROCESS_MODEL: str = os.getenv("PREPROCESS_MODEL", "deepseek-v4-flash")
+    VISION_MODEL: str = os.getenv("VISION_MODEL", "qwen-vl-plus")
+    VISION_BASE_URL: str = os.getenv("VISION_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
+    VISION_API_KEY: str = os.getenv("VISION_API_KEY", "")
     # 文件上传配置
     UPLOAD_DIR: str = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
     MAX_FILE_SIZE: int = 100 * 1024 * 1024  # 100MB

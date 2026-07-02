@@ -8,7 +8,6 @@ PREPROCESS_TOOL_NAMES = frozenset({
     "get_silence_timing",
     "calc",
     "translate",
-    "set_tone",
 })
 
 # Phase 3: 主模型在 function calling 中自主调用的工具
@@ -18,6 +17,7 @@ MAIN_TOOL_NAMES = frozenset({
     "adjust_engagement",
     "adjust_attention",
     "unlock_achievement",
+    "set_tone",
     # [TODO] "web_search",  # 暂不可用
 })
 

@@ -39,8 +39,9 @@ class IAIChatService(ABC):
     @abstractmethod
     def chat(self, user_id: int, message: str, conversation_id: int = None, model: str = None,
              role: str = "user", user_name: str = "", images: list = None,
+             documents: list = None,
              enable_search: bool = True, enable_deep_think: bool = True) -> ApiResponse[ChatReplyVO]:
-        """发送消息并获取 AI 回复（可带图片数组）"""
+        """发送消息并获取 AI 回复（可带图片数组和文档）"""
         ...
 
     @abstractmethod

@@ -12,25 +12,7 @@ from dataclasses import dataclass, field
 from typing import List, Dict, Callable
 
 from backend.Agent.provider import IAIProvider
-
-
-# ── 通用工具的关键词匹配（不依赖个人状态）─────────
-
-CALC_KEYWORDS = [
-    "计算", "算", "等于", "多少", "面积", "体积", "比例", "百分比",
-    "平均", "统计", "合计", "公式", "换算", "加减", "乘除", "平方", "开方",
-    "+", "-", "*", "/", "^", "sum", "avg", "mean",
-]
-
-TRANSLATE_KEYWORDS = [
-    "翻译", "译", "英文", "中文", "英语怎么说", "用英语", "translate",
-    "什么意思", "英文是什么", "用英文",
-]
-
-SAFETY_KEYWORDS = [
-    "杀", "死", "电击", "关押", "虐待", "折磨", "暴力",
-    "自残", "自杀", "强奸", "投毒", "爆炸", "绑架", "酷刑",
-]
+from backend.Agent.rules import CALC_KEYWORDS, TRANSLATE_KEYWORDS, SAFETY_KEYWORDS
 
 
 # ── 关键词匹配函数（供代码和测试使用）─────────────
@@ -77,11 +59,12 @@ class Preprocessor:
     """
 
     def __init__(self, provider: IAIProvider, tool_executor: Callable[..., str]):
-        self.provider = provider
+        self.provider = provider    # 服务提供商接口
         self._execute_tool = tool_executor
 
-    def run(self, user_input: str, history_summary: str = "") -> PreprocessResult:
-        """执行通用层预处理。"""
+    def run(self, user_input: str, history_summary: str = "",
+            safety_input: str = None) -> PreprocessResult:
+        """执行通用层预处理。safety_input 用于安全检测（通常用原始输入）。"""
         # Call 1: 提取
         extraction = self._extract(user_input, history_summary)
 
@@ -107,7 +90,8 @@ class Preprocessor:
             except Exception:
                 pass
 
-        if should_set_safety_tone(user_input):
+        # 安全检测用原始输入，避免 OCR 文本误触发
+        if should_set_safety_tone(safety_input or user_input):
             try:
                 tool_results["set_tone"] = self._execute_tool("set_tone", tone="safety")
             except Exception:
@@ -194,31 +178,37 @@ deep_think_needed: 涉及复杂推理、多步分析、方案设计、对比论�
 
     # ── Call 2: 优化 ──────────────────────────────
 
-    def _optimize(
-        self,
-        user_input: str,
-        extraction: dict,
-        tool_results: Dict[str, str],
-    ) -> str:
-        """整合原始输入 + 提取信息 + 通用工具结果 → 紧凑摘要（≤200字）。"""
+    def _optimize(self, user_input: str, extraction: dict, tool_results: Dict[str, str],) -> str:
+        """整合原始输入 + 提取信息 + 通用工具结果 → 紧凑摘要（动态长度）。"""
         tool_block = "\n".join(
             f"- {name}: {result}" for name, result in tool_results.items()
         ) if tool_results else "无"
 
-        prompt = f"""你是上下文优化器。基于以下信息，输出一段紧凑的上下文摘要（200字以内），直接输出文本，不要JSON，不要解释。
+        # 摘要长度按输入动态调整
+        in_len = len(user_input)
+        if in_len < 1000:
+            max_chars = 200
+        elif in_len < 3000:
+            max_chars = 300
+        elif in_len < 8000:
+            max_chars = 400
+        else:
+            max_chars = 500
 
-【原始用户输入】（必须保留原意）
-{user_input}
-
-【提取信息】
-意图: {extraction.get('intent', '未知')}
-关键词: {', '.join(extraction.get('keywords', []))}
-实体: {json.dumps(extraction.get('entities', {}), ensure_ascii=False)}
-
-【通用工具结果】
-{tool_block}
-
-请生成一段整合上下文，供主AI模型参考："""
+        prompt = f"""你是上下文优化器。基于以下信息，输出一段紧凑的上下文摘要（{max_chars}字以内），直接输出文本，不要JSON，不要解释。
+    
+                【原始用户输入】（必须保留原意）
+                {user_input}
+                
+                【提取信息】
+                意图: {extraction.get('intent', '未知')}
+                关键词: {', '.join(extraction.get('keywords', []))}
+                实体: {json.dumps(extraction.get('entities', {}), ensure_ascii=False)}
+                
+                【通用工具结果】
+                {tool_block}
+                
+                请生成一段整合上下文，供主AI模型参考："""
 
         try:
             resp = self.provider.chat([{"role": "user", "content": prompt}])

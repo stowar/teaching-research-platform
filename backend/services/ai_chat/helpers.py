@@ -29,11 +29,13 @@ def is_unlocked(user_id: int) -> bool:
 
 
 def process_image(data_url: str) -> str:
+    """识别图片内容 — VL 优先 → Tesseract → EasyOCR 三级降级。"""
     try:
         match = re.match(r"data:image/\w+;base64,(.+)", data_url)
         if not match:
             return ""
-        img_bytes = base64.b64decode(match.group(1))
+        img_b64 = match.group(1)
+        img_bytes = base64.b64decode(img_b64)
         try:
             from PIL import Image
             img = Image.open(io.BytesIO(img_bytes))
@@ -41,36 +43,63 @@ def process_image(data_url: str) -> str:
             meta = f"[图片: {img.format or '?'}, {w}x{h}]"
         except Exception:
             meta = "[图片上传成功]"
-        ocr_text = ""
-        try:
-            import pytesseract
-            if not pytesseract.pytesseract.tesseract_cmd or pytesseract.pytesseract.tesseract_cmd == "tesseract":
-                for path in [r"D:\Tool\QCR\tesseract.exe", r"C:\Program Files\Tesseract-OCR\tesseract.exe",
-                             "/usr/bin/tesseract", "/usr/local/bin/tesseract"]:
-                    if os.path.exists(path):
-                        pytesseract.pytesseract.tesseract_cmd = path
-                        break
-            img_ocr = Image.open(io.BytesIO(img_bytes))
-            for lang in ["chi_sim+eng", "eng"]:
-                try:
-                    ocr_text = pytesseract.image_to_string(img_ocr, lang=lang).strip()
-                    if ocr_text:
-                        break
-                except Exception:
-                    continue
-        except Exception:
+
+        result = None
+
+        # ── L1: VL 模型（需配置 VISION_API_KEY）──
+        from backend.core.config import settings
+        if settings.VISION_API_KEY and "你的" not in settings.VISION_API_KEY:
+            try:
+                from openai import OpenAI
+                client = OpenAI(api_key=settings.VISION_API_KEY, base_url=settings.VISION_BASE_URL)
+                resp = client.chat.completions.create(
+                    model=settings.VISION_MODEL,
+                    messages=[{"role": "user", "content": [
+                        {"type": "text", "text": "只描述这张图片本身的内容，不要与任何之前的图片对比。如果是文档/教案/板书/表格，提取其中所有文字并按原结构输出。如果是照片，描述场景和关键细节。用中文。"},
+                        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{img_b64}"}},
+                    ]}],
+                    max_tokens=800,
+                )
+                result = resp.choices[0].message.content.strip()
+            except Exception:
+                pass
+
+        # ── L2: Tesseract OCR ──
+        if not result:
+            try:
+                import pytesseract
+                if not pytesseract.pytesseract.tesseract_cmd or pytesseract.pytesseract.tesseract_cmd == "tesseract":
+                    for path in [r"D:\Tool\QCR\tesseract.exe", r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+                                 "/usr/bin/tesseract", "/usr/local/bin/tesseract"]:
+                        if os.path.exists(path):
+                            pytesseract.pytesseract.tesseract_cmd = path
+                            break
+                img_ocr = Image.open(io.BytesIO(img_bytes))
+                for lang in ["chi_sim+eng", "eng"]:
+                    try:
+                        result = pytesseract.image_to_string(img_ocr, lang=lang).strip()
+                        if result:
+                            break
+                    except Exception:
+                        continue
+            except Exception:
+                pass
+
+        # ── L3: EasyOCR ──
+        if not result:
             try:
                 import easyocr
                 reader = easyocr.Reader(["ch_sim", "en"], gpu=False, verbose=False)
                 results = reader.readtext(img_bytes)
-                ocr_text = " ".join(r[1] for r in results)
+                result = " ".join(r[1] for r in results)
             except Exception:
                 pass
-        if ocr_text:
-            return f"{meta}\n识别文字：\n{ocr_text}"
-        return meta
-    except Exception:
-        return "[图片解析失败]"
+
+        if result:
+            return f"{meta}\n{result}"
+        return f"{meta}\n[无文字内容]"
+    except Exception as e:
+        return f"[图片解析失败: {str(e)[:80]}]"
 
 
 def tone_label(tone) -> str:

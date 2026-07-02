@@ -64,7 +64,7 @@ def chat(
 ):
     return svc.chat(current_user.id, data.message, data.conversation_id, data.model,
                     current_user.role, (current_user.name or ""), data.images,
-                    data.enable_search, data.enable_deep_think)
+                    data.documents, data.enable_search, data.enable_deep_think)
 
 
 @router.get("/state", summary="AI 状态", response_model=ApiResponse[AIStateVO])

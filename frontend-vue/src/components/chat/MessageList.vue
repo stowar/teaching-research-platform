@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch, nextTick } from 'vue'
-import { Bot, User } from 'lucide-vue-next'
+import { Bot, User, FileText } from 'lucide-vue-next'
 import MarkdownIt from 'markdown-it'
 
 defineProps({
@@ -41,6 +41,11 @@ defineExpose({ scrollToBottom, container })
           </div>
           <div v-if="msg.images?.length" class="message-images">
             <img v-for="(img, i) in msg.images" :key="i" :src="img" class="msg-img" />
+          </div>
+          <div v-if="msg.attachments?.length" class="message-attachments">
+            <span v-for="(name, i) in msg.attachments" :key="i" class="msg-attach">
+              <FileText :size="12" /> {{ name }}
+            </span>
           </div>
           <div class="message-bubble" :class="{ 'markdown-body': msg.role === 'assistant' }">
             <div v-if="msg.role === 'assistant'" class="message-text" v-html="msg.loginPrompt ? msg.content : md.render(msg.content)" />
@@ -111,4 +116,11 @@ defineExpose({ scrollToBottom, container })
 .message-images { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:var(--space-2); }
 .msg-img { max-width:240px; max-height:240px; border-radius:var(--radius-md); border:1px solid var(--border-light); object-fit:contain; animation:img-in 0.3s var(--ease-out) both; }
 @keyframes img-in { from{opacity:0;transform:scale(0.92)} to{opacity:1;transform:scale(1)} }
+.message-attachments { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:var(--space-2); }
+.msg-attach {
+  display:inline-flex; align-items:center; gap:4px; padding:2px 8px;
+  border-radius:var(--radius-sm); background:var(--color-brand-50); color:var(--color-brand-600);
+  font-size:11px;
+}
+[data-theme="dark"] .msg-attach { background:rgba(79,70,229,0.15); color:var(--color-brand-300); }
 </style>

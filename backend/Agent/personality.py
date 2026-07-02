@@ -42,8 +42,8 @@ class Personality:
         self.attention = 30
         self.tone = Tone.PROFESSIONAL
         self._last_user_time = time.time()
-        self._last_short_silence = 0.0
-        self._last_long_silence = 0.0  # 上一次长静默（>2h），不随短间隔覆盖
+        self._last_silence = 0.0           # 本轮静默快照（>5min 时由 on_user_message 刷新）
+        self._last_long_silence = 0.0      # 上一次长静默（>2h），不随短间隔覆盖
         self._longest_silence = 0.0
 
     # ── 时间感知 ──────────────────────────────────
@@ -60,15 +60,14 @@ class Personality:
         return f"{now.tm_year}年{now.tm_mon}月{now.tm_mday}日 {now.tm_hour:02d}:{now.tm_min:02d} {weekdays[now.tm_wday]}"
 
     def get_silence_timing(self) -> str:
-        """AI 调用：返回全阶段静默追踪（短期/长期/历史最长）"""
+        """AI 调用：返回全阶段静默追踪。"""
         current = self.silence_timing / 3600
-        short = self._last_short_silence
         long_s = self._last_long_silence
         longest = self._longest_silence
 
         parts = []
-        if current < 0.01:
-            parts.append("当前静默：刚刚")
+        if current < 0.0167:
+            parts.append("当前静默：刚刚（用户在线）")
         elif current < 2:
             parts.append(f"当前静默：{current*60:.0f}分钟")
         else:
@@ -120,14 +119,11 @@ class Personality:
 
     def on_user_message(self, content: str):
         """收到用户消息：快照静默时长、更新时间戳、消耗关注度、微增投入、自动调语气"""
-        # 短静默:只有间隔超过 5 分钟才刷新静默快照，同轮对话不覆盖
         sh = self.silence_timing / 3600
         if sh > 0.08:
             self._last_silence = sh
-        # 长静默（>2h）单独记录，不随短间隔丢失
         if sh > 2:
             self._last_long_silence = sh
-        # 最长静默（历史最长）
         if sh > self._longest_silence:
             self._longest_silence = sh
 
@@ -135,9 +131,8 @@ class Personality:
         self.attention = max(0, self.attention - 3)
         self.engagement = min(200, self.engagement + 1)
 
-        # 根据关键词自动调语气（规则定义在 Agent/rules.py）
+        # 关键词自动调语气（AI 可在 Phase 3 通过 set_tone 覆盖）
         from backend.Agent.rules import TONE_RULES
-
         lowered = content.lower()
         for tone_name, rule in TONE_RULES.items():
             if any(kw in lowered for kw in rule["keywords"]):
